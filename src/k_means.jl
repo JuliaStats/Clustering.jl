@@ -1,62 +1,79 @@
-# Compute RSS 
-# Squared Euclidean distance between point and its assigned center, summed over all points.
-# When current_rss and previous_rss are within tolerance, stop.
+# Compute RSS, which is the squared Euclidean distance between every point
+# and its assigned center
+function rss(x::Matrix{Float64},
+             assignments::Vector{Int64},
+             centers::Matrix{Float64})
 
-function k_means(x, k)
+  residuals = 0.0
+
+  for i = 1:size(x, 1)
+    residuals += norm(x[i, :] - centers[assignments[i], :])^2
+  end
+
+  return residuals
+end
+
+function k_means(x::Matrix{Float64}, k::Int64, tolerance::Float64, max_iter::Int64)
+  # Keep track of the number of data points and their dimensionality
   n = size(x, 1)
   p = size(x, 2)
-  
-  # Random initializations of assignments.
-  y = int((k - 1) * rand(n)) + 1
-  
+
+  # Random initializations of assignments
+  assignments = zeros(Int64, n)
+  for i in 1:n
+    assignments[i] = randi(k)
+  end
+
   # Compute centers of initial clusters.
   centers = zeros(k, p)
-  
+
+  # Run until convergence or until the number of iterations is too high
   converged = false
-  
   iter = 0
-  max_iter = 1000
-  
+
+  # Stop when current_rss and previous_rss are within tolerance of each other
   previous_rss = Inf
   current_rss = Inf
   delta_rss = Inf
-  
-  while delta_rss > 10e-6 && iter < max_iter
-    # Recompute cluster assignments given centers.
-    for j = 1:k
-      indices = find(y .== j)
-      centers[j, :] = mean(x[indices, :], 1)
+
+  while !converged && iter < max_iter
+    # Increment the iteration counter
+    iter += 1
+
+    # Recompute cluster assignments given current centers
+    for cluster_index = 1:k
+      indices = find(assignments .== cluster_index)
+      centers[cluster_index, :] = mean(x[indices, :], 1)
     end
-    
-    # Reassign points to closest cluster.
+
+    # Reassign points to the closest cluster
     for i = 1:n
-      distances = map(j -> norm(x[i, :] - centers[j, :]), [1:k])
-      y[i] = find(distances .== min(distances))[1]
+      distances = zeros(k)
+      for cluster_index in 1:k
+        distances[cluster_index] = norm(x[i, :] - centers[cluster_index, :])
+      end
+      assignments[i] = findfirst(distances .== min(distances))
     end
-    
+
+    # Update the RSS values for previous and current cluster assignments
     previous_rss = current_rss
-    current_rss = rss(x, y, centers)
+    current_rss = rss(x, assignments, centers)
     delta_rss = previous_rss - current_rss
-    
-    iter = iter + 1
+
+    if delta_rss <= tolerance
+      converged = true
+    end
   end
-  
-  results = KMeansOutput()
-  
-  results.assignments = y
-  results.centers = centers
-  results.iterations = iter
-  results.rss = current_rss
-  
-  results
+
+  results = KMeansOutput(assignments,
+                         centers,
+                         iter,
+                         current_rss,
+                         converged)
+
+  return results
 end
 
-function rss(x, y, centers)
-  residuals = 0.0
-  
-  for i = 1:size(x, 1)
-    residuals += norm(x[i, :] - centers[y[i], :])^2
-  end
-  
-  residuals
+function k_means(x::Matrix{Float64}, k::Int64)
+  k_means(x, k, 10e-8, 1_000)
 end

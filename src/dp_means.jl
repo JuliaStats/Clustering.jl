@@ -1,74 +1,68 @@
-# Currently assumes data is 2D.
-# Tolerance good one?
-
-function dp_means(data, lambda, max_iterations, tolerance)
+function dp_means(data::Matrix{Float64}, lambda::Float64, tolerance::Float64, max_iterations::Int64)
+  # Keep track of the number of data points
   n = size(data, 1)
+
+  # Initially assign all data points to a single cluster
   k = 1
-  assignments = ones(n)
-  mu_x = [mean(data, 1)[1]]
-  mu_y = [mean(data, 1)[2]]
-  
+  assignments = ones(Int64, n)
+  centers = mean(data, 1)
+
+  # Keep working until convergence or exceeding bound on iterations
   converged = false
   iteration = 0
-  
+
+  # Keep track of error in system
   ss_old = Inf
   ss_new = Inf
-  
+
   while !converged && iteration < max_iterations
-    iteration = iteration + 1
-    
+    iteration += 1
+
+    # Update cluster assignments
     for i = 1:n
       distances = zeros(k)
-      
-      for j = 1:k
-        distances[j] = (data[i, 1] - mu_x[j])^2 + (data[i, 2] - mu_y[j])^2
+
+      for cluster_index = 1:k
+        distances[cluster_index] = norm(data[i, 1] - centers[cluster_index, :])#^2
       end
-      
+
       if min(distances) > lambda
-        k = k + 1
+        k += 1
         assignments[i] = k
-        mu_x = [mu_x, data[i, 1]]
-        mu_y = [mu_y, data[i, 2]]
+        centers = vcat(centers, data[i, :])
       else
-        assignments[i] = find(distances .== min(distances))[1]
+        assignments[i] = findfirst(distances .== min(distances))
       end
     end
-    
-    for j = 1:k
-      if sum(assignments .== j) > 0
-        indices = find(assignments .== j)
-        mu_x[j] = mean(data[indices, 1])
-        mu_y[j] = mean(data[indices, 2])
+
+    # Update cluster centers for non-empty clusters
+    for cluster_index = 1:k
+      if sum(assignments .== cluster_index) > 0
+        indices = find(assignments .== cluster_index)
+        centers[cluster_index, :] = mean(data[indices, :], 1)
       end
     end
-    
+
+    # Update convergence criterion
     ss_old = ss_new
-    ss_new = 0
-    
+    ss_new = 0.0
+
     for i = 1:n
-      ss_new = ss_new + (data[i, 1] - mu_x[assignments[i]])^2 + (data[i, 2] - mu_y[assignments[i]])^2
+      ss_new += norm(data[i, :] - centers[assignments[i], :])#^2
     end
-    
+
     ss_change = ss_old - ss_new
-    
+
     if !isnan(ss_change) && ss_change < tolerance
       converged = true
     end
   end
-  
-  centers = Dict()
-  centers[:x] = mu_x
-  centers[:y] = mu_y
-  
-  results = Dict()
-  results[:centers] = centers
-  results[:assignments] = assignments
-  results[:k] = k
-  results[:iterations] = iteration
-  results[:converged] = converged
-  results[:ss] = ss_new
-  
-  results
+
+  results = DPMeansOutput(assignments, centers, k, iteration, ss_new, converged)
+
+  return results
 end
 
-dp_means(data, lambda) = dp_means(data, lambda, 1000, 10e-3)
+function dp_means(data::Matrix{Float64}, lambda::Float64)
+  dp_means(data, lambda, 10e-8, 1_000)
+end

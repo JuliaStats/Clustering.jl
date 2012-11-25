@@ -5,8 +5,8 @@ srand(1)
 
 n = 100
 
-x = vcat(hcat(randn(n), randn(n)),
-         hcat(randn(n) + 10, randn(n) + 10))
-y = vcat(zeros(n), ones(n))
+x = vcat(randn(n, 2), randn(n, 2) .+ 10)
+true_assignments = vcat(zeros(n), ones(n))
 
-k_means(x, 2)
+results = k_means(x, 2)
+results.assignments
