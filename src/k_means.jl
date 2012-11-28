@@ -77,3 +77,7 @@ end
 function k_means(x::Matrix{Float64}, k::Int64)
   k_means(x, k, 10e-8, 1_000)
 end
+
+function k_means(df::DataFrame, k::Int64)
+  k_means(matrix(df), k, 10e-8, 1_000)
+end

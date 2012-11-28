@@ -66,3 +66,7 @@ end
 function dp_means(data::Matrix{Float64}, lambda::Float64)
   dp_means(data, lambda, 10e-8, 1_000)
 end
+
+function dp_means(df::DataFrame, lambda::Float64)
+  dp_means(matrix(df), lambda, 10e-8, 1_000)
+end

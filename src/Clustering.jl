@@ -1,5 +1,8 @@
+load("DataFrames")
+
 module Clustering
   using Base
+  using DataFrames
 
   export k_means, dp_means
 
