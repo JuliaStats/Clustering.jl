@@ -17,7 +17,8 @@ for i = 1:n
   data[i, :] += centers[assignments[i], :]
 end
 
-results = dp_means(data, 10.0)
+results = dp_means(data, 19.0)
 
 # Should really look at active clusters, not created clusters
 results.k
+unique(results.assignments)
