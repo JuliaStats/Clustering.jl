@@ -1,6 +1,5 @@
 # Installation
 
-    require("pkg")
     Pkg.add("Clustering")
 
 # Functionality
@@ -10,14 +9,7 @@
 
 # Examples
 
-    load("DataFrames")
-    using DataFrames
-
-    load("RDatasets")
-    using RDatasets
-
-    load("Clustering")
-    using Clustering
+    using DataFrames, RDatasets, Clustering
 
     iris = data("datasets", "iris")
 
@@ -29,3 +21,14 @@
     df["Cluster"] = clusters.assignments
     df["Label"] = iris[:, "Species"]
     head(df)
+
+    by(df, ["Cluster", "Label"], nrow)
+
+    clusters = dp_means(iris[:, 2:5], 6.0)
+
+    df = DataFrame()
+    df["Cluster"] = clusters.assignments
+    df["Label"] = iris[:, "Species"]
+    head(df)
+
+    by(df, ["Cluster", "Label"], nrow)

@@ -1,4 +1,3 @@
-load("Clustering")
 using Clustering
 
 n = 1_000
@@ -17,7 +16,7 @@ for i = 1:n
   data[i, :] += centers[assignments[i], :]
 end
 
-results = dp_means(data, 19.0)
+results = dp_means(data, 20.0)
 
 # Should really look at active clusters, not created clusters
 results.k
