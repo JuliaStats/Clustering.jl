@@ -8,7 +8,7 @@ end
 
 KMeansOutput() = KMeansOutput(Int64[], Float64[], 0, 0.0, false)
 
-function show(io::Any, results::KMeansOutput)
+function show(io::IO, results::KMeansOutput)
   println(io, "Cluster Assignments:")
   println(io, results.assignments)
   println(io)
@@ -26,8 +26,6 @@ function show(io::Any, results::KMeansOutput)
   println(io)
 end
 
-repl_show(io::Any, results::KMeansOutput) = show(io, results)
-
 type DPMeansOutput
   assignments::Vector{Int64}
   centers::Matrix{Float64}
@@ -39,7 +37,7 @@ end
 
 DPMeansOutput() = DPMeansOutput(Int64[], Float64[], 0, 0, 0.0, false)
 
-function show(io::Any, results::DPMeansOutput)
+function show(io::IO, results::DPMeansOutput)
   println(io, "Cluster Assignments:")
   println(io, results.assignments)
   println(io)
@@ -58,5 +56,3 @@ function show(io::Any, results::DPMeansOutput)
   print(io, "Algorithm Converged: ")
   println(io, results.converged)
 end
-
-repl_show(io::Any, results::DPMeansOutput) = show(io, results)
