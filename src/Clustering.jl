@@ -1,9 +1,10 @@
-using DataFrames
+require("options")
 
 module Clustering
-    using DataFrames
+    using Distributions
+    using OptionsMod
 
-    import Base.print, Base.show, Base.repl_show
+    import Base.show
 
     export k_means, dp_means
 
