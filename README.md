@@ -15,7 +15,7 @@
 
     k = length(unique(iris[:, "Species"]))
 
-    clusters = k_means(iris[:, 2:5], k)
+    clusters = k_means(matrix(iris[:, 2:5]), k)
 
     df = DataFrame()
     df["Cluster"] = clusters.assignments
@@ -24,7 +24,7 @@
 
     by(df, ["Cluster", "Label"], nrow)
 
-    clusters = dp_means(iris[:, 2:5], 6.0)
+    clusters = dp_means(matrix(iris[:, 2:5]), 6.0)
 
     df = DataFrame()
     df["Cluster"] = clusters.assignments
