@@ -1,5 +1,3 @@
-require("options")
-
 module Clustering
     using Distributions
     using OptionsMod
