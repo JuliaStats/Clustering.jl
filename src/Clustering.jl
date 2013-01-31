@@ -1,4 +1,4 @@
-require("options")
+require("Options")
 
 module Clustering
     using Distributions
