@@ -246,7 +246,8 @@ function _kmeans!(
 	
 	# main loop
 	if disp_level >= 2
-		@printf "%6s %18s %18s | %8s \n" "Iters" "objv" "objv-change" "affected"
+		@printf "%7s %18s %18s | %8s \n" "Iters" "objv" "objv-change" "affected"
+		println("-------------------------------------------------------------")
 	end
 	
 	t = 0
@@ -294,7 +295,7 @@ function _kmeans!(
 		# display iteration information (if asked)
 			
 		if disp_level >= 2
-			@printf "%5d: %18.6e %18.6e | %8d\n" t objv objv_change num_affected 
+			@printf "%7d %18.6e %18.6e | %8d\n" t objv objv_change num_affected 
 		end
 	end
 	
