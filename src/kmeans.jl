@@ -43,7 +43,8 @@ end
 ###########################################################
 
 
-function update_assignments!(dmat::FPMat, assignments::Vector{Int}, costs::FPVec, counts::Vector{Int})
+function init_assignments!(dmat::FPMat, assignments::Vector{Int}, costs::FPVec, counts::Vector{Int})
+	
 	k, n = size(dmat)
 	fill!(counts, 0)
 	
@@ -57,10 +58,45 @@ function update_assignments!(dmat::FPMat, assignments::Vector{Int}, costs::FPVec
 				c = ci
 			end
 		end
-
+		
 		assignments[j] = a		
 		costs[j] = c
 		counts[a] += 1
+	end
+end
+
+function update_assignments!(dmat::FPMat, assignments::Vector{Int}, 
+	costs::FPVec, counts::Vector{Int}, affected::BitVector)
+	
+	k, n = size(dmat)
+	fill!(counts, 0)
+	
+	for j = 1 : n
+		a = 1
+		c = dmat[1, j]
+		for i = 2 : k
+			ci = dmat[i, j]
+			if ci < c
+				a = i
+				c = ci
+			end
+		end
+		
+		pa = assignments[j]
+		if pa != a
+			assignments[j] = a
+			affected[a] = true
+			affected[pa] = true
+		end	
+		costs[j] = c
+		counts[a] += 1
+	end
+	
+	# everything that gets zero count is also tagged as affected
+	for i = 1 : k
+		if counts[i] == 0
+			affected[i] = true
+		end
 	end
 end
 
@@ -82,8 +118,8 @@ function repick_unused_centers(x::FPMat, costs::FPVec, centers::FPMat, unused::I
 end
 
 
-function update_centers!(x::FPMat, w::Nothing, 
-	assignments::Vector{Int}, costs::FPVec, counts::Vector{Int}, centers::FPMat)
+function update_centers!(x::FPMat, w::Nothing, assignments::Vector{Int}, 
+	costs::FPVec, counts::Vector{Int}, centers::FPMat, affected::BitVector)
 	
 	n = size(x, 2)
 	k = size(centers, 2)
@@ -91,25 +127,29 @@ function update_centers!(x::FPMat, w::Nothing,
 	s = falses(k)
 	for j = 1 : n
 		i = assignments[j]
-		if s[i]
-			@devec centers[:,i] += x[:,j]
-		else
-			@devec centers[:,i] = x[:,j]
-			s[i] = true
+		if affected[i]
+			if s[i]
+				@devec centers[:,i] += x[:,j]
+			else
+				@devec centers[:,i] = x[:,j]
+				s[i] = true
+			end
 		end
 	end
 	
 	unused = IntSet()
 		
 	for i = 1 : k
-		c = counts[i]
-		if c > 0  
-			if c != 1 # nothing need to be done when c == 1
-				inv_c = 1 / c
-				@devec centers[:,i] .*= inv_c
+		if affected[i]
+			c = counts[i]
+			if c > 0  
+				if c != 1 # nothing need to be done when c == 1
+					inv_c = 1 / c
+					@devec centers[:,i] .*= inv_c
+				end
+			else
+				add!(unused, i)
 			end
-		else
-			add!(unused, i)
 		end
 	end
 	
@@ -119,8 +159,8 @@ function update_centers!(x::FPMat, w::Nothing,
 end
 
 
-function update_centers!(x::FPMat, weights::FPVec, 
-	assignments::Vector{Int}, costs::FPVec, counts::Vector{Int}, centers::FPMat)
+function update_centers!(x::FPMat, weights::FPVec, assignments::Vector{Int}, 
+	costs::FPVec, counts::Vector{Int}, centers::FPMat, affected::BitVector)
 	
 	n = size(x, 2)
 	k = size(centers, 2)
@@ -128,30 +168,34 @@ function update_centers!(x::FPMat, weights::FPVec,
 	s = zeros(eltype(weights), k)
 	for j = 1 : n
 		i = assignments[j]
-		wj = weights[j]
-		@assert wj >= 0
+		if affected[i]
+			wj = weights[j]
+			@assert wj >= 0
 		
-		if wj > 0
-			if s[i] > 0
-				@devec centers[:,i] += wj .* x[:,j]
-			else
-				@devec centers[:,i] = wj .* x[:,j]
+			if wj > 0
+				if s[i] > 0
+					@devec centers[:,i] += wj .* x[:,j]
+				else
+					@devec centers[:,i] = wj .* x[:,j]
+				end
+				s[i] += wj
 			end
-			s[i] += wj
 		end
 	end
 	
 	unused = IntSet()
 		
 	for i = 1 : k
-		c = s[i]
-		if c > 0  
-			if c != 1 # nothing need to be done when c == 1
-				inv_c = 1 / c
-				@devec centers[:,i] .*= inv_c
+		if affected[i]
+			c = s[i]
+			if c > 0  
+				if c != 1 # nothing need to be done when c == 1
+					inv_c = 1 / c
+					@devec centers[:,i] .*= inv_c
+				end
+			else
+				add!(unused, i)
 			end
-		else
-			add!(unused, i)
 		end
 	end
 	
@@ -169,6 +213,8 @@ type KmeansResult
 	total_cost::Real
 end
 
+# core k-means skeleton
+
 function _kmeans!(
 	x::FPMat, 
 	centers::FPMat, 
@@ -178,7 +224,7 @@ function _kmeans!(
 	opts::KmeansOpts)
 
 	# process options
-
+	
 	tol = opts.tol
 	w = opts.weights
 	
@@ -189,26 +235,49 @@ function _kmeans!(
 		throw(ArgumentError("Invalid value for the option 'display'.")) 
 
 	# initialize	
+	
+	k = size(centers, 2)
+	affected = trues(k) # indicators of whether a center needs to be updated
+	num_affected = k
+	
 	dmat = pairwise(SqEuclidean(), centers, x)
-	update_assignments!(dmat, assignments, costs, counts)
+	init_assignments!(dmat, assignments, costs, counts)
 	objv = w == nothing ? sum(costs) : dot(w, costs)
 	
 	# main loop
-	
 	if disp_level >= 2
-		@printf "%6s %18s %18s\n" "Iters" "objv" "objv-change"
+		@printf "%6s %18s %18s | %8s \n" "Iters" "objv" "objv-change" "affected"
 	end
 	
 	t = 0
+	
 	converged = false
 	
 	while !converged && t < opts.max_iters
 		t = t + 1
 		
-		update_centers!(x, w, assignments, costs, counts, centers)
-		pairwise!(dmat, SqEuclidean(), centers, x)
+		# update (affected) centers
 		
-		update_assignments!(dmat, assignments, costs, counts)
+		update_centers!(x, w, assignments, costs, counts, centers, affected)
+		
+		# update pairwise distance matrix
+		
+		if t == 1 || num_affected > 0.75 * k  
+			pairwise!(dmat, SqEuclidean(), centers, x)
+		else
+			# if only a small subset is affected, only compute for that subset
+			affected_inds = find(affected)
+			dmat_p = pairwise(SqEuclidean(), centers[:, affected_inds], x)
+			dmat[affected_inds, :] = dmat_p
+		end
+		
+		# update assignments
+		
+		fill!(affected, false)
+		update_assignments!(dmat, assignments, costs, counts, affected)		
+		num_affected = sum(affected)
+		
+		# compute change of objective and determine convergence
 		
 		prev_objv = objv
 		objv = w == nothing ? sum(costs) : dot(w, costs)
@@ -221,9 +290,11 @@ function _kmeans!(
 		if abs(objv_change) < tol
 			converged = true
 		end
+		
+		# display iteration information (if asked)
 			
 		if disp_level >= 2
-			@printf "%5d: %18.6e %18.6e\n" t objv objv_change 
+			@printf "%5d: %18.6e %18.6e | %8d\n" t objv objv_change num_affected 
 		end
 	end
 	
@@ -266,7 +337,7 @@ function kmeans!(x::FPMat, centers::FPMat, opts::KmeansOpts)
 		end
 	end
 	
-	assignments = Array(Int, n)
+	assignments = zeros(Int, n)
 	costs = zeros(n)
 	counts = Array(Int, k)
 	
