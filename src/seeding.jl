@@ -4,20 +4,20 @@ using MLBase
 using Distance
 
 
-function randseed_initialize!(x::RealMat, centers::RealMat)
+function randseed_initialize!(x::FPMat, centers::FPMat)
 	n = size(x, 2)
 	k = size(centers, 2)
 	si = sample_without_replacement(1:n, k)
 	centers[:,:] = x[:,si]
 end
 
-function kmeanspp_initialize!(x::RealMat, centers::RealMat)
+function kmeanspp_initialize!(x::FPMat, centers::FPMat)
 	n = size(x, 2)
 	k = size(centers, 2)
 	
 	# randomly pick the first center
 	si = rand(1:n)
-	v = x[:,seed]
+	v = x[:,si]
 	centers[:,1] = v
 	
 	# initialize the cost vector
@@ -25,9 +25,9 @@ function kmeanspp_initialize!(x::RealMat, centers::RealMat)
 	
 	# pick remaining (with a chance proportional to cost)
 	for i = 2 : k
-		idx = sample_by_weights(costs)
-		v = x[:, seed]
-		centers[:, i] = v
+		si = sample_by_weights(costs)
+		v = x[:,si]
+		centers[:,i] = v
 		
 		# update costs
 		
