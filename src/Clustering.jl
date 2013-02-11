@@ -7,6 +7,7 @@ module Clustering
     import Base.show
 
     export k_means, dp_means
+	export kmeans
 
     include("types.jl")
     include("k_means.jl")

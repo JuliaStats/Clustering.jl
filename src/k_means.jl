@@ -74,6 +74,7 @@ function k_meanspp_initialization!{S <: Real, T <: Real}(x::Matrix{S},
     end
 end
 
+
 # Update cluster assignments
 function update_assignments!{S <: Real, T <: Real}(x::Matrix{S},
                                                    centers::Matrix{T},
