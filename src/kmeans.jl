@@ -34,8 +34,8 @@ end
 ###########################################################
 
 type KmeansProblem
-	x::RealMat,
-	k::Int
+	x::RealMat
+	weights::Union(Nothing, RealVec)
 end
 
 type KmeansState
@@ -44,6 +44,20 @@ type KmeansState
 	costs::RealVec,
 	counts::Vector{Int},
 	dmat::RealMat
+end
+
+type KmeansResult
+	centers::RealMat,
+	assignments::Vector{Int},
+	costs::RealVec,
+	counts::RealVec,
+	total_cost::Real
+end
+
+
+function get_kmeans_result(pb::KmeansProblem, s::KmeansState)
+	@assert pb.weights == nothing
+	KmeansResult(s.centers, s.assignments, s.costs, s.counts, sum(s.costs))
 end
 
 
@@ -161,6 +175,13 @@ function _kmeans!(
 	opts::KmeansOpts)
 	
 	iter_opts = iter_options(:minimize, opts.max_iters, opts.tol)
+	mon = get_std_iter_monitor(opts.display)
 	
+	pb = KmeansProblem(x, nothing)
+	state = init_state(pb, centers)
 	
+	iterative_update(pb, state, iter_opts, mon)	
+	
+	return get_kmeans_result(pb, state)
 end
+
