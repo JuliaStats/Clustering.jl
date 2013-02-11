@@ -211,6 +211,8 @@ type KmeansResult
 	costs::FPVec
 	counts::Vector{Int}
 	total_cost::Real
+	iterations::Int
+	converged::Bool
 end
 
 # core k-means skeleton
@@ -307,7 +309,7 @@ function _kmeans!(
 		end
 	end
 	
-	return KmeansResult(centers, assignments, costs, counts, objv)
+	return KmeansResult(centers, assignments, costs, counts, objv, t, converged)
 end
 
 

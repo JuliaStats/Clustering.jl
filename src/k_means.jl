@@ -128,8 +128,8 @@ end
 
 function k_means{T <: Real}(x::Matrix{T}, k::Integer, opts::Options)
     # Set default options
-    @defaults opts tolerance => 10e-8
-    @defaults opts max_iter => 1_000
+    @defaults opts tolerance => 1.0e-8
+    @defaults opts max_iter => 1000
     @defaults opts initialize_centers! => k_meanspp_initialization!
 
     # Keep track of the number of data points and their dimensionality
@@ -168,7 +168,7 @@ function k_means{T <: Real}(x::Matrix{T}, k::Integer, opts::Options)
         current_rss = rss(x, centers, assignments, n, p)
 
         # Assess convergence
-        if previous_rss - current_rss <= tolerance
+        if abs(previous_rss - current_rss) <= tolerance
             converged = true
         end
     end
