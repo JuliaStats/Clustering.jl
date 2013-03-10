@@ -42,7 +42,7 @@ end
 ###########################################################
 
 #
-#  Updates assignments, costs, and counts based on 
+#  Updates assignments, costs, and counts based on
 #  an updated (squared) distance matrix
 #
 function update_assignments!{T<:FloatingPoint}(
@@ -55,10 +55,10 @@ function update_assignments!{T<:FloatingPoint}(
     unused::Vector{Int})        # out: the list of centers get no samples assigned to it
 
     k::Int, n::Int = size(dmat)
-    
+
     # re-initialize the counting vector
     fill!(counts, 0)
-    
+
     if is_init
         fill!(to_update, true)
     else
@@ -70,7 +70,7 @@ function update_assignments!{T<:FloatingPoint}(
 
     # process each sample
     for j = 1 : n
-        
+
         # find the closest cluster to the i-th sample
         a::Int = 1
         c::T = dmat[1, j]
@@ -83,27 +83,27 @@ function update_assignments!{T<:FloatingPoint}(
         end
 
         # set/update the assignment
-        
+
         if is_init
             assignments[j] = a
         else  # update
             pa = assignments[j]
             if pa != a
-                # if assignment changes, 
+                # if assignment changes,
                 # both old and new centers need to be updated
                 assignments[j] = a
                 to_update[a] = true
                 to_update[pa] = true
             end
         end
-        
+
         # set costs and counts accordingly
         costs[j] = c
         counts[a] += 1
     end
 
     # look for centers that have no associated samples
-    
+
     for i = 1 : k
         if counts[i] == 0
             push!(unused, i)
@@ -124,27 +124,27 @@ function update_centers!{T<:FloatingPoint}(
     to_update::Vector{Bool},        # in: whether a center needs update (k)
     centers::Matrix{T},             # out: updated centers (d x k)
     cweights::Vector{T})            # out: updated cluster weights (k)
-    
+
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
     fill!(cweights, zero(T))
-    
+
     # accumulate samples to centers (based on assignments)
     for j = 1 : n
         i = assignments[j]
-        
+
         # only updates affected centers
         if to_update[i]
             if cweights[i] > 0
                 @devec centers[:,i] += x[:,j]
             else
-                @devec centers[:,i] = x[:,j]                
+                @devec centers[:,i] = x[:,j]
             end
             cweights[i] += 1
         end
     end
-    
+
     # sum ==> mean
     for i = 1 : k
         if to_update[i]
@@ -164,12 +164,12 @@ function update_centers!{T<:FloatingPoint}(
     weights::Vector{T},             # in: sample weights (n)
     assignments::Vector{Int},       # in: assignments (n)
     to_update::Vector{Bool},        # in: whether a center needs update (k)
-    centers::Matrix{T},             # out: updated centers (d x k) 
+    centers::Matrix{T},             # out: updated centers (d x k)
     cweights::Vector{T})            # out: updated cluster weights (k)
-    
+
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
-    
+
     fill!(cweights, zero(T))
 
     # accumulate samples to centers (based on assignments)
@@ -186,7 +186,7 @@ function update_centers!{T<:FloatingPoint}(
             cweights[i] += wj
         end
     end
-    
+
     # sum ==> mean
     for i = 1 : k
         if to_update[i]
@@ -202,10 +202,10 @@ end
 #
 function repick_unused_centers{T<:FloatingPoint}(
     x::Matrix{T},           # in: the sample set (d x n)
-    costs::Vector{T},       # in: the current assignment costs (n) 
+    costs::Vector{T},       # in: the current assignment costs (n)
     centers::Matrix{T},     # to be updated: the centers (d x k)
     unused::Vector{Int})    # in: the set of indices of centers to be updated
-    
+
     # pick new centers using a scheme like kmeans++
     ds = similar(costs)
     tcosts = copy(costs)
@@ -290,11 +290,11 @@ function _kmeans!{T<:FloatingPoint}(
         end
 
         # update pairwise distance matrix
-        
+
         if !isempty(unused)
             to_update[unused] = true
         end
-        
+
         if t == 1 || num_affected > 0.75 * k
             pairwise!(dmat, SqEuclidean(), centers, x)
         else
@@ -355,10 +355,10 @@ function check_k(n, k)
 end
 
 function kmeans!{T<:FloatingPoint}(
-    x::Matrix{T}, 
-    centers::Matrix{T}, 
+    x::Matrix{T},
+    centers::Matrix{T},
     opts::KmeansOpts)
-    
+
     m::Int, n::Int = size(x)
     m2::Int, k::Int = size(centers)
     if m != m2
@@ -378,7 +378,7 @@ function kmeans!{T<:FloatingPoint}(
     counts = Array(Int, k)
     weights = opts.weights
     cweights = Array(T, k)
-    
+
     if isa(weights, Vector)
         if !(eltype(weights) == T)
             throw(ArgumentError("The element type of weights must be the same as that of samples."))
@@ -390,10 +390,10 @@ end
 
 
 function kmeans{T<:FloatingPoint}(
-    x::Matrix{T}, 
-    init_centers::Matrix{T}, 
+    x::Matrix{T},
+    init_centers::Matrix{T},
     opts::KmeansOpts)
-    
+
     kmeans!(x, copy(init_centers), opts)
 end
 
