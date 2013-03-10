@@ -223,14 +223,14 @@ end
 
 
 type KmeansResult{T<:FloatingPoint}
-    centers::Matrix{T}
-    assignments::Vector{Int}
-    costs::Vector{T}
-    counts::Vector{Int}
-    cweights::Vector{T}
-    total_cost::Float64
-    iterations::Int
-    converged::Bool
+    centers::Matrix{T}         # cluster centers (d x k)
+    assignments::Vector{Int}   # assignments (n)
+    costs::Vector{T}           # costs of the resultant assignments (n)
+    counts::Vector{Int}        # number of samples assigned to each cluster (k)
+    cweights::Vector{T}        # cluster weights (k)
+    total_cost::Float64        # total cost (i.e. objective) (k)
+    iterations::Int            # number of elapsed iterations 
+    converged::Bool            # whether the procedure converged
 end
 
 # core k-means skeleton
