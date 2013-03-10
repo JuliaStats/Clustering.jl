@@ -1,17 +1,13 @@
 # Functions for choosing initial centers (often called seeds)
 
-using MLBase
-using Distance
-
-
-function randseed_initialize!(x::FPMat, centers::FPMat)
+function randseed_initialize!{T<:FloatingPoint}(x::Matrix{T}, centers::Matrix{T})
 	n = size(x, 2)
 	k = size(centers, 2)
 	si = sample_without_replacement(1:n, k)
 	centers[:,:] = x[:,si]
 end
 
-function kmeanspp_initialize!(x::FPMat, centers::FPMat)
+function kmeanspp_initialize!{T<:FloatingPoint}(x::Matrix{T}, centers::Matrix{T})
 	n = size(x, 2)
 	k = size(centers, 2)
 	
