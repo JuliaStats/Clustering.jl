@@ -13,20 +13,12 @@ type KmeansOpts
 end
 
 
-function kmeans_opts(opts::Options)
-    @defaults opts max_iter=200 tol=1.0e-6
-    @defaults opts weights=nothing
-    @defaults opts display=:iter
-
-    kopts = KmeansOpts(max_iter, tol, weights, display)
-
-    @check_used opts
-    return kopts
-end
-
-function kmeans_opts()
-    o = @options
-    kmeans_opts(o)
+function kmeans_opts(;max_iter::Integer=200, tol::Real=1.0e-6, weights=nothing, display::Symbol=:iter)
+    KmeansOpts(
+        int(max_iter), 
+        float64(tol), 
+        weights, 
+        display)
 end
 
 
@@ -397,8 +389,7 @@ function kmeans{T<:FloatingPoint}(
     kmeans!(x, copy(init_centers), opts)
 end
 
-kmeans(x::Matrix, init_centers::Matrix, opts::Options) = kmeans(x, init_centers, kmeans_opts(opts))
-kmeans(x::Matrix, init_centers::Matrix) = kmeans(x, init_centers, kmeans_opts())
+kmeans(x::Matrix, init_centers::Matrix; opts...) = kmeans(x, init_centers, kmeans_opts(;opts...))
 
 
 function kmeans(x::Matrix, k::Int, opts::KmeansOpts)
@@ -409,7 +400,5 @@ function kmeans(x::Matrix, k::Int, opts::KmeansOpts)
     kmeans!(x, init_centers, opts)
 end
 
-kmeans(x::Matrix, k::Int, opts::Options) = kmeans(x, k, kmeans_opts(opts))
-kmeans(x::Matrix, k::Int) = kmeans(x, k, kmeans_opts())
-
+kmeans(x::Matrix, k::Int; opts...) = kmeans(x, k, kmeans_opts(;opts...))
 

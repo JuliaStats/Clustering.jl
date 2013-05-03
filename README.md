@@ -59,6 +59,8 @@ end
 
 Options:
 
+**Note:** options are specified using keyword arguments.
+
 |  name       |  descrption                           | default value |
 |-------------|---------------------------------------|---------------|
 | max_iters   |  maximum number of iterations         |  100          |
@@ -74,9 +76,7 @@ Options:
 x = rand(100, 10000)   # a set of 10000 samples (each of dimension 100)
 
 k = 50  # the number of clustering
-
-opts = @options max_iter=50 display=:iter
-result = kmeans(x, k, opts)
+result = kmeans(x, k; max_iter=50 display=:iter)
 
 ```
 
