@@ -100,7 +100,7 @@ interpreted as the tendency of assigning point ``i`` to point ``j``
   clusters. For example, if ``S[i,i]==max(S)`` for all ``i``, then
   every point will be an exemplar itself.
 
-Usually, assigning the diagonal of ``S`` to be the *medium of all the
+Usually, assigning the diagonal of ``S`` to be the *median of all the
 rest entries* could lead to reasonable results.
 
 Interfaces:

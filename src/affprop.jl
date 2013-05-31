@@ -38,7 +38,7 @@ function affinity_propagation{T<:FloatingPoint}(S::Matrix{T}, opts::AffinityProp
     IC = nothing
 
     for n_iter = 1:opts.max_iter
-        update_message!(psi, phi, S, n, opts)
+        affprop_update_message!(psi, phi, S, n, opts)
 
         IC = diag(psi) + diag(phi) .> 0
         exemplars[:, mod(n_iter-1, opts.n_stop_check)+1] = IC
@@ -61,7 +61,7 @@ function affinity_propagation{T<:FloatingPoint}(S::Matrix{T}, opts::AffinityProp
         end
     end
 
-    assignment, exemplar_index = decide_assignment(phi, S, n, IC)
+    assignment, exemplar_index = affprop_decide_assignment(phi, S, n, IC)
     if opts.display == :iter || opts.display == :final
         if converged
             println("affinity propagation converged with $n_iter iterations")
@@ -83,7 +83,7 @@ affinity_propagation(x::Matrix; opts...) = affinity_propagation(x, AffinityPropa
 # as well as the order of message updating can affect the
 # convergence behavior drastically.
 ############################################################
-function update_message!{T<:FloatingPoint}(psi::Matrix{T}, phi::Matrix{T}, S::Matrix{T}, n, opts::AffinityPropagationOpts)
+function affprop_update_message!{T<:FloatingPoint}(psi::Matrix{T}, phi::Matrix{T}, S::Matrix{T}, n, opts::AffinityPropagationOpts)
     # update phi
     for i = 1:n
         SM = S[i,:] + psi[i,:]
@@ -107,7 +107,7 @@ function update_message!{T<:FloatingPoint}(psi::Matrix{T}, phi::Matrix{T}, S::Ma
     end
 end
 
-function decide_assignment{T<:FloatingPoint}(phi::Matrix{T}, S::Matrix{T}, n::Integer, exemplar::BitArray{1})
+function affprop_decide_assignment{T<:FloatingPoint}(phi::Matrix{T}, S::Matrix{T}, n::Integer, exemplar::BitArray{1})
     assignment = zeros(Int, n)
     Iexp = find(exemplar)
 

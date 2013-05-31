@@ -13,5 +13,5 @@ module Clustering
     
     export AffinityPropagationOpts
     export affinity_propagation
-    include("ap.jl")
+    include("affprop.jl")
 end
