@@ -10,4 +10,8 @@ module Clustering
 
     include("seeding.jl")
     include("kmeans.jl")
+    
+    export AffinityPropagationOpts
+    export affinity_propagation
+    include("affprop.jl")
 end
