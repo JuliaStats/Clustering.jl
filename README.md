@@ -14,11 +14,11 @@ Pkg.add("Clustering")
 Currently working algorithms:
 
 * Kmeans
+* Affinity Propagation
 
 To be available:
 
 * K medoids
-* Affinity Propagation
 * DP means
 * ISO Data
 
@@ -76,7 +76,56 @@ Options:
 x = rand(100, 10000)   # a set of 10000 samples (each of dimension 100)
 
 k = 50  # the number of clustering
-result = kmeans(x, k; max_iter=50 display=:iter)
+result = kmeans(x, k; max_iter=50, display=:iter)
 
+```
+
+## Affinity Propagation
+
+Affinity Propagation is an algorithm that uses loopy belief propagation
+to run MAP inference to identify some *exemplars*. Unlike kmeans, the
+exemplars are chosen from the original samples. After the algorithm
+returns, every sample will be assigned to one of the exemplars.
+
+The input of the algorithm is a similarity matrix ``S``.
+Unlike kmeans, you don't need to (and cannot) specify the number of
+clusters. But the diagonal values of ``S`` will affect how many
+clusters you will get at the end. Specifically, ``S[i,j]`` could be
+interpreted as the tendency of assigning point ``i`` to point ``j``
+(when ``j`` is an exemplar). So
+
+* ``S`` need **NOT** to be symmetric
+* ``S[i,i]`` represents the willingness of assigned point ``i`` to
+  itself. So generally larger diagonal values for ``S`` means more
+  clusters. For example, if ``S[i,i]==max(S)`` for all ``i``, then
+  every point will be an exemplar itself.
+
+Usually, assigning the diagonal of ``S`` to be the *medium of all the
+rest entries* could lead to reasonable results.
+
+Interfaces:
+
+```julia
+result = affinity_propagation(S, opts)
+```
+
+where the following options could be specified using keyword arguments
+
+```julia
+max_iter::Integer = 500,    # max number of iterations
+n_stop_check::Integer = 10, # stop if exemplars not changed for this number of iterations
+damp::FloatingPoint = 0.5,  # damping factor for message updating, 0 means no damping
+display::Symbol = :iter     # whether progress is shown
+```
+
+the returning value is a struct that looks like this:
+
+```julia
+type AffinityPropagationResult
+    exemplar_index ::Vector{Int} # index for exemplars (centers)
+    assignments    ::Vector{Int} # assignments for each point
+    iterations     ::Int         # number of iterations executed
+    converged      ::Bool        # converged or not
+end
 ```
 
