@@ -1,17 +1,16 @@
 module Clustering
     using Devectorize
     using Distance
-    using MLBase
-
+    using Stats
+    
     import Base.show
 
-    export k_means
     export kmeans, kmeans!, kmeans_opts, update!
+
+    export AffinityPropagationOpts
+    export affinity_propagation
 
     include("seeding.jl")
     include("kmeans.jl")
-    
-    export AffinityPropagationOpts
-    export affinity_propagation
     include("affprop.jl")
 end
