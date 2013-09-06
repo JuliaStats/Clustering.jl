@@ -3,7 +3,7 @@
 function randseed_initialize!{T<:FloatingPoint}(x::Matrix{T}, centers::Matrix{T})
     n = size(x, 2)
     k = size(centers, 2)
-    si = sample_without_replacement(1:n, k)
+    si = sample(1:n, k, replace=false)
     centers[:,:] = x[:,si]
 end
 
@@ -21,7 +21,7 @@ function kmeanspp_initialize!{T<:FloatingPoint}(x::Matrix{T}, centers::Matrix{T}
 
     # pick remaining (with a chance proportional to cost)
     for i = 2 : k
-        si = sample_by_weights(costs)
+        si = wsample(1:n, costs)
         v = x[:,si]
         centers[:,i] = v
 

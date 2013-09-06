@@ -1,7 +1,7 @@
 module Clustering
     using Devectorize
     using Distance
-    using Stats
+    using Distributions
     
     import Base.show
 
