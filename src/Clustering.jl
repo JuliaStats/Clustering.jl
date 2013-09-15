@@ -1,5 +1,5 @@
 module Clustering
-    using Devectorize
+    using NumericExtensions
     using Distance
     using Distributions
     
@@ -10,6 +10,7 @@ module Clustering
     export AffinityPropagationOpts
     export affinity_propagation
 
+    include("utils.jl")
     include("seeding.jl")
     include("kmeans.jl")
     include("affprop.jl")

@@ -120,28 +120,21 @@ function update_centers!{T<:FloatingPoint}(
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
-    fill!(cweights, zero(T))
-
-    # accumulate samples to centers (based on assignments)
-    for j = 1 : n
-        i = assignments[j]
-
-        # only updates affected centers
+    # initialize center weights 
+    for i = 1 : k
         if to_update[i]
-            if cweights[i] > 0
-                @devec centers[:,i] += x[:,j]
-            else
-                @devec centers[:,i] = x[:,j]
-            end
-            cweights[i] += 1
+            cweights[i] = 0.
         end
     end
+
+    # accumulate columns
+    accumulate_cols_u!(centers, cweights, x, assignments, to_update)
 
     # sum ==> mean
     for i = 1 : k
         if to_update[i]
-            ci::T = 1 / cweights[i]
-            @devec centers[:,i] .*= ci
+            @inbounds ci::T = 1 / cweights[i]
+            multiply!(unsafe_view(centers,:,i), ci)
         end
     end
 end
@@ -162,28 +155,21 @@ function update_centers!{T<:FloatingPoint}(
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
-    fill!(cweights, zero(T))
-
-    # accumulate samples to centers (based on assignments)
-    for j = 1 : n
-        i = assignments[j]
+    # initialize center weights 
+    for i = 1 : k
         if to_update[i]
-            wj = weights[j]
-
-            if cweights[i] > 0
-                @devec centers[:,i] += wj .* x[:,j]
-            else
-                @devec centers[:,i] = wj .* x[:,j]
-            end
-            cweights[i] += wj
+            cweights[i] = 0.
         end
     end
+
+    # accumulate columns
+    accumulate_cols_u!(centers, cweights, x, assignments, weights, to_update)
 
     # sum ==> mean
     for i = 1 : k
         if to_update[i]
-            ci::T = 1 / cweights[i]
-            @devec centers[:,i] .*= ci
+            @inbounds ci::T = 1 / cweights[i]
+            multiply!(unsafe_view(centers,:,i), ci)
         end
     end
 end
@@ -201,9 +187,10 @@ function repick_unused_centers{T<:FloatingPoint}(
     # pick new centers using a scheme like kmeans++
     ds = similar(costs)
     tcosts = copy(costs)
+    n = size(x, 2)
 
     for i in unused
-        j = sample_by_weights(tcosts)
+        j = wsample(1:n, tcosts)
         tcosts[j] = 0
         v = x[:,j]
         centers[:,i] = v
