@@ -14,4 +14,5 @@ module Clustering
     include("seeding.jl")
     include("kmeans.jl")
     include("affprop.jl")
+    include("dbscan.jl")
 end
