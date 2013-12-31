@@ -90,7 +90,7 @@ function affprop_update_message!{T<:FloatingPoint}(psi::Matrix{T}, phi::Matrix{T
         I = indmax(SM)
         Y = SM[I]
         SM[I] = -Inf
-        Y2 = max(SM)
+        Y2 = maximum(SM)
         val = S[i,:] - Y;
         val[I] = S[i,I] - Y2;
         phi[i,:] = opts.damp*phi[i,:] + (1-opts.damp)*val
