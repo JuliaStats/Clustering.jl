@@ -1,7 +1,7 @@
 module Clustering
     using NumericExtensions
     using Distance
-    using Distributions
+    using StatsBase
     
     import Base.show
 

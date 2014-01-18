@@ -1,4 +1,4 @@
 julia 0.2-
 NumericExtensions
 Distance
-Distributions
+StatsBase 0.3-
