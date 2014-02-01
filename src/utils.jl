@@ -21,8 +21,8 @@ function accumulate_cols!(
 		@inbounds cj = c[j]
 		1 <= cj <= K || error("assignment out of boundary.")
 
-		rj = unsafe_view(r, :, cj)
-		xj = unsafe_view(x, :, j)
+		rj = view(r, :, cj)
+		xj = view(x, :, j)
 		if rw[cj] > 0
 			add!(rj, xj)
 		else
@@ -54,8 +54,8 @@ function accumulate_cols!(
 			@inbounds cj = c[j]
 			1 <= cj <= K || error("assignment out of boundary.")
 
-			rj = unsafe_view(r, :, cj)
-			xj = unsafe_view(x, :, j)
+			rj = view(r, :, cj)
+			xj = view(x, :, j)
 			if rw[cj] > 0
 				fma!(rj, xj, wj)
 			else
@@ -86,8 +86,8 @@ function accumulate_cols_u!(
 		1 <= cj <= K || error("assignment out of boundary.")
 
 		if u[cj]
-			rj = unsafe_view(r, :, cj)
-			xj = unsafe_view(x, :, j)
+			rj = view(r, :, cj)
+			xj = view(x, :, j)
 			if rw[cj] > 0
 				add!(rj, xj)
 			else
@@ -122,8 +122,8 @@ function accumulate_cols_u!(
 			1 <= cj <= K || error("assignment out of boundary.")
 			
 			if u[cj]
-				rj = unsafe_view(r, :, cj)
-				xj = unsafe_view(x, :, j)
+				rj = view(r, :, cj)
+				xj = view(x, :, j)
 				if rw[cj] > 0
 					fma!(rj, xj, wj)
 				else
