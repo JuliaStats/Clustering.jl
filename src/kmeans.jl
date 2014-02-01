@@ -134,7 +134,7 @@ function update_centers!{T<:FloatingPoint}(
     for i = 1 : k
         if to_update[i]
             @inbounds ci::T = 1 / cweights[i]
-            multiply!(unsafe_view(centers,:,i), ci)
+            multiply!(view(centers,:,i), ci)
         end
     end
 end
@@ -169,7 +169,7 @@ function update_centers!{T<:FloatingPoint}(
     for i = 1 : k
         if to_update[i]
             @inbounds ci::T = 1 / cweights[i]
-            multiply!(unsafe_view(centers,:,i), ci)
+            multiply!(view(centers,:,i), ci)
         end
     end
 end
