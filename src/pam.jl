@@ -28,10 +28,10 @@ function update_SU!(D, E, S, U, dist)
     best_i = 0
     i=0
     for i in U
-        g_i = 0
+        g_i = 0.0
         for j in U # - {I}
             if i != j
-                g_i += max(D[j] - dist[i,j], 0)
+                @inbounds g_i += max(D[j]-dist[j,i], 0.0)
             end
         end
 
@@ -44,6 +44,7 @@ function update_SU!(D, E, S, U, dist)
     push!(S, i)
     setdiff!(U, i)
 end
+
 function pam_build!(D, E, S, U, dist, k)
     for i in 1:k-1
         update_SU!(D, E, S, U, dist)
@@ -57,7 +58,7 @@ function pam_build(dist, k)
     best_sumdist = Inf
     best_p = 0
     for p in 1:n
-        sumdist = sum(dist[p, 1:p-1]) + sum(dist[p, p+1:end])
+        sumdist = sum(sub(dist, :, p))
         if sumdist < best_sumdist
             best_sumdist = sumdist
             best_p = p
@@ -80,7 +81,7 @@ end
 
 
 ##################################################################
-## **pam_Swap** phase based on steps 2 to 5 in
+## **Swap** phase based on steps 2 to 5 in
 ## [K-medois](http://en.wikipedia.org/wiki/K-medoids)
 ## wikipedia page and
 ## [Data Mining and Algorithms in R](http://bit.ly/1inWWWh)
@@ -114,7 +115,7 @@ function assign_to_medoids(medoid_indeces, dist)
 end
 
 function medoid_score(m, neighbors, dist)
-    score = 0
+    score = 0.0
     for n in neighbors
         score += dist[m, n]
     end
@@ -123,7 +124,7 @@ end
 
 
 function best_medoid(cluster, dist)
-    best = 0
+    best = 0.0
     best_score = Inf
     for (i, medoid) in enumerate(cluster)
         score = medoid_score(medoid, [cluster[1:i-1], cluster[i+1:end]], dist)
@@ -145,7 +146,6 @@ end
 
 function pam_swap(medoids, dist)
     old_medoids = Int[]
-
 
     medoids_and_neighbors = [Int => [Int]]
     while medoids != old_medoids
