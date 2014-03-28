@@ -13,15 +13,18 @@ Pkg.add("Clustering")
 
 Currently working algorithms:
 
-* Kmeans
+* K-means
 * Affinity Propagation
+* K-medoids
 
 To be available:
 
-* K medoids
 * DP means
 * ISO Data
 
+# Performance evaluation
+
+For partitioning methods, silhouette widths can be calculated.
 
 # Documentation
 
@@ -129,3 +132,33 @@ type AffinityPropagationResult
 end
 ```
 
+## K medoids
+
+K-medoids is a partitioning algorithm like k-means, but cluster centers are observations
+in the data set(,the medoids,) instead of cluster means, and any distance metric can
+be used, not necessarily the Euclidean distance.
+
+The input of the algorithm is a dissimilarity matrix `dist`, which should be symmetric, and
+the number of clusters, `k`.
+
+Interfaces:
+
+```julia
+result = kmedoids(dist, k)
+```
+
+The method returns a `KmedoidsResult`:
+
+```julia
+type KmedoidsResult
+    medoids::Vector{Int}     #indexes of medoids
+    assignments::Vector{Int} #cluster assignments
+end
+```
+
+## Silhouette widths
+
+[Silhouettes](http://en.wikipedia.org/wiki/Silhouette_%28clustering%29) are useful for evaluating
+the performance of a partitioning clustering algorithm or to help choose the number of clusters.
+The `silhouettes` function takes cluster assignments and a dissimilarity matrix and returns
+a vector containing silhouettes for each observation.

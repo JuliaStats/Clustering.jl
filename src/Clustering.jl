@@ -10,9 +10,15 @@ module Clustering
     export AffinityPropagationOpts
     export affinity_propagation
 
+    export kmedoids
+
+    export silhouettes
+
     include("utils.jl")
     include("seeding.jl")
     include("kmeans.jl")
     include("affprop.jl")
     include("dbscan.jl")
+    include("kmedoids.jl")
+    include("sil.jl")
 end
