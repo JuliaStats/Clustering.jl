@@ -1,7 +1,7 @@
 ###########################################################
 #
-# This class implements the DBSCAN clustering algorithm,
-# as described in:
+#  This class implements the DBSCAN clustering algorithm,
+#  as described in:
 #
 #  A density-based algorithm for discovering clusters in
 #  large spatial databases with noise (1996)
@@ -42,11 +42,9 @@ function DBSCAN{T}(
     min_pts::Int,       # in: index of the current point
     eps::Float64)       # in: the epsilon parameter
 
-
     n::Int = size(dmat)[1]
     cluster_id = 1
     point_id = [0 for i = 1:n]
-
 
     for point = 1 : n
         if point_id[point] == 0
@@ -109,12 +107,10 @@ function expand_cluster{T}(
             point_id[i] = cluster_id
         end
 
-        # Remove the first point from the list of seeds
-        shift!(seeds)
-
         # Process all the neighbors of each seed
         while size(seeds,1) > 0
             current_point = shift!(seeds) # Get next seed
+
             # Find its neighbors
             result = region_query(dmat, current_point, eps)
 
@@ -122,12 +118,12 @@ function expand_cluster{T}(
             if size(result, 1) >= min_pts
                 # Process each of its neighbors
                 for i = 1:size(result, 1)
-                    if result[i] <= 0      # If it's unclassified
-                        if result[i] == 0  # and not noise
-                            seeds.push!(i) # add to seed list
+                    if point_id[result[i]] <= 0       # If it's unclassified
+                        if point_id[result[i]] == 0   # and not noise
+                            push!(seeds, result[i])   # add to seed list
                         end
                         # Add it to the cluster
-                        point_id[i] = cluster_id
+                        point_id[result[i]] = cluster_id
                     end
                 end
             end
