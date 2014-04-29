@@ -10,15 +10,17 @@ type KmeansOpts
     tol::Float64
     weights::Union(Nothing, Vector)
     display::Symbol
+    metric::PreMetric
 end
 
 
-function kmeans_opts(;max_iter::Integer=200, tol::Real=1.0e-6, weights=nothing, display::Symbol=:iter)
+function kmeans_opts(;max_iter::Integer=200, tol::Real=1.0e-6, weights=nothing, display::Symbol=:iter, metric::PreMetric=SqEuclidean())
     KmeansOpts(
         int(max_iter), 
         float64(tol), 
         weights, 
-        display)
+        display,
+        metric)
 end
 
 
@@ -182,7 +184,8 @@ function repick_unused_centers{T<:FloatingPoint}(
     x::Matrix{T},           # in: the sample set (d x n)
     costs::Vector{T},       # in: the current assignment costs (n)
     centers::Matrix{T},     # to be updated: the centers (d x k)
-    unused::Vector{Int})    # in: the set of indices of centers to be updated
+    unused::Vector{Int},    # in: the set of indices of centers to be updated
+    metric::PreMetric)      # in: metric to be used
 
     # pick new centers using a scheme like kmeans++
     ds = similar(costs)
@@ -195,7 +198,7 @@ function repick_unused_centers{T<:FloatingPoint}(
         v = x[:,j]
         centers[:,i] = v
 
-        colwise!(ds, SqEuclidean(), v, x)
+        colwise!(ds, metric, v, x)
         tcosts = min(tcosts, ds)
     end
 end
@@ -243,7 +246,7 @@ function _kmeans!{T<:FloatingPoint}(
     unused = Int[]
     num_affected::Int = k # number of centers, to which the distances need to be recomputed
 
-    dmat = pairwise(SqEuclidean(), centers, x)
+    dmat = pairwise(opts.metric, centers, x)
     update_assignments!(dmat, true, assignments, costs, counts, to_update, unused)
     objv = w == nothing ? sum(costs) : dot(w, costs)
 
@@ -265,7 +268,7 @@ function _kmeans!{T<:FloatingPoint}(
         update_centers!(x, w, assignments, to_update, centers, cweights)
 
         if !isempty(unused)
-            repick_unused_centers(x, costs, centers, unused)
+            repick_unused_centers(x, costs, centers, unused, opts.metric)
         end
 
         # update pairwise distance matrix
@@ -275,11 +278,11 @@ function _kmeans!{T<:FloatingPoint}(
         end
 
         if t == 1 || num_affected > 0.75 * k
-            pairwise!(dmat, SqEuclidean(), centers, x)
+            pairwise!(dmat, opts.metric, centers, x)
         else
             # if only a small subset is affected, only compute for that subset
             affected_inds = find(to_update)
-            dmat_p = pairwise(SqEuclidean(), centers[:, affected_inds], x)
+            dmat_p = pairwise(opts.metric, centers[:, affected_inds], x)
             dmat[affected_inds, :] = dmat_p
         end
 
