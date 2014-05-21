@@ -9,4 +9,4 @@ dist = pairwise(Euclidean(), x)
 
 @test isa(kmedoids(dist, 3), Clustering.KmedoidsResult)
 
-@test_throws kmedoids(dist, 500)
+@test_throws ErrorException kmedoids(dist, 500)

@@ -117,6 +117,7 @@ function update_centers!{T<:FloatingPoint}(
     centers::Matrix{T},             # out: updated centers (d x k)
     cweights::Vector{T})            # out: updated cluster weights (k)
 
+    d::Int = size(x, 1)
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
@@ -131,10 +132,13 @@ function update_centers!{T<:FloatingPoint}(
     accumulate_cols_u!(centers, cweights, x, assignments, to_update)
 
     # sum ==> mean
-    for i = 1 : k
-        if to_update[i]
-            @inbounds ci::T = 1 / cweights[i]
-            multiply!(view(centers,:,i), ci)
+    for j = 1:k
+        if to_update[j]
+            @inbounds cj::T = 1 / cweights[j]
+            vj = view(centers,:,j)
+            for i = 1:d
+                @inbounds vj[i] *= cj
+            end
         end
     end
 end
@@ -152,6 +156,7 @@ function update_centers!{T<:FloatingPoint}(
     centers::Matrix{T},             # out: updated centers (d x k)
     cweights::Vector{T})            # out: updated cluster weights (k)
 
+    d::Int = size(x, 1)
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
@@ -166,10 +171,13 @@ function update_centers!{T<:FloatingPoint}(
     accumulate_cols_u!(centers, cweights, x, assignments, weights, to_update)
 
     # sum ==> mean
-    for i = 1 : k
-        if to_update[i]
-            @inbounds ci::T = 1 / cweights[i]
-            multiply!(view(centers,:,i), ci)
+    for j = 1:k
+        if to_update[j]
+            @inbounds cj::T = 1 / cweights[j]
+            vj = view(centers,:,j)
+            for i = 1:d
+                @inbounds vj[i] *= cj
+            end
         end
     end
 end

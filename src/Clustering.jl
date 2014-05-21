@@ -1,5 +1,5 @@
 module Clustering
-    using NumericExtensions
+    using ArrayViews
     using Distance
     using StatsBase
     
