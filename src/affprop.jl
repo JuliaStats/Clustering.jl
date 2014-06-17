@@ -44,7 +44,7 @@ function affinity_propagation{T<:FloatingPoint}(S::Matrix{T}, opts::AffinityProp
         exemplars[:, mod(n_iter-1, opts.n_stop_check)+1] = IC
 
         if opts.display == :iter
-            @printf("%7d: %3d exemplars identified\n", n_iter, nnz(IC))
+            @printf("%7d: %3d exemplars identified\n", n_iter, countnz(IC))
         end
 
         if n_iter > opts.n_stop_check
@@ -91,7 +91,7 @@ function affprop_update_message!{T<:FloatingPoint}(psi::Matrix{T}, phi::Matrix{T
         Y = SM[I]
         SM[I] = -Inf
         Y2 = maximum(SM)
-        val = S[i,:] - Y;
+        val = S[i,:] .- Y;
         val[I] = S[i,I] - Y2;
         phi[i,:] = opts.damp*phi[i,:] + (1-opts.damp)*val
     end
@@ -101,7 +101,7 @@ function affprop_update_message!{T<:FloatingPoint}(psi::Matrix{T}, phi::Matrix{T
         RP = phi[:,j]
         idx = 1:n .!= j
         RP[idx] = max(RP[idx], 0)
-        val = sum(RP) - RP;
+        val = sum(RP) .- RP;
         val[idx] = min(val[idx], 0)
         psi[:,j] = opts.damp*psi[:,j] + (1 - opts.damp)*val
     end
