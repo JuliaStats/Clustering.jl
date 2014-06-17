@@ -6,7 +6,8 @@
 
 module dbscan_tester
 
-include("../src/dbscan.jl")
+using Clustering
+import Clustering: region_query, expand_cluster, DBSCAN
 
 function MakeTestMatrix()
     n = 125     # Number of points in the point cloud
@@ -125,12 +126,14 @@ function testDB()
     return passed
 end
 
-end # end module
-
 test_matrix = MakeTestMatrix()
 
 println ("region_query test: ", testRegionQuery())
 println ("expand_cluster test: ", testExpandCluster())
 println ("dbscan test: ", testDB())
+
+
+end # end module
+
 
 
