@@ -33,13 +33,13 @@ For partitioning methods, silhouette widths can be calculated.
 Interfaces:
 
 ```julia
- # perform K-means (centers are updated inplace)
+# perform K-means (centers are updated inplace)
 result = kmeans!(x, centers, opts) 
 
- # perform K-means based on a given set of inital centers
+# perform K-means based on a given set of inital centers
 result = kmeans(x, init_centers, opts)  
 
- # perform K-means to get K centers
+# perform K-means to get K centers
 result = kmeans(x, k, opts) 
 result = kmeans(x, k)
 
