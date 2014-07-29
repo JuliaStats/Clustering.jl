@@ -8,7 +8,7 @@ type KmeansResult{T<:FloatingPoint}
     costs::Vector{T}           # costs of the resultant assignments (n)
     counts::Vector{Int}        # number of samples assigned to each cluster (k)
     cweights::Vector{Float64}  # cluster weights (k)
-    total_cost::Float64        # total cost (i.e. objective) (k)
+    totalcost::Float64         # total cost (i.e. objective) (k)
     iterations::Int            # number of elapsed iterations 
     converged::Bool            # whether the procedure converged
 end
