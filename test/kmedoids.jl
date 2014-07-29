@@ -33,7 +33,7 @@ R = kmedoids(costs, k)
 X = reshape(float64([1, 6, 2, 3, 7, 21, 8, 20, 22]), 1, 9)
 costs = pairwise(SqEuclidean(), X)
 
-R = kmedoids!([1, 2, 6], costs)
+R = kmedoids!(costs, [1, 2, 6])
 @test isa(R, KmedoidsResult)
 @test R.medoids == [3, 5, 6]
 @test R.assignments == [1, 2, 1, 1, 2, 3, 2, 3, 3]

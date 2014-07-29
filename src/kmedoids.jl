@@ -40,8 +40,7 @@ function kmedoids{T<:Real}(costs::DenseMatrix{T}, k::Integer;
                int(maxiter), tol, display_level(display))
 end
 
-function kmedoids!{T<:Real}(medoids::Vector{Int}, 
-                            costs::DenseMatrix{T};
+function kmedoids!{T<:Real}(costs::DenseMatrix{T}, medoids::Vector{Int};
                             maxiter::Integer=_kmed_default_maxiter, 
                             tol::Real=_kmed_default_tol,
                             display::Symbol=_kmed_default_display)
