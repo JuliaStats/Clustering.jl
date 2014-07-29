@@ -1,11 +1,14 @@
-testfiles = ["affprop.jl",
-            "dbscan_test.jl",
-            "kmeans.jl",
-            "kmedoids.jl",
-            "sil.jl"]
 
-for fname in testfiles
-    println("Running $fname...")
-    include(fname)
+tests = ["seeding",
+         "kmeans",
+         "kmedoids",
+         "affprop",
+         "dbscan",
+         "sil"]
+
+for t in tests
+    fp = "$(t).jl"
+    println("Running $fp ...")
+    include(fp)
 end
 

@@ -56,7 +56,7 @@ end
 # Calculate the k-medoids clustering of the points with dissimilarity matrix
 # given by dist.
 function kmedoids{R <: FloatingPoint}(dist::Matrix{R}, k::Int)
-    kmedoids(dist, initial_medoids(dist, k))
+    kmedoids(dist, kmpp_by_costs(dist, k))
 end
 
 function kmedoids{R <: FloatingPoint}(dist::Matrix{R}, medoids::Vector{Int})
