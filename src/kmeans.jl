@@ -129,7 +129,22 @@ function update_centers!{T<:FloatingPoint}(
     end
 
     # accumulate columns
-    accumulate_cols_u!(centers, cweights, x, assignments, to_update)
+    for j = 1 : n
+        @inbounds cj = assignments[j]
+        1 <= cj <= k || error("assignment out of boundary.")
+        if to_update[cj]
+            rj = view(centers, :, cj)
+            xj = view(x, :, j)
+            if cweights[cj] > 0
+                for i = 1:d
+                    @inbounds rj[i] += xj[i]
+                end
+            else
+                copy!(rj, xj)
+            end
+            cweights[cj] += 1
+        end
+    end
 
     # sum ==> mean
     for j = 1:k
@@ -168,7 +183,30 @@ function update_centers!{T<:FloatingPoint}(
     end
 
     # accumulate columns
-    accumulate_cols_u!(centers, cweights, x, assignments, weights, to_update)
+    # accumulate_cols_u!(centers, cweights, x, assignments, weights, to_update)
+    for j = 1 : n
+        @inbounds wj = weights[j]
+
+        if wj > 0
+            @inbounds cj = assignments[j]
+            1 <= cj <= k || error("assignment out of boundary.")
+            
+            if to_update[cj]
+                rj = view(centers, :, cj)
+                xj = view(x, :, j)
+                if cweights[cj] > 0
+                    for i = 1:d
+                        @inbounds rj[i] += xj[i] * wj
+                    end
+                else
+                    for i = 1:d
+                        @inbounds rj[i] = xj[i] * wj
+                    end
+                end
+                cweights[cj] += wj
+            end
+        end
+    end
 
     # sum ==> mean
     for j = 1:k
@@ -253,14 +291,13 @@ function _kmeans!{T<:FloatingPoint}(
     objv = w == nothing ? sum(costs) : dot(w, costs)
 
     # main loop
+    t = 0
+    converged = false
     if displevel >= 2
         @printf "%7s %18s %18s | %8s \n" "Iters" "objv" "objv-change" "affected"
         println("-------------------------------------------------------------")
+        @printf("%7d %18.6e\n", t, objv)
     end
-
-    t = 0
-
-    converged = false
 
     while !converged && t < opts.max_iters
         t = t + 1
@@ -310,7 +347,7 @@ function _kmeans!{T<:FloatingPoint}(
         # display iteration information (if asked)
 
         if displevel >= 2
-            @printf "%7d %18.6e %18.6e | %8d\n" t objv objv_change num_affected
+            @printf("%7d %18.6e %18.6e | %8d\n", t, objv, objv_change, num_affected)
         end
     end
 
