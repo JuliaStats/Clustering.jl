@@ -1,5 +1,19 @@
 # Common utilities
 
+##### update minimum value
+
+function updatemin!(r::AbstractArray, x::AbstractArray)
+    n = length(r)
+    length(x) == n || throw(DimensionMismatch("Inconsistent array lengths."))
+    @inbounds for i = 1:n
+        xi = x[i]
+        if xi < r[i]
+            r[i] = xi
+        end
+    end
+    return r
+end
+
 
 ##### Column accumulation #####
 

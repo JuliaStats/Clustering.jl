@@ -3,22 +3,47 @@ module Clustering
     using Distance
     using StatsBase
     
-    import Base.show
+    import Base: show
+    import StatsBase: IntegerVector, RealVector, RealMatrix
 
-    export kmeans, kmeans!, kmeans_opts, update!
+    export
 
-    export AffinityPropagationOpts
-    export affinity_propagation
+    # reexport from ArrayViews
+    view,
 
-    export kmedoids
+    # reexport from StatsBase
+    sample, sample!,
 
-    export silhouettes
+
+    # seeding
+    SeedingAlgorithm, 
+    RandSeedAlg, KmppAlg, KmCentralityAlg,
+    copyseeds, copyseeds!,
+    initseeds, initseeds!, 
+    initseeds_by_costs, initseeds_by_costs!,
+    kmpp, kmpp_by_costs,
+
+    # kmeans
+    kmeans, kmeans!, kmeans_opts, 
+
+    # kmedoids
+    kmedoids,
+
+    # affprop
+    AffinityPropagationOpts, affinity_propagation,
+
+    # sil
+    silhouettes
+
+
+    ## source files
 
     include("utils.jl")
     include("seeding.jl")
     include("kmeans.jl")
+    include("kmedoids.jl")
     include("affprop.jl")
     include("dbscan.jl")
-    include("kmedoids.jl")
     include("sil.jl")
+    include("deprecate.jl")
 end

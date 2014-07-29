@@ -391,8 +391,7 @@ kmeans(x::Matrix, init_centers::Matrix; opts...) = kmeans(x, init_centers, kmean
 function kmeans(x::Matrix, k::Int, opts::KmeansOpts)
     m, n = size(x)
     check_k(n, k)
-    init_centers = Array(eltype(x), (m, k))
-    kmeanspp_initialize!(x, init_centers)
+    init_centers = copyseeds(x, kmpp(x, k))
     kmeans!(x, init_centers, opts)
 end
 
