@@ -56,8 +56,8 @@ type KmeansResult{T<:FloatingPoint}
     assignments::Vector{Int}   # assignments (n)
     costs::Vector{T}           # costs of the resultant assignments (n)
     counts::Vector{Int}        # number of samples assigned to each cluster (k)
-    cweights::Vector{T}        # cluster weights (k)
-    total_cost::Float64        # total cost (i.e. objective) (k)
+    cweights::Vector{Float64}  # cluster weights (k)
+    totalcost::Float64         # total cost (i.e. objective) (k)
     iterations::Int            # number of elapsed iterations 
     converged::Bool            # whether the procedure converged
 end
@@ -69,7 +69,7 @@ Options:
 
 |  name       |  descrption                           | default value |
 |-------------|---------------------------------------|---------------|
-| max_iters   |  maximum number of iterations         |  100          |
+| maxiter     |  maximum number of iterations         |  100          |
 | tol         |  tolerable objv change at convergence |  1.0e-6       |
 | weights     |  sample weights (a vector or nothing) |  nothing      |
 | display     |  verbosity (``:none``, ``:final``, or ``:iter``)  | ``:iter`` |

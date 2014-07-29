@@ -1,5 +1,14 @@
 # Common utilities
 
+##### convert weight options
+
+conv_weights{T}(::Type{T}, n::Int, w::Nothing) = nothing
+
+function conv_weights{T}(::Type{T}, n::Int, w::Vector)
+    length(w) == n || throw(DimensionMismatch("Incorrect length of weights."))
+    convert(Vector{T}, w)::Vector{T}
+end
+
 ##### convert display symbol to disp level
 
 display_level(s::Symbol) = 
