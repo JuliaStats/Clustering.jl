@@ -3,17 +3,41 @@ using Base.Test
 using Distance
 using Clustering
 
+srand(34568)
 
-x = rand(100, 500)
-dist = pairwise(Euclidean(), x)
+d = 3
+n = 200
+k = 10
 
-result = kmedoids(dist, 30)
-@test isa(result, Clustering.KmedoidsResult)
-# There should be no duplicate medoids
-@test length(result.medoids) == length(unique(result.medoids))
-# Every medoid should belong to its own cluster
-for i = 1:30
-    @test result.assignments[result.medoids[i]] == i
-end
+X = rand(d, n)
+costs = pairwise(SqEuclidean(), X)
+@assert size(costs) == (n, n)
 
-@test_throws ErrorException kmedoids(dist, 500)
+R = kmedoids(costs, k)
+@test isa(R, KmedoidsResult)
+@test length(R.medoids) == length(unique(R.medoids))
+@test all(R.assignments .>= 1) && all(R.assignments .<= k)
+@test R.assignments[R.medoids] == [1:k] # Every medoid should belong to its own cluster
+@test sum(R.counts) == n
+@test R.acosts == costs[sub2ind((n, n), R.medoids[R.assignments], 1:n)]
+@test_approx_eq sum(R.acosts) R.totalcost
+@test R.converged
+
+
+# this data set has three obvious groups:
+# group 1: [1, 3, 4], values: [1, 2, 3]
+# group 2: [2, 5, 7], values: [6, 7, 8]
+# group 3: [6, 8, 9], values: [21, 20, 22]
+#
+
+X = reshape(float64([1, 6, 2, 3, 7, 21, 8, 20, 22]), 1, 9)
+costs = pairwise(SqEuclidean(), X)
+
+R = kmedoids!([1, 2, 6], costs)
+@test isa(R, KmedoidsResult)
+@test R.medoids == [3, 5, 6]
+@test R.assignments == [1, 2, 1, 1, 2, 3, 2, 3, 3]
+@test R.counts == [3, 3, 3]
+@test_approx_eq R.acosts [1, 1, 0, 1, 0, 0, 1, 1, 1]
+@test_approx_eq R.totalcost 6.0
+@test R.converged

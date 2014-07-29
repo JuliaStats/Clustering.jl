@@ -27,7 +27,7 @@ module Clustering
     kmeans, kmeans!, kmeans_opts, 
 
     # kmedoids
-    kmedoids,
+    kmedoids, kmedoids!, KmedoidsResult,
 
     # affprop
     AffinityPropagationOpts, affinity_propagation,

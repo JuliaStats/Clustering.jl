@@ -238,11 +238,7 @@ function _kmeans!{T<:FloatingPoint}(
     max_iters::Int = opts.max_iters
     display::Symbol = opts.display
 
-    disp_level =
-        display == :none ? 0 :
-        display == :final ? 1 :
-        display == :iter ? 2 :
-        throw(ArgumentError("Invalid value for the option 'display'."))
+    displevel = display_level(opts.display)
 
     # initialize
 
@@ -257,7 +253,7 @@ function _kmeans!{T<:FloatingPoint}(
     objv = w == nothing ? sum(costs) : dot(w, costs)
 
     # main loop
-    if disp_level >= 2
+    if displevel >= 2
         @printf "%7s %18s %18s | %8s \n" "Iters" "objv" "objv-change" "affected"
         println("-------------------------------------------------------------")
     end
@@ -313,12 +309,12 @@ function _kmeans!{T<:FloatingPoint}(
 
         # display iteration information (if asked)
 
-        if disp_level >= 2
+        if displevel >= 2
             @printf "%7d %18.6e %18.6e | %8d\n" t objv objv_change num_affected
         end
     end
 
-    if disp_level >= 1
+    if displevel >= 1
         if converged
             println("K-means converged with $t iterations (objv = $objv)")
         else

@@ -25,14 +25,20 @@ initseeds(alg::SeedingAlgorithm, X::RealMatrix, k::Integer) =
 initseeds_by_costs(alg::SeedingAlgorithm, costs::RealMatrix, k::Integer) = 
     initseeds_by_costs!(Array(Int, k), alg, costs)
 
-
 seeding_algorithm(s::Symbol) = 
     s == :rand ? RandSeedAlg() :
     s == :kmpp ? KmppAlg() :
     s == :kmcen ? KmCentralityAlg() :
     error("Unknown seeding algorithm $s")
 
-seeding_algorithm(alg::SeedingAlgorithm) = alg
+initseeds(algname::Symbol, X::RealMatrix, k::Integer) = 
+    initseeds(seeding_algorithm(algname), X, k)::Vector{Int}
+
+initseeds_by_costs(algname::Symbol, costs::RealMatrix, k::Integer) = 
+    initseeds_by_costs(seeding_algorithm(algname), costs, k)
+
+initseeds(iseeds::Vector{Int}, X::RealMatrix, k::Integer) = iseeds
+initseeds_by_costs(iseeds::Vector{Int}, costs::RealMatrix, k::Integer) = iseeds
 
 function copyseeds!(S::DenseMatrix, X::DenseMatrix, iseeds::AbstractVector)
     d = size(X, 1)
