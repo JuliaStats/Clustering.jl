@@ -187,17 +187,8 @@ end
 # TODO: faster way without creating temporary arrays
 function _find_medoid(costs::DenseMatrix, grp::Vector{Int})
     @assert !isempty(grp)
-    c = transpose(costs[grp, grp])
-    p = 1
-    sc = sum(view(c,:,1))
-    for j = 2:size(c,2)
-        sc_j = sum(view(c,:,j))
-        if sc_j < sc
-            p = j
-            sc = sc_j
-        end
-    end
-    return grp[p]
+    p = indmin(sum(costs[grp, grp], 2))
+    return grp[p]::Int
 end
 
 
