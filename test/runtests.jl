@@ -6,9 +6,10 @@ tests = ["seeding",
          "dbscan",
          "sil"]
 
+println("Runing tests:")
 for t in tests
     fp = "$(t).jl"
-    println("Running $fp ...")
+    println("* $fp ...")
     include(fp)
 end
 
