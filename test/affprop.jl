@@ -1,12 +1,25 @@
 # simple program to test affinity propagation
 
+using Base.Test
 using Distance
 using Clustering
 
-x = rand(100, 500)
+srand(34568)
+
+d = 10
+n = 500
+x = rand(d, n)
 S = -pairwise(Euclidean(), x, x)
 
 # set diagonal value to median value
-S = S - diagm(diag(S)) + median(S)*eye(size(S,1))
+S = S - diagm(diag(S)) + median(S)*eye(size(S,1)) 
 
-result = affinity_propagation(S; max_iter=200, display=:iter)
+R = affinityprop(S)
+
+@test isa(R, AffinityPropResult)
+k = length(R.exemplars)
+@test 0 < k < n
+@test length(R.assignments) == n
+@test all(R.assignments .>= 1) && all(R.assignments .<= k)
+@test all(R.assignments[R.exemplars] .== [1:k])
+

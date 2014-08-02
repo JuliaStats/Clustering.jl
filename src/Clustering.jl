@@ -30,7 +30,7 @@ module Clustering
     kmedoids, kmedoids!, KmedoidsResult,
 
     # affprop
-    AffinityPropagationOpts, affinity_propagation,
+    AffinityPropResult, affinityprop,
 
     # sil
     silhouettes

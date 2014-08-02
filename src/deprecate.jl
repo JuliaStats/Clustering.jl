@@ -30,3 +30,10 @@ function initial_medoids{T<:FloatingPoint}(costs::Matrix{T}, k::Int)
 
     initseeds_by_costs(KmCentralityAlg(), costs, k)
 end
+
+function affinity_propagation(x::Matrix; opts...)
+    Base.depwarn("affinity_propagation is deprecated. Please use affinityprop instead.", 
+                 :affinity_propagation)
+    affinityprop(x; opts...)
+end
+

@@ -17,8 +17,8 @@ Pkg.add("Clustering")
 Currently working algorithms:
 
 * K-means
-* Affinity Propagation
 * K-medoids
+* Affinity Propagation
 
 To be available:
 
@@ -83,6 +83,35 @@ result = kmeans(x, k; max_iter=50, display=:iter)
 
 ```
 
+
+## K medoids
+
+K-medoids is a partitioning algorithm like k-means, but cluster centers are observations
+in the data set(,the medoids,) instead of cluster means, and any distance metric can
+be used, not necessarily the Euclidean distance.
+
+The input of the algorithm is a dissimilarity matrix `dist`, which should be symmetric, and
+the number of clusters, `k`.
+
+Interfaces:
+
+```julia
+result = kmedoids(dist, k)
+```
+
+The method returns a `KmedoidsResult`:
+
+type KmedoidsResult{T}
+    medoids::Vector{Int}        # indices of methods (k)
+    assignments::Vector{Int}    # assignments (n)
+    acosts::Vector{T}           # costs of the resultant assignments (n)
+    counts::Vector{Int}         # number of samples assigned to each cluster (k)
+    totalcost::Float64          # total assignment cost (i.e. objective) (k)
+    iterations::Int             # number of elapsed iterations 
+    converged::Bool             # whether the procedure converged
+end
+
+
 ## Affinity Propagation
 
 Affinity Propagation is an algorithm that uses loopy belief propagation
@@ -109,50 +138,26 @@ rest entries* could lead to reasonable results.
 Interfaces:
 
 ```julia
-result = affinity_propagation(S, opts)
+result = affinityprop(S; ...)
 ```
 
 where the following options could be specified using keyword arguments
 
 ```julia
-max_iter::Integer = 500,    # max number of iterations
-n_stop_check::Integer = 10, # stop if exemplars not changed for this number of iterations
-damp::FloatingPoint = 0.5,  # damping factor for message updating, 0 means no damping
-display::Symbol = :iter     # whether progress is shown
+maxiter = 200,      # maximum number of iterations
+tol = 1.0e-6,       # tolerable changes on A and R upon convergence
+damp = 0.5,         # damping factor for message updating, 0 means no damping
+display = :none     # the level of display, can be either of :none, :final, or :iter
 ```
 
 the returning value is a struct that looks like this:
 
 ```julia
-type AffinityPropagationResult
-    exemplar_index ::Vector{Int} # index for exemplars (centers)
-    assignments    ::Vector{Int} # assignments for each point
-    iterations     ::Int         # number of iterations executed
-    converged      ::Bool        # converged or not
-end
-```
-
-## K medoids
-
-K-medoids is a partitioning algorithm like k-means, but cluster centers are observations
-in the data set(,the medoids,) instead of cluster means, and any distance metric can
-be used, not necessarily the Euclidean distance.
-
-The input of the algorithm is a dissimilarity matrix `dist`, which should be symmetric, and
-the number of clusters, `k`.
-
-Interfaces:
-
-```julia
-result = kmedoids(dist, k)
-```
-
-The method returns a `KmedoidsResult`:
-
-```julia
-type KmedoidsResult
-    medoids::Vector{Int}     #indexes of medoids
-    assignments::Vector{Int} #cluster assignments
+type AffinityPropResult
+    exemplars::Vector{Int}      # indexes of exemplars (centers)
+    assignments::Vector{Int}    # assignments for each point
+    iterations::Int             # number of iterations executed
+    converged::Bool             # converged or not
 end
 ```
 

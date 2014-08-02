@@ -1,123 +1,237 @@
-############################################################
-# Affinity Propagation
-############################################################
+# Affinity propagation
+#
+#   Reference:
+#       Clustering by Passing Messages Between Data Points.
+#       Brendan J. Frey and Delbert Dueck
+#       Science, vol 315, pages 972-976, 2007.
+#
 
-type AffinityPropagationOpts
-    max_iter     ::Int
-    n_stop_check ::Int
-    damp         ::Float64
-    display      ::Symbol
+#### Interface
+
+type AffinityPropResult
+    exemplars::Vector{Int}      # indexes of exemplars (centers)
+    assignments::Vector{Int}    # assignments for each point
+    iterations::Int             # number of iterations executed
+    converged::Bool             # converged or not
 end
 
-function AffinityPropagationOpts(;
-    max_iter::Integer = 500,    # max number of iterations
-    n_stop_check::Integer = 10, # stop if exemplars not changed for this number of iterations
-    damp::FloatingPoint = 0.5,  # damping factor for message updating, 0 means no damping
-    display::Symbol = :iter     # verboseness: :iter, :final, :none
-    )
+const _afp_default_maxiter = 200
+const _afp_default_damp = 0.5
+const _afp_default_tol = 1.0e-6
+const _afp_default_display = :none
 
-    AffinityPropagationOpts(int(max_iter), int(n_stop_check), float(damp), display)
-end
+function affinityprop{T<:FloatingPoint}(S::DenseMatrix{T}; 
+                                        maxiter::Integer=_afp_default_maxiter,
+                                        tol::Real=_afp_default_tol,
+                                        damp::Real=_afp_default_damp, 
+                                        display::Symbol=_afp_default_display)
 
-type AffinityPropagationResult
-    exemplar_index ::Vector{Int} # index for exemplars (centers)
-    assignments    ::Vector{Int} # assignments for each point
-    iterations     ::Int         # number of iterations executed
-    converged      ::Bool        # converged or not
-end
-
-function affinity_propagation{T<:FloatingPoint}(S::Matrix{T}, opts::AffinityPropagationOpts)
+    # check arguments
     n = size(S, 1)
+    size(S, 2) == n || error("S must be a square matrix.")
+    tol > 0 || error("tol must be a positive value.")
+    0 <= damp < 1 || error("damp must be a non-negative real value below 1.")
+
+    # invoke core implementation
+    _affinityprop(S, int(maxiter), tol, convert(T, damp), display_level(display))
+end
+
+
+#### Implementation
+
+function _affinityprop{T<:FloatingPoint}(S::DenseMatrix{T}, 
+                                         maxiter::Int, 
+                                         tol::Real,
+                                         damp::T, 
+                                         displevel::Int)
+    n = size(S, 1)
+    n2 = n * n
+
+    # initialize messages
+    R = zeros(T, n, n)  # responsibilities
+    A = zeros(T, n, n)  # availabilities
+
+    # prepare storages
+    Rt = Array(T, n, n)
+    At = Array(T, n, n)
+
+    if displevel >= 2
+        @printf "%7s %12s | %8s \n" "Iters" "objv-change" "exemplars"
+        println("-----------------------------------------------------")
+    end
+
+    t = 0
     converged = false
+    while !converged && t < maxiter
+        t += 1
 
-    exemplars = falses(n, opts.n_stop_check)
-    psi = zeros(eltype(S), n, n)
-    phi = zeros(eltype(S), n, n)
+        # compute new messages
+        _afp_compute_r!(Rt, S, A)
+        _afp_dampen_update!(R, Rt, damp)
 
-    n_iter = 0
-    IC = nothing
+        _afp_compute_a!(At, R)
+        _afp_dampen_update!(A, At, damp)
 
-    for n_iter = 1:opts.max_iter
-        affprop_update_message!(psi, phi, S, n, opts)
+        # determine convergence
+        ch = max(Linfdist(A, At), Linfdist(R, Rt)) / (one(T) - damp)
+        converged = (ch < tol)
 
-        IC = diag(psi) + diag(phi) .> 0
-        exemplars[:, mod(n_iter-1, opts.n_stop_check)+1] = IC
-
-        if opts.display == :iter
-            @printf("%7d: %3d exemplars identified\n", n_iter, countnz(IC))
+        if displevel >= 2
+            # count the number of exemplars
+            ne = _afp_count_exemplars(A, R)
+            @printf("%7d %12.4e | %8d\n", t, ch, ne)
         end
+    end
 
-        if n_iter > opts.n_stop_check
-            converged = true
-            for i = 1:opts.n_stop_check
-                if IC != exemplars[:, i]
-                    converged = false
-                    break
+    # extract exemplars and assignments
+    exemplars = _afp_extract_exemplars(A, R)
+    assignments = _afp_get_assignments(S, exemplars)
+
+    if displevel >= 1
+        if converged
+            println("Affinity propagation converged with $t iterations: $(length(exemplars)) exemplars.")
+        else
+            println("Affinity propagation terminated without convergence after $t iterations: $(length(exemplars)) exemplars.")
+        end
+    end
+    
+    # produce output struct
+    return AffinityPropResult(exemplars, assignments, t, converged)
+end
+
+
+# compute responsibilities
+function _afp_compute_r!{T}(R::Matrix{T}, S::DenseMatrix{T}, A::Matrix{T})
+    n = size(S, 1)
+
+    I1 = Array(Int, n)  # I1[i] is the column index of the maximum element in (A+S)[i,:]
+    Y1 = Array(T, n)    # Y1[i] is the maximum element in (A+S)[i,:]
+    Y2 = Array(T, n)    # Y2[i] is the second maximum element in (A+S)[i,:]
+        
+    # Find the first and second maximum elements along each row
+    @inbounds for i = 1:n
+        v1 = A[i,1] + S[i,1]
+        v2 = A[i,2] + S[i,2]
+        if v1 > v2
+            I1[i] = 1
+            Y1[i] = v1
+            Y2[i] = v2
+        else
+            I1[i] = 2
+            Y1[i] = v2
+            Y2[i] = v1
+        end
+    end
+    @inbounds for j = 3:n, i = 1:n
+        v = A[i,j] + S[i,j]
+        if v > Y2[i]
+            if v > Y1[i]
+                Y2[i] = Y1[i]
+                I1[i] = j
+                Y1[i] = v
+            else
+                Y2[i] = v
+            end
+        end
+    end
+
+    # compute R values
+    @inbounds for j = 1:n, i = 1:n
+        mv = (j == I1[i] ? Y2[i] : Y1[i])
+        R[i,j] = S[i,j] - mv
+    end
+
+    return R
+end
+
+# compute availabilities
+function _afp_compute_a!{T}(A::Matrix{T}, R::Matrix{T})
+    n = size(R, 1)
+    z = zero(T)
+    for j = 1:n
+        @inbounds rjj = R[j,j]
+
+        # compute s <- sum_{i \ne j} max(0, R(i,j))
+        s = z
+        for i = 1:n
+            if i != j
+                @inbounds r = R[i,j]
+                if r > z
+                    s += r
                 end
             end
-            if converged
-                break
+        end
+
+        for i = 1:n
+            if i == j
+                @inbounds A[i,j] = s
+            else
+                @inbounds r = R[i,j]
+                u = rjj + s
+                if r > z
+                    u -= r
+                end 
+                A[i,j] = ifelse(u < z, u, z)
             end
         end
     end
+    return A
+end
 
-    assignment, exemplar_index = affprop_decide_assignment(phi, S, n, IC)
-    if opts.display == :iter || opts.display == :final
-        if converged
-            println("affinity propagation converged with $n_iter iterations")
-        else
-            println("affinity propagation terminated without convergence after $n_iter iterations")
+# dampen update
+function _afp_dampen_update!{T}(x::Array{T}, xt::Array{T}, damp::T)
+    ct = one(T) - damp
+    for i = 1:length(x)
+        @inbounds x[i] = ct * xt[i] + damp * x[i]
+    end
+    return x
+end
+
+# count the number of exemplars
+function _afp_count_exemplars(A::Matrix, R::Matrix)
+    n = size(A,1)
+    c = 0
+    for i = 1:n
+        @inbounds if A[i,i] + R[i,i] > 0
+            c += 1
         end
     end
-
-    return AffinityPropagationResult(exemplar_index, assignment, n_iter, converged)
+    return c
 end
 
-affinity_propagation(x::Matrix; opts...) = affinity_propagation(x, AffinityPropagationOpts(;opts...))
-
-############################################################
-# Message Updating
-#
-# Loopy message passing sometimes can be tricky. Parallel
-# updating vs. in-place updating; damping vs. no-damping;
-# as well as the order of message updating can affect the
-# convergence behavior drastically.
-############################################################
-function affprop_update_message!{T<:FloatingPoint}(psi::Matrix{T}, phi::Matrix{T}, S::Matrix{T}, n, opts::AffinityPropagationOpts)
-    # update phi
+# extract all exemplars
+function _afp_extract_exemplars(A::Matrix, R::Matrix)
+    n = size(A,1)
+    r = Int[]
     for i = 1:n
-        SM = S[i,:] + psi[i,:]
-        I = indmax(SM)
-        Y = SM[I]
-        SM[I] = -Inf
-        Y2 = maximum(SM)
-        val = S[i,:] .- Y;
-        val[I] = S[i,I] - Y2;
-        phi[i,:] = opts.damp*phi[i,:] + (1-opts.damp)*val
+        @inbounds if A[i,i] + R[i,i] > 0
+            push!(r, i)
+        end
     end
-
-    # update psi
-    for j = 1:n
-        RP = phi[:,j]
-        idx = 1:n .!= j
-        RP[idx] = max(RP[idx], 0)
-        val = sum(RP) .- RP;
-        val[idx] = min(val[idx], 0)
-        psi[:,j] = opts.damp*psi[:,j] + (1 - opts.damp)*val
-    end
+    return r
 end
 
-function affprop_decide_assignment{T<:FloatingPoint}(phi::Matrix{T}, S::Matrix{T}, n::Integer, exemplar::BitArray{1})
-    assignment = zeros(Int, n)
-    Iexp = find(exemplar)
-
+# get assignments
+function _afp_get_assignments(S::DenseMatrix, exemplars::Vector{Int})
+    n = size(S, 1)
+    k = length(exemplars)
+    Se = S[:, exemplars]
+    a = Array(Int, n)
     for i = 1:n
-        I = indmax(phi[i,Iexp] + S[i,Iexp])
-        assignment[i] = Iexp[I]
+        p = 1
+        v = Se[i,1]
+        for j = 2:k
+            s = Se[i,j]
+            if s > v
+                v = s
+                p = j
+            end
+        end
+        a[i] = p
     end
-
-    # make sure exemplars are assigned to themselves
-    assignment[Iexp] = Iexp
-
-    return assignment, Iexp
+    for i in 1:k
+        a[exemplars[i]] = i
+    end
+    return a
 end
+
