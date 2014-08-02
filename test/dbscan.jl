@@ -1,11 +1,4 @@
-#############################################################
-#
-#  This script tests the DBSCAN function and the two
-#  auxiliary functions that it calls.
-#
-
-module dbscan_tester
-
+using Base.Test
 using Clustering
 import Clustering: region_query, expand_cluster, DBSCAN
 
@@ -128,12 +121,8 @@ end
 
 test_matrix = MakeTestMatrix()
 
-println ("region_query test: ", testRegionQuery())
-println ("expand_cluster test: ", testExpandCluster())
-println ("dbscan test: ", testDB())
-
-
-end # end module
-
+@test testRegionQuery()
+@test testExpandCluster()
+@test testDB()
 
 
