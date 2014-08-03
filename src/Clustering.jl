@@ -14,7 +14,6 @@ module Clustering
     # reexport from StatsBase
     sample, sample!,
 
-
     # seeding
     SeedingAlgorithm, 
     RandSeedAlg, KmppAlg, KmCentralityAlg,
@@ -31,6 +30,9 @@ module Clustering
 
     # affprop
     AffinityPropResult, affinityprop,
+
+    # dbscan
+    DbscanResult, dbscan,
 
     # sil
     silhouettes

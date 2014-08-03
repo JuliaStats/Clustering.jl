@@ -19,6 +19,7 @@ Currently working algorithms:
 * K-means
 * K-medoids
 * Affinity Propagation
+* DBSCAN
 
 To be available:
 
