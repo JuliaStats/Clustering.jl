@@ -29,6 +29,7 @@ function affinityprop{T<:FloatingPoint}(S::DenseMatrix{T};
     # check arguments
     n = size(S, 1)
     size(S, 2) == n || error("S must be a square matrix.")
+    n >= 2 || error("the number of samples must be at least 2.")
     tol > 0 || error("tol must be a positive value.")
     0 <= damp < 1 || error("damp must be a non-negative real value below 1.")
 
