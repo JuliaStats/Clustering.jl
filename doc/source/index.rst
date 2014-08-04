@@ -10,4 +10,4 @@ Contents:
 
    overview.rst
    init.rst
-
+   kmeans.rst

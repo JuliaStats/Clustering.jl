@@ -1,3 +1,5 @@
+.. _cinit:
+
 Clustering Initialization
 ==========================
 
