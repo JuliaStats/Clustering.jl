@@ -1,5 +1,10 @@
 # Common utilities
 
+##### common types
+
+abstract ClusteringResult
+
+
 ##### convert weight options
 
 conv_weights{T}(::Type{T}, n::Int, w::Nothing) = nothing

@@ -8,7 +8,7 @@
 
 #### Interface
 
-type AffinityPropResult
+type AffinityPropResult <: ClusteringResult
     exemplars::Vector{Int}      # indexes of exemplars (centers)
     assignments::Vector{Int}    # assignments for each point
     iterations::Int             # number of iterations executed

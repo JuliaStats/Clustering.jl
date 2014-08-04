@@ -3,7 +3,7 @@
 
 #### Result type
 
-type KmedoidsResult{T}
+type KmedoidsResult{T} <: ClusteringResult
     medoids::Vector{Int}        # indices of methods (k)
     assignments::Vector{Int}    # assignments (n)
     acosts::Vector{T}           # costs of the resultant assignments (n)

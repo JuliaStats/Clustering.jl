@@ -2,7 +2,7 @@
 
 #### Interface
 
-type KmeansResult{T<:FloatingPoint}
+type KmeansResult{T<:FloatingPoint} <: ClusteringResult
     centers::Matrix{T}         # cluster centers (d x k)
     assignments::Vector{Int}   # assignments (n)
     costs::Vector{T}           # costs of the resultant assignments (n)

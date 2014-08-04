@@ -14,6 +14,9 @@ module Clustering
     # reexport from StatsBase
     sample, sample!,
 
+    # common
+    ClusteringResult,
+
     # seeding
     SeedingAlgorithm, 
     RandSeedAlg, KmppAlg, KmCentralityAlg,
