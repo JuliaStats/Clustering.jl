@@ -11,3 +11,4 @@ Welcome to Clustering's documentation!
    overview.rst
    init.rst
    algorithms.rst
+   validate.rst
