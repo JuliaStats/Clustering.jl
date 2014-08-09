@@ -10,5 +10,4 @@ Welcome to Clustering's documentation!
 
    overview.rst
    init.rst
-   kmeans.rst
-   kmedoids.rst
+   algorithms.rst
