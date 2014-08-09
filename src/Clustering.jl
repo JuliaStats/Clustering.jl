@@ -16,6 +16,7 @@ module Clustering
 
     # common
     ClusteringResult,
+    nclusters, counts, assignments, 
 
     # seeding
     SeedingAlgorithm, 

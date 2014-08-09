@@ -4,6 +4,12 @@
 
 abstract ClusteringResult
 
+# generic functions
+
+nclusters(R::ClusteringResult) = length(R.counts)
+counts(R::ClusteringResult) = R.counts
+assignments(R::ClusteringResult) = R.assignments
+
 
 ##### convert weight options
 
