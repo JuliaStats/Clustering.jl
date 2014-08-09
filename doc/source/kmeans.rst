@@ -61,14 +61,7 @@ This package implements the *K-means* algorithm in the ``kmeans`` function:
                      - a vector of length ``n`` that gives the sample weights.
     --------------  -----------------------------------------------------------  ------------------------
      ``display``     The level of information to be displayed.                    ``:none``
-
-                     This should be a symbol, which may take either of the 
-                     following values:
-
-                     - ``:none``: nothing will be shown
-                     - ``:final``: only shows a brief summary when the
-                                   algorithm ends
-                     - ``:iter``:  shows progess at each iteration
+                     (see :ref:`copts`)
     ==============  ===========================================================  ========================
 
 

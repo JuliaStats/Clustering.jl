@@ -44,14 +44,7 @@ This package implements a K-means style algorithm instead of PAM, which is consi
      ``tol``         Tolerable change of objective at convergence.                ``1.0e-6`` 
     --------------  -----------------------------------------------------------  ------------------------
      ``display``     The level of information to be displayed.                    ``:none``
-
-                     This should be a symbol, which may take either of the 
-                     following values:
-
-                     - ``:none``: nothing will be shown
-                     - ``:final``: only shows a brief summary when the
-                                   algorithm ends
-                     - ``:iter``:  shows progess at each iteration
+                     (see :ref:`copts`)
     ==============  ===========================================================  ========================
 
 
@@ -77,14 +70,7 @@ This package implements a K-means style algorithm instead of PAM, which is consi
      ``tol``         Tolerable change of objective at convergence.                ``1.0e-6`` 
     --------------  -----------------------------------------------------------  ------------------------
      ``display``     The level of information to be displayed.                    ``:none``
-
-                     This should be a symbol, which may take either of the 
-                     following values:
-
-                     - ``:none``: nothing will be shown
-                     - ``:final``: only shows a brief summary when the
-                                   algorithm ends
-                     - ``:iter``:  shows progess at each iteration
+                     (see :ref:`copts`)
     ==============  ===========================================================  ========================    
 
 

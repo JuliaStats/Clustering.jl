@@ -7,4 +7,4 @@ This package implements a variety of clustering algorithms:
 	
 	kmeans.rst
 	kmedoids.rst
-
+	affprop.rst
