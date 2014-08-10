@@ -1,7 +1,7 @@
 K-medoids
 ===========
 
-*K-medoids* is a clustering algorithm that seeks a subset of points out of a given set such that the total costs or distances between each point to the closest point in the chosen subset is minimal. This chosen subset of points are called *medoids*.
+`K-medoids <http://en.wikipedia.org/wiki/K-medoids>`_ is a clustering algorithm that seeks a subset of points out of a given set such that the total costs or distances between each point to the closest point in the chosen subset is minimal. This chosen subset of points are called *medoids*.
 
 This package implements a K-means style algorithm instead of PAM, which is considered to be much more efficient and reliable. Particularly, the algorithm is implemented by the ``kmedoids`` function.
 

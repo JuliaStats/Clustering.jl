@@ -1,7 +1,7 @@
 Affinity Propagation
 ======================
 
-*Affinity propagation* is a clustering algorithm based on *message passing* between data points. Similar to *K-medoids*, it finds a subset of points as *exemplars* based on (dis)similarities, and assigns each point in the given data set to the closest exemplar.  
+`Affinity propagation <http://en.wikipedia.org/wiki/Affinity_propagation>`_ is a clustering algorithm based on *message passing* between data points. Similar to *K-medoids*, it finds a subset of points as *exemplars* based on (dis)similarities, and assigns each point in the given data set to the closest exemplar.  
 
 This package implements the affinity propagation algorithm based on the following paper:
 

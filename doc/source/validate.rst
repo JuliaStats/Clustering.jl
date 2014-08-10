@@ -6,3 +6,4 @@ This package provides a variety of ways to validate or evaluate clustering resul
 .. toctree:: 
 
 	silhouette.rst
+	varinfo.rst

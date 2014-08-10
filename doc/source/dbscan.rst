@@ -1,7 +1,7 @@
 DBSCAN
 =========
 
-*Density-based Spatial Clustering of Applications with Noise (DBSCAN)* is a data clustering algorithm that finds clusters through density-based expansion of seed points. The algorithm is proposed by:
+`Density-based Spatial Clustering of Applications with Noise (DBSCAN) <http://en.wikipedia.org/wiki/DBSCAN>`_ is a data clustering algorithm that finds clusters through density-based expansion of seed points. The algorithm is proposed by:
 
     Martin Ester, Hans-peter Kriegel, Jörg S, and Xiaowei Xu
     *A density-based algorithm for discovering clusters in large spatial databases with noise.* 

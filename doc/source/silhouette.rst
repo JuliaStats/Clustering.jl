@@ -1,7 +1,7 @@
 Silhouettes
 =============
 
-*Silhouettes* is a method for validating clusters of data. Particularly, it provides a quantitative way to measure how well each item lies within its cluster as opposed to others. The *Silhouette* value of a data point is defined as:
+`Silhouettes <http://en.wikipedia.org/wiki/Silhouette_(clustering)>`_ is a method for validating clusters of data. Particularly, it provides a quantitative way to measure how well each item lies within its cluster as opposed to others. The *Silhouette* value of a data point is defined as:
 
 .. math::
 

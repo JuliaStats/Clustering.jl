@@ -1,7 +1,7 @@
 K-means
 ==========
 
-*K-means* is a classic method for clustering or vector quantization. The K-means algorithms produces a fixed number of clusters, each associated with a *center* (also known as a *prototype*), and each sample belongs to a cluster with the nearest center. 
+`K-means <http://en.wikipedia.org/wiki/K_means>`_ is a classic method for clustering or vector quantization. The K-means algorithms produces a fixed number of clusters, each associated with a *center* (also known as a *prototype*), and each sample belongs to a cluster with the nearest center. 
 
 From a mathematical standpoint, K-means is an coordinate descent algorithm to solve the following optimization problem:
 
