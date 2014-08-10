@@ -14,6 +14,10 @@ module Clustering
     # reexport from StatsBase
     sample, sample!,
 
+    # common
+    ClusteringResult,
+    nclusters, counts, assignments, 
+
     # seeding
     SeedingAlgorithm, 
     RandSeedAlg, KmppAlg, KmCentralityAlg,
@@ -34,7 +38,7 @@ module Clustering
     # dbscan
     DbscanResult, dbscan,
 
-    # sil
+    # silhouette
     silhouettes
 
 
@@ -46,6 +50,6 @@ module Clustering
     include("kmedoids.jl")
     include("affprop.jl")
     include("dbscan.jl")
-    include("sil.jl")
+    include("silhouette.jl")
     include("deprecate.jl")
 end

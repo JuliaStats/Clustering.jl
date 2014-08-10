@@ -8,9 +8,10 @@
 
 #### Interface
 
-type AffinityPropResult
+type AffinityPropResult <: ClusteringResult
     exemplars::Vector{Int}      # indexes of exemplars (centers)
     assignments::Vector{Int}    # assignments for each point
+    counts::Vector{Int}         # number of samples in each cluster
     iterations::Int             # number of iterations executed
     converged::Bool             # converged or not
 end
@@ -86,7 +87,7 @@ function _affinityprop{T<:FloatingPoint}(S::DenseMatrix{T},
 
     # extract exemplars and assignments
     exemplars = _afp_extract_exemplars(A, R)
-    assignments = _afp_get_assignments(S, exemplars)
+    assignments, counts = _afp_get_assignments(S, exemplars)
 
     if displevel >= 1
         if converged
@@ -97,7 +98,7 @@ function _affinityprop{T<:FloatingPoint}(S::DenseMatrix{T},
     end
     
     # produce output struct
-    return AffinityPropResult(exemplars, assignments, t, converged)
+    return AffinityPropResult(exemplars, assignments, counts, t, converged)
 end
 
 
@@ -218,6 +219,7 @@ function _afp_get_assignments(S::DenseMatrix, exemplars::Vector{Int})
     k = length(exemplars)
     Se = S[:, exemplars]
     a = Array(Int, n)
+    cnts = zeros(Int, k)
     for i = 1:n
         p = 1
         v = Se[i,1]
@@ -230,9 +232,12 @@ function _afp_get_assignments(S::DenseMatrix, exemplars::Vector{Int})
         end
         a[i] = p
     end
-    for i in 1:k
+    for i = 1:k
         a[exemplars[i]] = i
     end
-    return a
+    for i = 1:n
+        @inbounds cnts[a[i]] += 1
+    end
+    return (a, cnts)
 end
 

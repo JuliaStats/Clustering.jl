@@ -8,7 +8,7 @@
 #
 
 
-type DbscanResult
+type DbscanResult <: ClusteringResult
     seeds::Vector{Int}          # starting points of clusters, size (k,)
     assignments::Vector{Int}    # assignments, size (n,)
     counts::Vector{Int}         # number of points in each cluster, size (k,)

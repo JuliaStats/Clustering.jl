@@ -23,3 +23,9 @@ k = length(R.exemplars)
 @test all(R.assignments .>= 1) && all(R.assignments .<= k)
 @test all(R.assignments[R.exemplars] .== [1:k])
 
+@test length(R.counts) == k
+@test sum(R.counts) == n
+for i = 1:k
+	@test R.counts[i] == countnz(R.assignments .== i)
+end
+
