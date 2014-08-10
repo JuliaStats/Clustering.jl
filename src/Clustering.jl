@@ -39,17 +39,24 @@ module Clustering
     DbscanResult, dbscan,
 
     # silhouette
-    silhouettes
+    silhouettes,
+
+    # varinfo
+    varinfo
 
 
     ## source files
 
     include("utils.jl")
     include("seeding.jl")
+
     include("kmeans.jl")
     include("kmedoids.jl")
     include("affprop.jl")
     include("dbscan.jl")
+
     include("silhouette.jl")
+    include("varinfo.jl")
+
     include("deprecate.jl")
 end

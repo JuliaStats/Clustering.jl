@@ -4,7 +4,8 @@ tests = ["seeding",
          "kmedoids",
          "affprop",
          "dbscan",
-         "silhouette"]
+         "silhouette", 
+         "varinfo"]
 
 println("Runing tests:")
 for t in tests
