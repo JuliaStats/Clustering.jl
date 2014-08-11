@@ -96,15 +96,15 @@ If you already have a set of initial center vectors, you may use ``kmeans!`` ins
     R = kmeans(X, 20; maxiter=200, display=:iter)
 
     # the number of resultant clusters should be 20
-    @assert nclusters(R) == 20
+    @assert size(R.centers)[2] == 20
 
     # obtain the resultant assignments
     # a[i] indicates which cluster the i-th sample is assigned to 
-    a = assignments(R)
+    a = R.assignments
 
     # obtain the number of samples in each cluster
     # c[k] is the number of samples assigned to the k-th cluster
-    c = counts(R)
+    c = R.counts
 
     # get the centers (i.e. mean vectors)
     # M is a matrix of size (5, 20)
