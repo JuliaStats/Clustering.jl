@@ -1,6 +1,6 @@
 using Base.Test
 
-using Distance
+using Distances
 using Clustering
 
 srand(34568)

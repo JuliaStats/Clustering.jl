@@ -1,4 +1,4 @@
 julia 0.3-
 ArrayViews 0.3-
-Distance 0.4-
+Distances
 StatsBase 0.3-

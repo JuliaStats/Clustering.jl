@@ -1,6 +1,6 @@
 module Clustering
     using ArrayViews
-    using Distance
+    using Distances
     using StatsBase
     
     import Base: show

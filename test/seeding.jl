@@ -1,5 +1,5 @@
 using Clustering
-using Distance: SqEuclidean, pairwise
+using Distances: SqEuclidean, pairwise
 using Base.Test
 
 srand(34568)
