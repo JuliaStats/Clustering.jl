@@ -27,7 +27,7 @@ function kmeans!{T<:FloatingPoint}(X::Matrix{T}, centers::Matrix{T};
     m, n = size(X)
     m2, k = size(centers)
     m == m2 || throw(DimensionMismatch("Inconsistent array dimensions."))
-    (2 <= k < n) || erro("k must have 2 <= k < n.")
+    (2 <= k < n) || error("k must have 2 <= k < n.")
 
     assignments = zeros(Int, n)
     costs = zeros(T, n)
@@ -47,7 +47,7 @@ function kmeans(X::Matrix, k::Int;
                 display::Symbol=_kmeans_default_display)
 
     m, n = size(X)
-    (2 <= k < n) || erro("k must have 2 <= k < n.")
+    (2 <= k < n) || error("k must have 2 <= k < n.")
     iseeds = initseeds(init, X, k)
     centers = copyseeds(X, iseeds)
     kmeans!(X, centers; 
