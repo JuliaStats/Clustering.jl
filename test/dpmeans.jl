@@ -25,7 +25,7 @@ res = dpmeans(x, λ; maxiter=50)
 
 # float32 example
 X = convert(Matrix{Float32}, 
-	[0.0 1.0  0.0;
+    [0.0 1.0  0.0;
      1.0 0.0  0.5
      0.0 1.0 10.0] )
 λ = 3
