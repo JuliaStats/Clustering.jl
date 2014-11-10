@@ -29,6 +29,9 @@ module Clustering
     # kmeans
     kmeans, kmeans!, KmeansResult, kmeans_opts, 
 
+    # dpmeans
+    dpmeans, DPmeansResult,
+
     # kmedoids
     kmedoids, kmedoids!, KmedoidsResult,
 
@@ -51,6 +54,7 @@ module Clustering
     include("seeding.jl")
 
     include("kmeans.jl")
+    include("dpmeans.jl")
     include("kmedoids.jl")
     include("affprop.jl")
     include("dbscan.jl")

@@ -1,6 +1,7 @@
 
 tests = ["seeding",
          "kmeans",
+         "dpmeans",
          "kmedoids",
          "affprop",
          "dbscan",
