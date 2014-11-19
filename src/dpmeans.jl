@@ -57,8 +57,6 @@ function _dpmeans!{T<:FloatingPoint}(
     # init 
     const m,n  = size(X)
     k          = 1                     # cluster count
-    L          = Array(Vector{Int}, 1) # cluster list
-    L[1]       = [1:n]                 # assign all variables to one cluster
     μ          = Array(T, m, 1)        # mean list
     μ[:,1]     = mean(X,2)             # initialize to global mean
     score      = Inf                   # current algorithm score
