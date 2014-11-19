@@ -10,7 +10,7 @@ type DPmeansResult{T<:FloatingPoint} <: ClusteringResult
     centers     :: Matrix{T}   # cluster centers (d x k)
     assignments :: Vector{Int} # assignments (n)
     costs       :: Vector{T}   # costs of the resultant assignments (n)
-    counts      :: Vector{Int} # number of samples assigned to each cluster
+    counts      :: Vector{Int} # number of samples assigned to each cluster (k)
     totalcost   :: T           # total cost of the clustering
     iterations  :: Int         # number of elapsed iterations
     converged   :: Bool        # whether the procedure converged
@@ -85,10 +85,22 @@ function _dpmeans!{T<:FloatingPoint}(
         score = 0.0
         n_updated = 0
         for i = 1 : n
-            x    = X[:,i]
-            d_ic = map(i->dot(x-μ[:,i], x-μ[:,i]), [1:k]) # distance from cluster c
-            j    = indmin(d_ic) # index of best cluster
-            if d_ic[j] > λ
+            x = X[:,i]
+
+            # identify best cluster and best cluster distance
+            best_cluster_dist  = Inf
+            best_cluster_index = -1
+            for j = 1 : k
+                dist = 0.0 # dot product
+                for l = 1 : m
+                    dist += (x[l] - μ[l,j])*(x[l] - μ[l,j])
+                end
+                if dist < best_cluster_dist
+                    best_cluster_dist, best_cluster_index = dist, j
+                end
+            end
+
+            if best_cluster_dist > λ
                 # create a new cluster
                 k   += 1
                 assignments[i] = k
@@ -96,10 +108,10 @@ function _dpmeans!{T<:FloatingPoint}(
                 n_updated += 1
             else
                 # assign to best
-                n_updated += assignments[i] != j
-                assignments[i] = j
+                n_updated += (assignments[i] != best_cluster_index)
+                assignments[i] = best_cluster_index
             end
-            score += d_ic[j] # add score
+            score += best_cluster_dist # add score
         end
 
         if displevel >= 2
@@ -111,29 +123,46 @@ function _dpmeans!{T<:FloatingPoint}(
         if abs(score - score_prev) < tol
             converged = true
         else
-            # generate clusters
-            L = [Int[] for i=1:k]
-            for (i,z_) in enumerate(assignments)
-                push!(L[z_], i)
+
+            # recompute means
+            μ = zeros(T, m, k)
+            assignment_mat = falses(n,k)
+            counts = zeros(Int, k)
+            for (i,a) in enumerate(assignments)
+                assignment_mat[i,a] = true
+                counts[a] += 1
             end
 
-            # remove empty clusters
-            filter!(l->!isempty(l), L)
-            k = length(L)
-
-            # update means
-            μ = Array(T, m, k)
-            for (i,l) in enumerate(L)
-                μ[:,i] = sum(X[:,l], 2) ./ length(l)
+            # identify empty clusters
+            good_clusters = falses(k)
+            for i = 1 : k
+                if counts[i] != 0
+                    good_clusters[i] = true
+                    μ[:,i] = sum(X[:,assignment_mat[:,i]], 2) ./ counts[i]
+                end
             end
+
+            μ = μ[:,good_clusters]
+            k = size(μ,2)
         end
     end
 
     # -------------------
 
-    map!(i->norm(X[:,i]-μ[:,assignments[i]],2), costs, [1:n])
-    counts    = map(l->length(l), L)
-    totalcost = sum(costs)
+    # compute costs and counts
+    totalcost = zero(T)
+    counts = zeros(Int, k)
+    for i = 1 : n
+        cost = zero(T)
+        assignment = assignments[i]
+        for j = 1 : m
+            cost += (X[j,i] - μ[j,assignment])*(X[j,i] - μ[j,assignment])
+        end
+        cost = sqrt(cost)
+        costs[i] = cost
+        totalcost += cost
+        counts[assignment] += 1
+    end
 
     if displevel >= 1
         if converged
