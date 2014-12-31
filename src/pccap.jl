@@ -5,18 +5,22 @@
 type PccapResult <: ClusteringResult
     assignments::Vector # discrete cluster assignment
     counts::Vector
-    chi                 # fuzzy cluster assignment
+    chi::Matrix         # fuzzy cluster assignment
 end
 
 function pccap(P, n; pi=nothing)
     if pi == nothing
         pi = abs(vec((Array{Float64})(eigs(P';nev=1)[2])))
-        pi = pi / sum(pi)                         # => first col of X is one
+        pi = pi / sum(pi)                     # => first col of X is one
     end
     
     X = schurvectors(P, pi, n)
     A = getA(X)
     chi = X*A
+
+    assigments = vec(mapslices(indmax,chi,2))
+    counts = hist(assignments)
+    return PccapResult(assignments, counts, chi)
 end
 
 function schurvectors(P, pi, n)
