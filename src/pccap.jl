@@ -18,8 +18,8 @@ function pccap(P, n; pi=nothing)
     A = getA(X)
     chi = X*A
 
-    assigments = vec(mapslices(indmax,chi,2))
-    counts = hist(assignments)
+    assignments = vec(mapslices(indmax,chi,2))
+    counts = hist(assignments)[2]
     return PccapResult(assignments, counts, chi)
 end
 
