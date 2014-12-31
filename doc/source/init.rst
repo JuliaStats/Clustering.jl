@@ -51,7 +51,7 @@ The packages provide two functions ``initseeds`` and ``initseeds_by_costs`` for 
     The argument ``algname`` determines the choice of algorithm (see above).
 
 
-In practice, we found that Kmeans++ is the most effective method for initial seeding. Thus, we provide specific functions to simply the use of Kmeans++ seeding:
+In practice, we found that Kmeans++ is the most effective method for initial seeding. Thus, we provide specific functions to simplify the use of Kmeans++ seeding:
 
 .. function:: kmpp(X, k)
 
@@ -65,7 +65,7 @@ In practice, we found that Kmeans++ is the most effective method for initial see
 Internals
 ~~~~~~~~~~
 
-In this package, each seeding algorithm is represented by a sub-type of ``SeedingAlgorithm``. Particularly, the random selection algorithm, Kmean++, and centrality-based algorithm are respectively represented by sub-types ``RandSeedAlg``, ``KmppAlg``, and ``KmCentralityAlg``.
+In this package, each seeding algorithm is represented by a sub-type of ``SeedingAlgorithm``. Particularly, the random selection algorithm, Kmeans++, and centrality-based algorithm are respectively represented by sub-types ``RandSeedAlg``, ``KmppAlg``, and ``KmCentralityAlg``.
 
 For each sub type, the following methods are implemented:
 

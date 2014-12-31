@@ -2,3 +2,4 @@ julia 0.3-
 ArrayViews 0.4.8-
 Distances 0.2-
 StatsBase 0.6.9-
+Optim

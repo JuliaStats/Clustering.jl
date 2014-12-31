@@ -2,6 +2,7 @@ module Clustering
     using ArrayViews
     using Distances
     using StatsBase
+    using Optim
     
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix
@@ -38,6 +39,9 @@ module Clustering
     # dbscan
     DbscanResult, dbscan,
 
+    # pccap
+    pccap,
+
     # silhouette
     silhouettes,
 
@@ -54,6 +58,7 @@ module Clustering
     include("kmedoids.jl")
     include("affprop.jl")
     include("dbscan.jl")
+    include("pccap.jl")
 
     include("silhouette.jl")
     include("varinfo.jl")
