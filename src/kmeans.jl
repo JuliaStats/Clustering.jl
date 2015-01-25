@@ -185,7 +185,7 @@ function update_assignments!{T<:FloatingPoint}(
     end
 
     # process each sample
-    for j = 1 : n
+    @inbounds for j = 1 : n
 
         # find the closest cluster to the i-th sample
         a::Int = 1
@@ -252,18 +252,18 @@ function update_centers!{T<:FloatingPoint}(
     end
 
     # accumulate columns
-    for j = 1 : n
-        @inbounds cj = assignments[j]
+    @inbounds for j = 1 : n
+        cj = assignments[j]
         1 <= cj <= k || error("assignment out of boundary.")
         if to_update[cj]
-            rj = view(centers, :, cj)
-            xj = view(x, :, j)
             if cweights[cj] > 0
                 for i = 1:d
-                    @inbounds rj[i] += xj[i]
+                    centers[i, cj] += x[i, j]
                 end
             else
-                copy!(rj, xj)
+                for i = 1:d
+                    centers[i, cj] = x[i, j]
+                end
             end
             cweights[cj] += 1
         end
