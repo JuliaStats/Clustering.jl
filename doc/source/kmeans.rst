@@ -111,3 +111,20 @@ If you already have a set of initial center vectors, you may use ``kmeans!`` ins
     # M[:,k] is the mean vector of the k-th cluster
     M = R.centers
 
+Example with plot
+
+.. code-block:: julia
+
+    using RDatasets
+    
+    iris = dataset("datasets", "iris")
+    head(iris)
+    
+    # K-means Clustering unsupervised machine learning example
+    
+    using Clustering
+    
+    features = array(iris[:, 1:4])'   # use matrix() on Julia v0.2
+    result = kmeans( features, 3 )    # onto 3 clusters
+    
+    plot(iris, x = "PetalLength", y = "PetalWidth", color = result.assignments, Geom.point)
