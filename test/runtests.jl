@@ -4,6 +4,7 @@ tests = ["seeding",
          "kmedoids",
          "affprop",
          "dbscan",
+         "meanshift",
          "silhouette", 
          "varinfo"]
 
