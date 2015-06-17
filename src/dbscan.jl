@@ -61,20 +61,20 @@ end
 
 function _dbs_region_query{T<:Real}(D::DenseMatrix{T}, p::Int, eps::T)
     n = size(D,1)
-    nbs = Int[]
+    nbs = Set{Int}()
     dists = view(D,:,p)
     for i = 1:n
         @inbounds if dists[i] < eps
             push!(nbs, i)
         end
     end
-    return nbs::Vector{Int}
+    return nbs
 end
 
 function _dbs_expand_cluster!{T<:Real}(D::DenseMatrix{T},           # distance matrix
                                        k::Int,                      # the index of current cluster
                                        p::Int,                      # the index of seeding point
-                                       nbs::Vector{Int},            # eps-neighborhood of p
+                                       nbs::Set{Int},            # eps-neighborhood of p
                                        eps::T,                      # radius of neighborhood
                                        minpts::Int,                 # minimum number of neighbors of a density point
                                        assignments::Vector{Int},    # assignment vector
@@ -82,7 +82,7 @@ function _dbs_expand_cluster!{T<:Real}(D::DenseMatrix{T},           # distance m
     assignments[p] = k
     cnt = 1
     while !isempty(nbs)
-        q = shift!(nbs)
+        q = pop!(nbs)
         if !visited[q]
             visited[q] = true
             qnbs = _dbs_region_query(D, q, eps)
