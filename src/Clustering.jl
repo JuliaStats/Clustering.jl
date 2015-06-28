@@ -42,7 +42,10 @@ module Clustering
     silhouettes,
 
     # varinfo
-    varinfo
+    varinfo, 
+
+    # hclust
+    Hclust, hclust, cutree
 
 
     ## source files
@@ -57,6 +60,8 @@ module Clustering
 
     include("silhouette.jl")
     include("varinfo.jl")
+
+    include("hclust.jl")
 
     include("deprecate.jl")
 end

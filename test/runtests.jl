@@ -5,7 +5,8 @@ tests = ["seeding",
          "affprop",
          "dbscan",
          "silhouette", 
-         "varinfo"]
+         "varinfo",
+         "hclust"]
 
 println("Runing tests:")
 for t in tests
@@ -13,4 +14,3 @@ for t in tests
     println("* $fp ...")
     include(fp)
 end
-
