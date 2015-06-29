@@ -56,3 +56,12 @@ function show(io::IO, results::DPMeansOutput)
   print(io, "Algorithm Converged: ")
   println(io, results.converged)
 end
+
+## Mostly following R's hclust class
+type Hclust{T<:Real}
+    merge::Matrix{Int}
+    height::Vector{T}
+    order::Vector{Int}
+    labels::Vector
+    method::Symbol
+end
