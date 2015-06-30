@@ -17,6 +17,7 @@ function assertdistancematrix(d::AbstractMatrix)
     nr, nc = size(d)
     nr == nc || throw(DimensionMismatch("Distance matrix should be square."))
     issym(d) || error("Distance matrix should be symmetric.")
+    nr > 3 || error("Must have 4 or more objects to cluster.")
 end
 
 ## This seems to work like R's implementation, but it is extremely inefficient
