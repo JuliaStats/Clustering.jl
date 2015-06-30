@@ -178,7 +178,7 @@ function _kmed_update_assignments!{T}(costs::DenseMatrix{T},        # in: (n, n)
         push!(groups[p], j)
     end
 
-    return (tcost, ch)::(Float64, Int)
+    return (tcost, ch)::Tuple{Float64, Int}
 end
 
 
