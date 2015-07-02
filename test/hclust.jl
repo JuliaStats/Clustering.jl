@@ -1,6 +1,6 @@
 
 # load the examples array
-include("hclust_generated_examples.jl")
+include("hclust-generated-examples.jl")
 
 # test to make sure many random examples match R's implementation
 for example in examples
