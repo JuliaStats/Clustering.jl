@@ -6,6 +6,7 @@ tests = ["seeding",
          "dbscan",
          "silhouette", 
          "varinfo",
+         "randindex",
          "hclust"]
 
 println("Runing tests:")

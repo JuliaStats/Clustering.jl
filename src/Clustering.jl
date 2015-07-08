@@ -44,6 +44,9 @@ module Clustering
     # varinfo
     varinfo, 
 
+    # randindex
+    randindex,
+
     # hclust
     Hclust, hclust, cutree
 
@@ -59,6 +62,7 @@ module Clustering
     include("dbscan.jl")
 
     include("silhouette.jl")
+    include("randindex.jl")
     include("varinfo.jl")
 
     include("hclust.jl")
