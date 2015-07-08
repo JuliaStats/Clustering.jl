@@ -7,3 +7,4 @@ This package provides a variety of ways to validate or evaluate clustering resul
 
 	silhouette.rst
 	varinfo.rst
+	randindex.rst

@@ -54,3 +54,6 @@ function randindex(c1,c2)
 
 	return (ARI, RI, MI, HI)
 end
+
+randindex(R::ClusteringResult, c0::AbstractVector{Int}) = randindex(assignments(R), c0)
+randindex(R1::ClusteringResult, R2::ClusteringResult) = randindex(assignments(R2), assignments(R1)) 
