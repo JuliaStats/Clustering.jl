@@ -4,7 +4,7 @@ module Clustering
     using StatsBase
     
     import Base: show
-    import StatsBase: IntegerVector, RealVector, RealMatrix
+    import StatsBase: IntegerVector, RealVector, RealMatrix, counts
 
     export
 

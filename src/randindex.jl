@@ -1,19 +1,3 @@
-function contingency(mem1,mem2)
-	# Form contigency matrix for two vectors
-	# contigency = contigency(mem1,mem2) returns contingency matrix for two
-	# vectors mem1, mem2. These define which cluster each entity has been assigned to.
-	#
-
-	contigency = zeros(maximum(mem1),maximum(mem2))
-
-	for i = 1:length(mem1)
-	   contigency[mem1[i],mem2[i]] += 1
-	end
-
-	return contigency
-end
-
-
 function randindex(c1,c2)
 	# rand_index - calculates Rand Indices to compare two partitions
 	# (AR, RI, MI, HI) = rand(c1,c2), where c1,c2 are vectors listing the 
@@ -24,7 +8,7 @@ function randindex(c1,c2)
 	# See L. Hubert and P. Arabie (1985) "Comparing Partitions" Journal of 
 	# Classification 2:193-218
 
-	c = contingency(c1,c2)		# form contingency matrix
+	c = counts(c1,c2,(1:maximum(c1),1:maximum(c2))) # form contingency matrix
 
 	n 	= round(Int,sum(c))
 	nis = sum(sum(c,2).^2)		# sum of squares of sums of rows
