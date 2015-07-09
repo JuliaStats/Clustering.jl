@@ -24,10 +24,10 @@ This package provides the ``randindex`` function that implements several metrics
 
     :return: tuple of indices.
 
-.. function:: varinfo(R, k0, a0)
+.. function:: randindex(R, c0)
 
-    This method takes ``R``, an instance of ``ClusteringResult``, as input, and computes the tuple of indices (see above) where ``a0`` is the corresponding assignment vector. 
+    This method takes ``R``, an instance of ``ClusteringResult``, as input, and computes the tuple of indices (see above) where ``c0`` is the corresponding assignment vector. 
 
-.. function:: varinfo(R1, R2)
+.. function:: randindex(R1, R2)
 
     This method takes ``R1`` and ``R2`` (both are instances of ``ClusteringResult``) and computes  the tuple of indices (see above) between them.
