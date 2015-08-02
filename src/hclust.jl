@@ -17,7 +17,6 @@ function assertdistancematrix(d::AbstractMatrix)
     nr, nc = size(d)
     nr == nc || throw(DimensionMismatch("Distance matrix should be square."))
     issym(d) || error("Distance matrix should be symmetric.")
-    nr > 3 || error("Must have 4 or more objects to cluster.")
 end
 
 ## This seems to work like R's implementation, but it is extremely inefficient
@@ -254,16 +253,16 @@ end
 ##   merge c[i] and nearest neigbor c[i]
 ##   if i>3 i -= 3 else i <- 1
 function hclust2{T<:Real}(d::Symmetric{T}, method::Function)
-    nc = size(d,1)
-    mr = Array(Int, nc-1)       # min row
-    mc = Array(Int, nc-1)       # min col
-    h = Array(T, nc-1)          # height
-    cl = map(x->[x], 1:nc)      # clusters
+    nc = size(d,1)                      # number of clusters
+    mr = Array(Int, nc-1)               # min row
+    mc = Array(Int, nc-1)               # min col
+    h = Array(T, nc-1)                  # height
+    cl = [[x] for x in 1:nc]            # clusters
     merges = -[1:nc]
     next = 1
     i = 1
-    N = Array(Int, nc)
-    N[1] = 1                      # arbitrary choice
+    N = Array(Int, nc+1)
+    N[1] = 1                            # arbitrary choice
     while nc > 1
         found=false
         mindist = Inf
@@ -320,6 +319,7 @@ end
 ## this calls the routine that gives the correct answer, fastest
 ## method names are inspired by R's hclust
 function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
+    nc = size(d,1)
     if method == :single
         h = hclust_minimum(d)
     elseif method == :complete
@@ -329,7 +329,6 @@ function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
     else
         error("Unsupported method ", method)
     end
-    nc = size(d,1)
     ## order and label are placeholders for the moment
     Hclust(h..., [1:nc], [1:nc], method)
 end
