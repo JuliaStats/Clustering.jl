@@ -36,7 +36,7 @@ function kmeans!{T<:FloatingPoint}(X::Matrix{T}, centers::Matrix{T};
 
     _kmeans!(X, conv_weights(T, n, weights), centers, 
              assignments, costs, counts, cweights, 
-             int(maxiter), tol, display_level(display))
+             Int(maxiter), tol, display_level(display))
 end
 
 function kmeans(X::Matrix, k::Int; 
@@ -153,7 +153,7 @@ function _kmeans!{T<:FloatingPoint}(
         end
     end
 
-    return KmeansResult(centers, assignments, costs, counts, cweights, float64(objv), t, converged)
+    return KmeansResult(centers, assignments, costs, counts, cweights, Float64(objv), t, converged)
 end
 
 
