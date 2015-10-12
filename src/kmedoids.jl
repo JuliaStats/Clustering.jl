@@ -37,7 +37,7 @@ function kmedoids{T<:Real}(costs::DenseMatrix{T}, k::Integer;
 
     # invoke core algorithm
     _kmedoids!(medoids, costs, 
-               int(maxiter), tol, display_level(display))
+               round(Int, maxiter), tol, display_level(display))
 end
 
 function kmedoids!{T<:Real}(costs::DenseMatrix{T}, medoids::Vector{Int};
@@ -52,7 +52,7 @@ function kmedoids!{T<:Real}(costs::DenseMatrix{T}, medoids::Vector{Int};
 
     # invoke core algorithm
     _kmedoids!(medoids, costs, 
-               int(maxiter), tol, display_level(display))
+               round(Int, maxiter), tol, display_level(display))
 end
 
 
