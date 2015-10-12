@@ -2,7 +2,7 @@
 # run as: Rscript hclust_gen_examples.R
 
 catExample <- function(h, D, method) {
-  cat("{\n\"method\" => :")
+  cat("Dict{Any,Any}(\n\"method\" => :")
   cat(method)
   cat(",\n")
   cat("\"D\" => [")
@@ -28,7 +28,7 @@ catExample <- function(h, D, method) {
     cat(h$height[i])
     cat(", ")
   }
-  cat("]\n},\n")
+  cat("]\n),\n")
 }
 
 catMethodExamples <- function(method="single") {

@@ -21,7 +21,7 @@ const _afp_default_damp = 0.5
 const _afp_default_tol = 1.0e-6
 const _afp_default_display = :none
 
-function affinityprop{T<:FloatingPoint}(S::DenseMatrix{T}; 
+function affinityprop{T<:AbstractFloat}(S::DenseMatrix{T}; 
                                         maxiter::Integer=_afp_default_maxiter,
                                         tol::Real=_afp_default_tol,
                                         damp::Real=_afp_default_damp, 
@@ -35,13 +35,13 @@ function affinityprop{T<:FloatingPoint}(S::DenseMatrix{T};
     0 <= damp < 1 || error("damp must be a non-negative real value below 1.")
 
     # invoke core implementation
-    _affinityprop(S, int(maxiter), tol, convert(T, damp), display_level(display))
+    _affinityprop(S, round(Int, maxiter), tol, convert(T, damp), display_level(display))
 end
 
 
 #### Implementation
 
-function _affinityprop{T<:FloatingPoint}(S::DenseMatrix{T}, 
+function _affinityprop{T<:AbstractFloat}(S::DenseMatrix{T}, 
                                          maxiter::Int, 
                                          tol::Real,
                                          damp::T, 
