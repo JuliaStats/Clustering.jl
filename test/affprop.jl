@@ -21,7 +21,7 @@ k = length(R.exemplars)
 @test 0 < k < n
 @test length(R.assignments) == n
 @test all(R.assignments .>= 1) && all(R.assignments .<= k)
-@test all(R.assignments[R.exemplars] .== [1:k])
+@test all(R.assignments[R.exemplars] .== collect(1:k))
 
 @test length(R.counts) == k
 @test sum(R.counts) == n

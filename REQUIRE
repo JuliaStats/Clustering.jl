@@ -2,3 +2,4 @@ julia 0.3
 ArrayViews 0.6.0
 Distances 0.2.0
 StatsBase 0.7.0
+Compat

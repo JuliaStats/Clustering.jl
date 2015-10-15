@@ -2,6 +2,7 @@ module Clustering
     using ArrayViews
     using Distances
     using StatsBase
+    using Compat
     
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts

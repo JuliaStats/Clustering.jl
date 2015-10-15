@@ -79,7 +79,7 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
     mr = Array(Int, nc-1)       # min row
     mc = Array(Int, nc-1)       # min col
     h = Array(T, nc-1)          # height
-    merges = -[1:nc]
+    merges = -collect(1:nc)
     next = 1
     ## For each 0 < i <= n compute Nearest Neighbor N[i]
     N = zeros(Int, nc)
@@ -258,7 +258,7 @@ function hclust2{T<:Real}(d::Symmetric{T}, method::Function)
     mc = Array(Int, nc-1)               # min col
     h = Array(T, nc-1)                  # height
     cl = [[x] for x in 1:nc]            # clusters
-    merges = -[1:nc]
+    merges = -collect(1:nc)
     next = 1
     i = 1
     N = Array(Int, nc+1)
@@ -330,7 +330,7 @@ function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
         error("Unsupported method ", method)
     end
     ## order and label are placeholders for the moment
-    Hclust(h..., [1:nc], [1:nc], method)
+    Hclust(h..., collect(1:nc), collect(1:nc), method)
 end
 
 ## uplo may be Char for v0.3, Symbol for v0.4
