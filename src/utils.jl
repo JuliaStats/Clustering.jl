@@ -13,7 +13,7 @@ assignments(R::ClusteringResult) = R.assignments
 
 ##### convert weight options
 
-conv_weights{T}(::Type{T}, n::Int, w::Void) = nothing
+conv_weights{T}(::Type{T}, n::Int, w::@compat(Void)) = nothing
 
 function conv_weights{T}(::Type{T}, n::Int, w::Vector)
     length(w) == n || throw(DimensionMismatch("Incorrect length of weights."))

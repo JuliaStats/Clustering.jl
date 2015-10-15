@@ -1,3 +1,4 @@
+using Compat
 
 tests = ["seeding",
          "kmeans",

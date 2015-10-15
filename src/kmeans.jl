@@ -62,7 +62,7 @@ end
 # core k-means skeleton
 function _kmeans!{T<:AbstractFloat}(
     x::Matrix{T},                   # in: sample matrix (d x n)
-    w::Union{Void, Vector{T}},      # in: sample weights (n)
+    w::@compat(Union{Void, Vector{T}}),      # in: sample weights (n)
     centers::Matrix{T},             # in/out: matrix of centers (d x k)
     assignments::Vector{Int},       # out: vector of assignments (n)
     costs::Vector{T},               # out: costs of the resultant assignments (n)
@@ -153,7 +153,8 @@ function _kmeans!{T<:AbstractFloat}(
         end
     end
 
-    return KmeansResult(centers, assignments, costs, counts, cweights, Float64(objv), t, converged)
+    return KmeansResult(centers, assignments, costs, counts, cweights, 
+            @compat(Float64(objv)), t, converged)
 end
 
 
@@ -234,7 +235,7 @@ end
 #
 function update_centers!{T<:AbstractFloat}(
     x::Matrix{T},                   # in: sample matrix (d x n)
-    w::Void,                        # in: sample weights
+    w::@compat(Void),                        # in: sample weights
     assignments::Vector{Int},       # in: assignments (n)
     to_update::Vector{Bool},        # in: whether a center needs update (k)
     centers::Matrix{T},             # out: updated centers (d x k)
