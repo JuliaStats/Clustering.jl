@@ -2,7 +2,7 @@
 
 #### Interface
 
-type KmeansResult{T<:FloatingPoint} <: ClusteringResult
+type KmeansResult{T<:AbstractFloat} <: ClusteringResult
     centers::Matrix{T}         # cluster centers (d x k)
     assignments::Vector{Int}   # assignments (n)
     costs::Vector{T}           # costs of the resultant assignments (n)
@@ -18,7 +18,7 @@ const _kmeans_default_maxiter = 100
 const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
 
-function kmeans!{T<:FloatingPoint}(X::Matrix{T}, centers::Matrix{T};
+function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
                                    weights=nothing,
                                    maxiter::Integer=_kmeans_default_maxiter, 
                                    tol::Real=_kmeans_default_tol,
@@ -36,7 +36,7 @@ function kmeans!{T<:FloatingPoint}(X::Matrix{T}, centers::Matrix{T};
 
     _kmeans!(X, conv_weights(T, n, weights), centers, 
              assignments, costs, counts, cweights, 
-             int(maxiter), tol, display_level(display))
+             round(Int, maxiter), tol, display_level(display))
 end
 
 function kmeans(X::Matrix, k::Int; 
@@ -60,9 +60,9 @@ end
 #### Core implementation
 
 # core k-means skeleton
-function _kmeans!{T<:FloatingPoint}(
+function _kmeans!{T<:AbstractFloat}(
     x::Matrix{T},                   # in: sample matrix (d x n)
-    w::Union(Nothing, Vector{T}),   # in: sample weights (n)
+    w::@compat(Union{Void, Vector{T}}),      # in: sample weights (n)
     centers::Matrix{T},             # in/out: matrix of centers (d x k)
     assignments::Vector{Int},       # out: vector of assignments (n)
     costs::Vector{T},               # out: costs of the resultant assignments (n)
@@ -153,7 +153,8 @@ function _kmeans!{T<:FloatingPoint}(
         end
     end
 
-    return KmeansResult(centers, assignments, costs, counts, cweights, float64(objv), t, converged)
+    return KmeansResult(centers, assignments, costs, counts, cweights, 
+            @compat(Float64(objv)), t, converged)
 end
 
 
@@ -161,7 +162,7 @@ end
 #  Updates assignments, costs, and counts based on
 #  an updated (squared) distance matrix
 #
-function update_assignments!{T<:FloatingPoint}(
+function update_assignments!{T<:AbstractFloat}(
     dmat::Matrix{T},            # in:  distance matrix (k x n)
     is_init::Bool,              # in:  whether it is the initial run
     assignments::Vector{Int},   # out: assignment vector (n)
@@ -232,9 +233,9 @@ end
 #
 #  (specific to the case where samples are not weighted)
 #
-function update_centers!{T<:FloatingPoint}(
+function update_centers!{T<:AbstractFloat}(
     x::Matrix{T},                   # in: sample matrix (d x n)
-    w::Nothing,                     # in: sample weights
+    w::@compat(Void),                        # in: sample weights
     assignments::Vector{Int},       # in: assignments (n)
     to_update::Vector{Bool},        # in: whether a center needs update (k)
     centers::Matrix{T},             # out: updated centers (d x k)
@@ -286,7 +287,7 @@ end
 #
 #  (specific to the case where samples are weighted)
 #
-function update_centers!{T<:FloatingPoint}(
+function update_centers!{T<:AbstractFloat}(
     x::Matrix{T},                   # in: sample matrix (d x n)
     weights::Vector{T},             # in: sample weights (n)
     assignments::Vector{Int},       # in: assignments (n)
@@ -347,7 +348,7 @@ end
 #
 #  Re-picks centers that get no samples assigned to them.
 #
-function repick_unused_centers{T<:FloatingPoint}(
+function repick_unused_centers{T<:AbstractFloat}(
     x::Matrix{T},           # in: the sample set (d x n)
     costs::Vector{T},       # in: the current assignment costs (n)
     centers::Matrix{T},     # to be updated: the centers (d x k)
