@@ -39,6 +39,9 @@ module Clustering
     # dbscan
     DbscanResult, dbscan,
 
+    # meanshift
+    meanshift, MeanShiftResult, modedetect,
+
     # silhouette
     silhouettes,
 
@@ -61,6 +64,7 @@ module Clustering
     include("kmedoids.jl")
     include("affprop.jl")
     include("dbscan.jl")
+    include("meanshift.jl")
 
     include("silhouette.jl")
     include("randindex.jl")
