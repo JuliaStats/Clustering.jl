@@ -152,25 +152,16 @@ function _kmed_update_assignments!{T}(costs::DenseMatrix{T},        # in: (n, n)
 
     tcost = 0.0
     for j = 1:n
-        p = 1
-        mv = costs[medoids[1], j]
-
-        for i = 2:k
-            v = costs[medoids[i], j]
-            if v < mv
-                p = i
-                mv = v
-            end
-        end
+        mv, p = findmin(costs[medoids, j])
 
         if isinit
             assignments[j] = p
         else
             a = assignments[j]
             if p != a
+                assignments[j] = p
                 ch += 1
             end
-            assignments[j] = p
         end
 
         acosts[j] = mv
