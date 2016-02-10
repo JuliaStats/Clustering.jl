@@ -23,6 +23,12 @@ catExample <- function(h, D, method) {
     cat(";")
   }
   cat("],\n")
+  cat("\"order\" => [")
+  for (i in 1:length(h$order)) {
+    cat(h$order[i])
+    cat(", ")
+  }
+  cat("],\n")
   cat("\"height\" => [")
   for (i in 1:length(h$height)) {
     cat(h$height[i])

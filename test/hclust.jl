@@ -13,4 +13,7 @@ for example in examples
     for i in 1:length(h.height)
         @test_approx_eq_eps h.height[i] example["height"][i] 1e-5
     end
+    for i in 1:length(h.order)
+        @test h.order[i] == example["order"][i]
+    end
 end

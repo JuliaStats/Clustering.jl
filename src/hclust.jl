@@ -1,7 +1,7 @@
-## hclust.jl (c) 2014 David A. van Leeuwen 
+## hclust.jl (c) 2014 David A. van Leeuwen
 ## Hierarchical clustering, similar to R's hclust()
 
-## Algorithms are based upon C. F. Olson, Parallel Computing 21 (1995) 1313--1325. 
+## Algorithms are based upon C. F. Olson, Parallel Computing 21 (1995) 1313--1325.
 
 ## This is also in types.jl, but that is not read...
 ## Mostly following R's hclust class
@@ -29,7 +29,7 @@ function hclust_n3{T<:Real}(d::AbstractMatrix{T}, method::Function)
     nc = size(d,1)              # number of clusters
     cl = -[1:nc]                # segment to cluster attribution, initially negative
     next = 1                    # next cluster label
-    while next < nc 
+    while next < nc
         mindist = Inf
         mi = mj = 0
         cli = unique(cl)
@@ -46,7 +46,7 @@ function hclust_n3{T<:Real}(d::AbstractMatrix{T}, method::Function)
                     mask = cols | rows
                 end
             end
-        end 
+        end
         ## simulate R's order
         if mi < 0 && mj < 0 && mi > mj ||
             mi > 0 && mj > 0 && mi < mj ||
@@ -64,7 +64,7 @@ function hclust_n3{T<:Real}(d::AbstractMatrix{T}, method::Function)
     hcat(mr, mc), h
 end
 
-## Efficient single link algorithm, according to Olson, O(n^2), fig 2. 
+## Efficient single link algorithm, according to Olson, O(n^2), fig 2.
 ## Verified against R's implementation, correct, and about 2.5 x faster
 ## For each i < j compute D(i,j) (this is already given)
 ## For each 0 < i <= n compute Nearest Neighbor N(i)
@@ -106,7 +106,7 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
         i = 1
         for k in 2:nc           # O(n)
             if k < N[k]
-                distance = d[k,N[k]]            
+                distance = d[k,N[k]]
             else
                 distance = d[N[k],k]
             end
@@ -149,7 +149,7 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
             end
         end
         ## move the last row/col into j
-        for k=1:(j-1)           # k==nc, 
+        for k=1:(j-1)           # k==nc,
             d[k,j] = d[k,nc]
         end
         for k=(j+1):(nc-1)
@@ -187,7 +187,7 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
     end
     return hcat(mr, mc), h
 end
-        
+
 
 ## functions to compute maximum, minimum, mean for just a slice of an array
 
@@ -210,7 +210,7 @@ function sliceminimum{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vect
     end end
     mindist
 end
-    
+
 function slicemean{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int})
     s = zero(T)
     for i in cl1 for j in cl2
@@ -246,7 +246,7 @@ end
 ## Pick c1: 0 <= c1 <= n random
 ## i <- 1
 ## repeat n-1 times
-##   repeat 
+##   repeat
 ##     i++
 ##     c[i] = nearest neigbour c[i-1]
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
@@ -329,8 +329,18 @@ function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
     else
         error("Unsupported method ", method)
     end
-    ## order and label are placeholders for the moment
-    Hclust(h..., collect(1:nc), collect(1:nc), method)
+
+    # compute an ordering of the leaves
+    inds = Any[]
+    merge = h[1]
+    for i in 1:size(merge)[1]
+        inds1 = merge[i,1] < 0 ? -merge[i,1] : inds[merge[i,1]]
+        inds2 = merge[i,2] < 0 ? -merge[i,2] : inds[merge[i,2]]
+        push!(inds, [inds1; inds2])
+    end
+
+    ## label is just a placeholder for the moment
+    Hclust(h..., inds[end], collect(1:nc), method)
 end
 
 ## uplo may be Char for v0.3, Symbol for v0.4
@@ -343,7 +353,7 @@ end
 
 
 ## cut a tree at height `h' or to `k' clusters
-function cutree(hclust::Hclust; k::Int=1, 
+function cutree(hclust::Hclust; k::Int=1,
                 h::Real=maximum(hclust.height))
     clusters = Vector{Int}[]
     nnodes = length(hclust.labels)
@@ -385,4 +395,4 @@ function printupper(d::Matrix)
         end
         println()
     end
-end                
+end
