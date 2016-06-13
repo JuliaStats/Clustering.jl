@@ -48,8 +48,10 @@ module Clustering
     randindex,
 
     # hclust
-    Hclust, hclust, cutree
+    Hclust, hclust, cutree,
 
+    # MCL
+    mcl, MCLResult
 
     ## source files
 
@@ -60,6 +62,7 @@ module Clustering
     include("kmedoids.jl")
     include("affprop.jl")
     include("dbscan.jl")
+    include("mcl.jl")
 
     include("silhouette.jl")
     include("randindex.jl")

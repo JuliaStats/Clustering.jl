@@ -8,7 +8,8 @@ tests = ["seeding",
          "silhouette", 
          "varinfo",
          "randindex",
-         "hclust"]
+         "hclust",
+         "mcl"]
 
 println("Runing tests:")
 for t in tests
