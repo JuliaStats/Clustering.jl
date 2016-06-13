@@ -121,11 +121,12 @@ function mcl(adj::Matrix{Float64};
     rel_delta = NaN
     while !converged && niter < max_iter
         # expand (raise to the matrix power)
-        next_mcl_adj = mcl_adj ^ expansion # FIXME don't reallocate
+        expanded = mcl_adj ^ expansion # FIXME don't reallocate
         # inflate (apply power element-wise)
-        @inbounds for i in eachindex(next_mcl_adj)
-            next_mcl_adj[i] ^= inflation
+        @inbounds for (i, el) in enumerate(expanded)
+            next_mcl_adj[i] = abs(el)^inflation
         end
+
         # normalize in columns
         scale!(next_mcl_adj, 1.0./squeeze(sum(next_mcl_adj, 1), 1))
 

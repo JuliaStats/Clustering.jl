@@ -32,6 +32,10 @@ end
 @test res.nunassigned == 0
 @test res.assignments == [1, 2, 1, 2, 1, 2]
 
+# test non-integral expansion (show not raise an exception)
+res = mcl(adj_matrix, display=:verbose, inflation=1.8, expansion=1.5)
+@test isa(res, MCLResult)
+
 # test allow_singles
 res = mcl(diagm([1.0, 1.0]), display=:verbose, allow_singles=true)
 @test length(res.counts) == 2
