@@ -77,6 +77,41 @@ function _mcl_clusters(mcl_adj::Matrix{Float64}, allow_singles::Bool, zero_tol::
     clu_ixs, clu_sizes, unassigned_count
 end
 
+# adjacency matrix expansion (matrix-wise raising to a given power) kernel
+# FIXME `_mcl_expand!()` that does not allocate new expanded matrix
+function _mcl_expand(src::Matrix, expansion::Number)
+    src ^ expansion
+end
+
+# adjacency matrix inflation (element-wise raising to a given power) kernel
+function _mcl_inflate!(dest::Matrix{Float64}, src::Matrix{Complex128}, inflation::Number)
+    src_norm = vecnorm(src)
+    min_rel = -1E-3*src_norm
+    min_img = 1E-3*src_norm
+    @inbounds for (i, el) in enumerate(src)
+        rel = real(el)
+        img = imag(el)
+        if rel < min_rel || (abs(img) > min_img && abs(img) > 1E-3*abs(rel))
+            throw(InexactError())
+        end
+        dest[i] = max(0.0, rel)^inflation
+    end
+    return dest
+end
+
+# adjacency matrix inflation (element-wise raising to a given power) kernel
+function _mcl_inflate!(dest::Matrix{Float64}, src::Matrix{Float64}, inflation::Number)
+    src_norm = vecnorm(src)
+    min_el = -1E-3*src_norm
+    @inbounds for (i, el) in enumerate(src)
+        if el < min_el
+            throw(InexactError())
+        end
+        dest[i] = max(0.0, el)^inflation
+    end
+    return dest
+end
+
 """ mcl(adj::Matrix)
 
     Identifies clusters in the weighted graph specified by its adjacency
@@ -105,7 +140,7 @@ function mcl(adj::Matrix{Float64};
     # initialize the MCL adjacency matrix by normalized `adj` weights
     mcl_adj = copy(adj)
     # normalize in columns
-    scale!(mcl_adj, 1.0./squeeze(sum(mcl_adj, 1), 1))
+    scale!(mcl_adj, map(x -> x != 0.0 ?  1.0/x : x, squeeze(sum(mcl_adj, 1), 1)))
     mcl_norm = vecnorm(mcl_adj)
     if !isfinite(mcl_norm)
         throw(OverflowError("The norm of the input adjacency matrix is not finite"))
@@ -120,15 +155,11 @@ function mcl(adj::Matrix{Float64};
     converged = false
     rel_delta = NaN
     while !converged && niter < max_iter
-        # expand (raise to the matrix power)
-        expanded = mcl_adj ^ expansion # FIXME don't reallocate
-        # inflate (apply power element-wise)
-        @inbounds for (i, el) in enumerate(expanded)
-            next_mcl_adj[i] = abs(el)^inflation
-        end
+        expanded = _mcl_expand(mcl_adj, expansion)
+        _mcl_inflate!(next_mcl_adj, expanded, inflation)
 
         # normalize in columns
-        scale!(next_mcl_adj, 1.0./squeeze(sum(next_mcl_adj, 1), 1))
+        scale!(next_mcl_adj, map(x -> x != 0.0 ?  1.0/x : x, squeeze(sum(next_mcl_adj, 1), 1)))
 
         next_mcl_norm = vecnorm(next_mcl_adj)
         if !isfinite(next_mcl_norm)

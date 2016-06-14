@@ -33,7 +33,7 @@ end
 @test res.assignments == [1, 2, 1, 2, 1, 2]
 
 # test non-integral expansion (show not raise an exception)
-res = mcl(adj_matrix, display=:verbose, inflation=1.8, expansion=1.5)
+res = mcl(adj_matrix, display=:verbose, inflation=1.5, expansion=1.5)
 @test isa(res, MCLResult)
 
 # test allow_singles
