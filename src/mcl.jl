@@ -79,8 +79,21 @@ end
 
 # adjacency matrix expansion (matrix-wise raising to a given power) kernel
 # FIXME `_mcl_expand!()` that does not allocate new expanded matrix
-function _mcl_expand(src::Matrix, expansion::Number)
+function _mcl_expand(src::Matrix, expansion::Integer)
     src ^ expansion
+end
+
+# adjacency matrix expansion (matrix-wise raising to a given power) kernel
+# FIXME `_mcl_expand!()` that does not allocate new expanded matrix
+function _mcl_expand(src::Matrix, expansion::Number)
+    # we have to implement the workarond for matrix-power because of julia bug #16930
+    if isinteger(expansion)
+        return _mcl_expand(src, Integer(real(expansion)))
+    end
+    v, X = eig(src)
+    (eltype(v) <: Complex) || (any(v.<0) && (v = complex(v)))
+    Xinv = ishermitian(src) ? X' : inv(X)
+    scale(X, v.^expansion)*Xinv
 end
 
 # adjacency matrix inflation (element-wise raising to a given power) kernel
