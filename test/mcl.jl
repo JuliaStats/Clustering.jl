@@ -33,8 +33,10 @@ end
 @test res.assignments == [1, 2, 1, 2, 1, 2]
 
 # test non-integral expansion (show not raise an exception)
-res = mcl(adj_matrix, display=:verbose, inflation=1.5, expansion=1.5)
+res = mcl(adj_matrix, display=:verbose, inflation=1.5, expansion=1.5, save_final_matrix=true)
 @test isa(res, MCLResult)
+@test length(res.assignments) == length(nodes)
+@test size(res.mcl_adj) == size(adj_matrix) # test that the matrix is returned
 
 # test allow_singles
 res = mcl(diagm([1.0, 1.0]), display=:verbose, allow_singles=true)

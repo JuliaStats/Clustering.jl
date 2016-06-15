@@ -137,6 +137,7 @@ end
 function mcl(adj::Matrix{Float64};
              add_loops::Bool = true,
              expansion::Number = 2, inflation::Number = 2.0,
+             save_final_matrix::Bool = false,
              allow_singles::Bool = true,
              max_iter = 100, tol::Number=1E-5,
              display::Symbol=:none)
@@ -204,6 +205,7 @@ function mcl(adj::Matrix{Float64};
     end
     el2clu, clu_sizes, nunassigned = _mcl_clusters(mcl_adj, allow_singles, tol / length(mcl_adj))
 
-    MCLResult(mcl_adj, el2clu, clu_sizes, nunassigned,
+    MCLResult(save_final_matrix ? mcl_adj : Matrix{Float64}(0,0),
+              el2clu, clu_sizes, nunassigned,
               niter, rel_delta, converged)
 end
