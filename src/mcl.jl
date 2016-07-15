@@ -31,17 +31,19 @@ function _mcl_clusters(mcl_adj::Matrix{Float64}, allow_singles::Bool, zero_tol::
 
     # assign cluster indexes to each node
     # cluster index is the index of the first TRUE in a given column
-    clu_ixs = squeeze(mapslices(el_mask -> findmax(el_mask)[2], el2clu_mask, 1), 1)
+    clu_ixs = squeeze(mapslices(el_mask -> !isempty(el_mask) ? findmax(el_mask)[2] : 0, el2clu_mask, 1), 1)
     clu_sizes = zeros(Int, size(el2clu_mask, 1))
     unassigned_count = 0
     @inbounds for clu_ix in clu_ixs
-        clu_sizes[clu_ix] += 1
+        if clu_ix > 0
+            clu_sizes[clu_ix] += 1
+        end
     end
     if !allow_singles
         # collapse all size 1 clusters into one with index 0
         @inbounds for i in eachindex(clu_ixs)
             clu_ix = clu_ixs[i]
-            if clu_sizes[clu_ix] == 1
+            if clu_ix > 0 && clu_sizes[clu_ix] == 1
                 clu_ixs[i] = 0
                 clu_sizes[clu_ix] = 0
                 unassigned_count += 1
@@ -190,6 +192,7 @@ function mcl(adj::Matrix{Float64};
         niter += 1
         mcl_adj, next_mcl_adj = next_mcl_adj, mcl_adj
         mcl_norm = next_mcl_norm
+        if mcl_norm < tol break end # matrix is zero
     end
 
     if display != :none
