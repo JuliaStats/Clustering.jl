@@ -1,34 +1,30 @@
 module Clustering
-    using ArrayViews
     using Distances
     using StatsBase
     using Compat
-    
+
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts
+    import Compat: view, issymmetric
 
     export
-
-    # reexport from ArrayViews
-    view,
-
     # reexport from StatsBase
     sample, sample!,
 
     # common
     ClusteringResult,
-    nclusters, counts, assignments, 
+    nclusters, counts, assignments,
 
     # seeding
-    SeedingAlgorithm, 
+    SeedingAlgorithm,
     RandSeedAlg, KmppAlg, KmCentralityAlg,
     copyseeds, copyseeds!,
-    initseeds, initseeds!, 
+    initseeds, initseeds!,
     initseeds_by_costs, initseeds_by_costs!,
     kmpp, kmpp_by_costs,
 
     # kmeans
-    kmeans, kmeans!, KmeansResult, kmeans_opts, 
+    kmeans, kmeans!, KmeansResult, kmeans_opts,
 
     # kmedoids
     kmedoids, kmedoids!, KmedoidsResult,
@@ -43,7 +39,7 @@ module Clustering
     silhouettes,
 
     # varinfo
-    varinfo, 
+    varinfo,
 
     # randindex
     randindex,

@@ -26,6 +26,6 @@ k = length(R.exemplars)
 @test length(R.counts) == k
 @test sum(R.counts) == n
 for i = 1:k
-	@test R.counts[i] == countnz(R.assignments .== i)
+    @test R.counts[i] == countnz(R.assignments .== i)
 end
 
