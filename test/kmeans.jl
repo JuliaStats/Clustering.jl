@@ -48,7 +48,7 @@ r = kmeans(x, k; maxiter=50, weights=w)
 
 cw = zeros(k)
 for i = 1:n
-	cw[r.assignments[i]] += w[i]
+    cw[r.assignments[i]] += w[i]
 end
 @test_approx_eq r.cweights cw
 
