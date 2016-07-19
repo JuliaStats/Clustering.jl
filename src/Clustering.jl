@@ -5,7 +5,7 @@ module Clustering
 
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts
-    import Compat: view
+    import Compat: view, issymmetric
 
     export
     # reexport from StatsBase
