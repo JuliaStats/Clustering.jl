@@ -1,9 +1,7 @@
 module Clustering
     using Compat
     using Distances
-    using FixedSizeArrays
     using NearestNeighbors
-    using PointClouds
     using StatsBase
 
     import Base: show
@@ -36,7 +34,7 @@ module Clustering
     AffinityPropResult, affinityprop,
 
     # dbscan
-    DbscanResult, DbscanCluster, dbscan,
+    DbscanResult, DBSCANCluster, dbscan,
 
     # silhouette
     silhouettes,

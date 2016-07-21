@@ -15,7 +15,7 @@ type DbscanResult <: ClusteringResult
 end
 
 
-immutable DbscanCluster <: ClusteringResult
+immutable DBSCANCluster <: ClusteringResult
     size::Int                      # number of points in cluster
     core_indices::Vector{Int}      # core points indices
     boundary_indices::Vector{Int}  # boundary points indices
@@ -110,41 +110,37 @@ function _dbs_expand_cluster!{T<:Real}(D::DenseMatrix{T},           # distance m
 end
 
 """
-    dbscan(points, radius [; leafsize = 20, min_neighbors = 1, min_cluster_size = 1]) -> clusters
+    dbscan(points, radius ; leafsize = 20, min_neighbors = 1, min_cluster_size = 1) -> clusters
 
-Run DBSCAN spatial clustering for the given `points`.
+Cluster points using the DBSCAN (density-based spatial clustering of applications with noise) algorithm.
 
 ### Arguments
-* `points`: matrix of points or a `PointCloud`
+* `points`: matrix of points
 * `radius::Real`: query radius
 
 ### Keyword Arguments
-* `leafsize::Int`: number of leafs in the `KDTree`
+* `leafsize::Int`: number of points binned in each leaf node in the `KDTree`
 * `min_neighbors::Int`: minimum number of neighbors to be a core point
 * `min_cluster_size::Int`: minimum number of points to be a valid cluster
 
 ### Output
-* `Vector{DbscanCluster}`: an array of clusters with the id, size core indices and boundary indices
+* `Vector{DBSCANCluster}`: an array of clusters with the id, size core indices and boundary indices
 
 ### Example:
+``` julia
 points = randn(3, 10000)
 clusters = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20) # clusters with less than 20 points will be discarded
+```
 """
 function dbscan{T <: AbstractFloat, N}(points::Array{T, N}, radius::Real; leafsize::Int = 20, kwargs ...)
     kdtree = KDTree(points; leafsize=leafsize)
-    kdtree::KDTree{Float64, Distances.Euclidean} # TODO: julia-0.4 fails type inference here
+    kdtree::KDTree{T, Distances.Euclidean} # TODO: julia-0.4 fails type inference here
     return _dbscan(kdtree, points, radius; kwargs ...)
 end
 
-""" a wrapper around for PointCloud """
-function dbscan(cloud::PointCloud, radius::Real; kwargs ...)
-    points = destructure(positions(cloud))
-    kdtree = cloud.spatial_index
-    return _dbscan(kdtree, points, radius; kwargs ...)
-end
 
 """ An implementation of DBSCAN algorithm that keeps track of both the core and boundary points """
-function _dbscan{T<:AbstractFloat}(kdtree::KDTree, points::Union{PointCloud, Matrix{T}}, radius::T;
+function _dbscan{T<:AbstractFloat}(kdtree::KDTree, points::Matrix{T}, radius::T;
                                    min_neighbors::Int = 1, min_cluster_size::Int = 1)
     dim, num_points = size(points)
     num_points <= dim && throw(ArgumentError("points has $dim rows and $num_points columns. Must be a D x N matric with D < N"))
@@ -152,7 +148,7 @@ function _dbscan{T<:AbstractFloat}(kdtree::KDTree, points::Union{PointCloud, Mat
     1 <= min_neighbors || throw(ArgumentError("min_neighbors $min_neighbors must be ≥ 1"))
     1 <= min_cluster_size || throw(ArgumentError("min_cluster_size $min_cluster_size must be ≥ 1"))
 
-    clusters = Vector{DbscanCluster}(0)
+    clusters = Vector{DBSCANCluster}(0)
     visited = falses(num_points)
     cluster_selection = falses(num_points)
     core_selection = falses(num_points)
@@ -175,16 +171,16 @@ function _dbscan{T<:AbstractFloat}(kdtree::KDTree, points::Union{PointCloud, Mat
                 continue # query returns the query point as well as the neighbors
             end
             core_selection[current_index] = true
-            _update_exploration_list!(adj_list, to_explore, visited)
+            update_exploration_list!(adj_list, to_explore, visited)
         end
         cluster_size = sum(cluster_selection)
-        min_cluster_size <= cluster_size && _accept_cluster!(clusters, core_selection, cluster_selection, cluster_size)
+        min_cluster_size <= cluster_size && accept_cluster!(clusters, core_selection, cluster_selection, cluster_size)
     end
     return clusters
 end
 
 """
-`_update_exploration_list!(adj_list, exploration_list, visited)`
+    update_exploration_list!(adj_list, exploration_list, visited)
 
 Update the queue for expanding the cluster
 
@@ -194,7 +190,7 @@ Update the queue for expanding the cluster
 * `exploration_list :: Vector{Int}`: the indices that  will be explored in the future
 * `visited :: Vector{Bool}`: a flag to indicate whether a point has been explored already
 """
-function _update_exploration_list!(adj_list::Array{Int}, exploration_list::Vector{Int}, visited::BitArray{1})
+function update_exploration_list!{T <: Int}(adj_list::Array{T}, exploration_list::Vector{T}, visited::BitArray{1})
     for j in adj_list
         visited[j] && continue
         push!(exploration_list, j)
@@ -203,19 +199,19 @@ function _update_exploration_list!(adj_list::Array{Int}, exploration_list::Vecto
 end
 
 """
-`_accept_cluster!(clusters, core_selection, cluster_selection)`
+    accept_cluster!(clusters, core_selection, cluster_selection)
 
 Accept cluster and update the clusters list
 
 ### Input
 
-* `clusters :: Vector{DbscanCluster}`: a list of the accepted clusters
+* `clusters :: Vector{DBSCANCluster}`: a list of the accepted clusters
 * `core_selection :: Vector{Bool}`: selection of the core points of the cluster
 * `cluster_selection :: Vector{Bool}`: selection of all the cluster points
 """
-function _accept_cluster!(clusters::Vector{DbscanCluster}, core_selection::BitArray{1}, cluster_selection::BitArray{1}, cluster_size::Int)
+function accept_cluster!(clusters::Vector{DBSCANCluster}, core_selection::BitArray{1}, cluster_selection::BitArray{1}, cluster_size::Int)
     core_idx = find(core_selection) # index list of the core members
     boundary_selection = cluster_selection & ~core_selection
     boundary_idx = find(boundary_selection) # index list of the boundary members
-    push!(clusters, DbscanCluster(cluster_size, core_idx, boundary_idx))
+    push!(clusters, DBSCANCluster(cluster_size, core_idx, boundary_idx))
 end

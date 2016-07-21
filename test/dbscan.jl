@@ -1,7 +1,6 @@
 using Base.Test
 using Clustering
 using Distances
-using PointClouds
 
 srand(34568)
 
@@ -47,10 +46,3 @@ clusters = dbscan(points, 0.3, min_neighbors=2, min_cluster_size=100, leafsize=2
 @test clusters[1].core_indices == inds_1
 @test clusters[2].core_indices == inds_2
 @test clusters[3].core_indices == inds_3
-
-# Test a point cloud
-cloud = PointCloud(points)
-cloud_clusters = dbscan(cloud, 0.3, min_neighbors=2, min_cluster_size=100)
-@test cloud_clusters[1].core_indices == inds_1
-@test cloud_clusters[2].core_indices == inds_2
-@test cloud_clusters[3].core_indices == inds_3
