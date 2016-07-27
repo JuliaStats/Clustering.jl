@@ -34,7 +34,7 @@ module Clustering
     AffinityPropResult, affinityprop,
 
     # dbscan
-    DbscanResult, DBSCANCluster, dbscan,
+    DbscanResult, DbscanCluster, dbscan,
 
     # silhouette
     silhouettes,

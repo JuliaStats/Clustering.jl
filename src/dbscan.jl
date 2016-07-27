@@ -15,7 +15,7 @@ type DbscanResult <: ClusteringResult
 end
 
 
-immutable DBSCANCluster <: ClusteringResult
+immutable DbscanCluster <: ClusteringResult
     size::Int                      # number of points in cluster
     core_indices::Vector{Int}      # core points indices
     boundary_indices::Vector{Int}  # boundary points indices
@@ -124,7 +124,7 @@ Cluster points using the DBSCAN (density-based spatial clustering of application
 * `min_cluster_size::Int`: minimum number of points to be a valid cluster
 
 ### Output
-* `Vector{DBSCANCluster}`: an array of clusters with the id, size core indices and boundary indices
+* `Vector{DbscanCluster}`: an array of clusters with the id, size core indices and boundary indices
 
 ### Example:
 ``` julia
@@ -148,7 +148,7 @@ function _dbscan{T<:AbstractFloat}(kdtree::KDTree, points::Matrix{T}, radius::T;
     1 <= min_neighbors || throw(ArgumentError("min_neighbors $min_neighbors must be ≥ 1"))
     1 <= min_cluster_size || throw(ArgumentError("min_cluster_size $min_cluster_size must be ≥ 1"))
 
-    clusters = Vector{DBSCANCluster}(0)
+    clusters = Vector{DbscanCluster}(0)
     visited = falses(num_points)
     cluster_selection = falses(num_points)
     core_selection = falses(num_points)
@@ -205,13 +205,13 @@ Accept cluster and update the clusters list
 
 ### Input
 
-* `clusters :: Vector{DBSCANCluster}`: a list of the accepted clusters
+* `clusters :: Vector{DbscanCluster}`: a list of the accepted clusters
 * `core_selection :: Vector{Bool}`: selection of the core points of the cluster
 * `cluster_selection :: Vector{Bool}`: selection of all the cluster points
 """
-function accept_cluster!(clusters::Vector{DBSCANCluster}, core_selection::BitArray{1}, cluster_selection::BitArray{1}, cluster_size::Int)
+function accept_cluster!(clusters::Vector{DbscanCluster}, core_selection::BitArray{1}, cluster_selection::BitArray{1}, cluster_size::Int)
     core_idx = find(core_selection) # index list of the core members
     boundary_selection = cluster_selection & ~core_selection
     boundary_idx = find(boundary_selection) # index list of the boundary members
-    push!(clusters, DBSCANCluster(cluster_size, core_idx, boundary_idx))
+    push!(clusters, DbscanCluster(cluster_size, core_idx, boundary_idx))
 end
