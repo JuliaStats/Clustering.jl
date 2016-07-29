@@ -1,7 +1,8 @@
 module Clustering
-    using Distances
-    using StatsBase
     using Compat
+    using Distances
+    using NearestNeighbors
+    using StatsBase
 
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts
@@ -33,7 +34,7 @@ module Clustering
     AffinityPropResult, affinityprop,
 
     # dbscan
-    DbscanResult, dbscan,
+    DbscanResult, DbscanCluster, dbscan,
 
     # silhouette
     silhouettes,
