@@ -1,3 +1,5 @@
+__precompile__()
+
 module Clustering
     using Compat
     using Distances
