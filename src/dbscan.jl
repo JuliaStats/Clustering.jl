@@ -134,7 +134,6 @@ clusters = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20) # clus
 """
 function dbscan{T <: AbstractFloat, N}(points::Array{T, N}, radius::Real; leafsize::Int = 20, kwargs ...)
     kdtree = KDTree(points; leafsize=leafsize)
-    kdtree::KDTree{T, Distances.Euclidean} # TODO: julia-0.4 fails type inference here
     return _dbscan(kdtree, points, radius; kwargs ...)
 end
 
