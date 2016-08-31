@@ -93,7 +93,7 @@ function _dbs_expand_cluster!{T<:Real}(D::DenseMatrix{T},           # distance m
         if !visited[q]
             visited[q] = true
             qnbs = _dbs_region_query(D, q, eps)
-            if length(qnbs) > minpts
+            if length(qnbs) >= minpts
                 for x in qnbs
                     if assignments[x] == 0
                         push!(nbs, x)
