@@ -105,15 +105,8 @@ end
 
 # adjacency matrix inflation (element-wise raising to a given power) kernel
 function _mcl_inflate!(dest::Matrix{Float64}, src::Matrix{Float64}, inflation::Number)
-    src_norm = vecnorm(src)
-    min_el = -1E-3*src_norm
-    @inbounds for (i, el) in enumerate(src)
-        if el < min_el
-            throw(InexactError())
-        end
-        dest[i] = max(0.0, el)^inflation
-    end
-    return dest
+    any(src .< -1E-3*vecnorm(src)) && throw(InexactError())
+    map!(el -> max(0.0, el)^inflation, dest, src)
 end
 
 """
