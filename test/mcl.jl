@@ -19,7 +19,7 @@ for edge in edges
     n2 = findfirst(nodes, edge[2])
     adj_matrix[n1, n2] = adj_matrix[n2, n1] = edge[3]
 end
-@assert issym(adj_matrix)
+@assert issymmetric(adj_matrix)
 
 res = mcl(adj_matrix, display=:verbose, inflation=1.8)
 @test isa(res, MCLResult)
