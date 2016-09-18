@@ -21,7 +21,7 @@ for edge in edges
 end
 @assert issymmetric(adj_matrix)
 
-res = mcl(adj_matrix, display=:verbose, inflation=1.8)
+res = mcl(adj_matrix, display=:none, inflation=1.8)
 @test isa(res, MCLResult)
 k = length(res.counts)
 # println("k = $k")
@@ -36,19 +36,19 @@ end
 @test res.assignments == [1, 2, 1, 2, 1, 2]
 
 # test non-integral expansion (show not raise an exception)
-res = mcl(adj_matrix, display=:verbose, inflation=1.5, expansion=1.5, save_final_matrix=true)
+res = mcl(adj_matrix, display=:none, inflation=1.5, expansion=1.5, save_final_matrix=true)
 @test isa(res, MCLResult)
 @test length(res.assignments) == length(nodes)
 @test size(res.mcl_adj) == size(adj_matrix) # test that the matrix is returned
 
 # test allow_singles
-res = mcl(diagm([1.0, 1.0]), display=:verbose, allow_singles=true)
+res = mcl(diagm([1.0, 1.0]), display=:none, allow_singles=true)
 @test length(res.counts) == 2
 @test res.assignments == [1, 2]
 @test res.counts == [1, 1]
 @test res.nunassigned == 0
 
-res = mcl(diagm([1.0, 1.0]), display=:verbose, allow_singles=false)
+res = mcl(diagm([1.0, 1.0]), display=:none, allow_singles=false)
 @test length(res.counts) == 0
 @test res.assignments == [0, 0]
 @test res.nunassigned == 2
