@@ -1,9 +1,9 @@
 # MCL (Markov CLustering algorithm)
 
-#### Interface
-
 """
-    `mcl()` result.
+    immutable MCLResult <: ClusteringResult
+
+Result returned by `mcl()`.
 """
 immutable MCLResult <: ClusteringResult
     mcl_adj::Matrix{Float64}    # final MCL adjacency matrix (equailibrium state matrix if converged)
@@ -15,29 +15,22 @@ immutable MCLResult <: ClusteringResult
     converged::Bool             # whether the procedure converged
 end
 
-""" _mcl_clusters(mcl_adj, allow_singles, zero_tol = 1E-20)
-
-    Extract clusters from the final MCL matrix `mcl_adj`.
-    Returns the vector of cluster indices for each element, the sizes of the
-    clusters and the number of the unassigned elements (`allow_singles` controls
-    whether 1-element clusters would be retained or collapsed into the set of
-    unassigned elements with the cluster index 0).
-
-    See also `mcl()`.
-"""
+# Extract clusters from the final (equilibrium) MCL matrix
+# Return the tuple: cluster indices for each element, cluster sizes,
+# the number of unassigned (0 cluster index) elements (if `allow_singles` is on)
+# `zero_tol` is a minimal value to consider as an element-to-cluster assignment
 function _mcl_clusters(mcl_adj::Matrix{Float64}, allow_singles::Bool, zero_tol::Float64 = 1E-20)
     # remove rows containing only zero elements and convert into a mask of nonzero elements
     el2clu_mask = mcl_adj[squeeze(sum(mcl_adj, 2), 2) .> zero_tol, :] .> zero_tol
 
     # assign cluster indexes to each node
     # cluster index is the index of the first TRUE in a given column
-    clu_ixs = squeeze(mapslices(el_mask -> !isempty(el_mask) ? findmax(el_mask)[2] : 0, el2clu_mask, 1), 1)
+    clu_ixs = squeeze(mapslices(el_mask -> !isempty(el_mask) ? findmax(el_mask)[2] : 0,
+                                el2clu_mask, 1), 1)
     clu_sizes = zeros(Int, size(el2clu_mask, 1))
     unassigned_count = 0
     @inbounds for clu_ix in clu_ixs
-        if clu_ix > 0
-            clu_sizes[clu_ix] += 1
-        end
+        (clu_ix > 0) && (clu_sizes[clu_ix] += 1)
     end
     if !allow_singles
         # collapse all size 1 clusters into one with index 0
@@ -60,12 +53,9 @@ function _mcl_clusters(mcl_adj::Matrix{Float64}, allow_singles::Bool, zero_tol::
         old_clu_ix = clu_ixs[i]
         if old_clu_ix > 0
             new_clu_ix = clu_id_map[old_clu_ix]
-            if new_clu_ix == 0
-                next_clu_ix += 1
-                clu_ixs[i] = clu_id_map[old_clu_ix] = next_clu_ix
-            else
-                clu_ixs[i] = new_clu_ix
-            end
+            clu_ixs[i] = new_clu_ix == 0 ?
+                         clu_id_map[old_clu_ix] = (next_clu_ix += 1) :
+                         new_clu_ix
         end
     end
     old_clu_sizes = clu_sizes
@@ -79,7 +69,7 @@ function _mcl_clusters(mcl_adj::Matrix{Float64}, allow_singles::Bool, zero_tol::
     clu_ixs, clu_sizes, unassigned_count
 end
 
-# adjacency matrix expansion (matrix-wise raising to a given power) kernel
+# adjacency matrix expansion (matrix-wise raising to a given integer power) kernel
 # FIXME `_mcl_expand!()` that does not allocate new expanded matrix
 function _mcl_expand(src::Matrix, expansion::Integer)
     src ^ expansion
@@ -89,13 +79,12 @@ end
 # FIXME `_mcl_expand!()` that does not allocate new expanded matrix
 function _mcl_expand(src::Matrix, expansion::Number)
     # we have to implement the workarond for matrix-power because of julia bug #16930
-    if isinteger(expansion)
-        return _mcl_expand(src, Integer(real(expansion)))
-    end
+    isinteger(expansion) && return _mcl_expand(src, Integer(real(expansion)))
     v, X = eig(src)
+    # FIXME type instability here, revisit when #16930 is fixed
     (eltype(v) <: Complex) || (any(v.<0) && (v = complex(v)))
     Xinv = ishermitian(src) ? X' : inv(X)
-    scale(X, v.^expansion)*Xinv
+    X * Diagonal(v.^expansion) * Xinv
 end
 
 # adjacency matrix inflation (element-wise raising to a given power) kernel
@@ -127,25 +116,37 @@ function _mcl_inflate!(dest::Matrix{Float64}, src::Matrix{Float64}, inflation::N
     return dest
 end
 
-""" mcl(adj::Matrix)
-
-    Identifies clusters in the weighted graph specified by its adjacency
-    matrix using Markov Clustering Algorithm (MCL).
-
-    Returns `MCLResult`.
-
-    See http://micans.org/mcl/
 """
-function mcl(adj::Matrix{Float64};
+    mcl(adj::Matrix; [keyword arguments])::MCLResult
+
+Identify clusters in the weighted graph using Markov Clustering Algorithm (MCL).
+
+# Arguments
+* `adj::Matrix{Float64}`: adjacency matrix that defines the weighted graph
+  to cluster
+* `add_loops::Bool`: whether edges of weight 1.0 from the node to itself
+  should be appended to the graph (enabled by default)
+* `expansion::Number`: MCL expansion constant (2)
+* `inflation::Number`: MCL inflation constant (2.0)
+* `save_final_matrix::Bool`: save final equilibrium state in the result,
+  otherwise leave it empty; disabled by default, could be useful if
+  MCL doesn't converge
+* `max_iter::Integer`: max number of MCL iterations
+* `tol::Number`: MCL adjacency matrix convergence threshold
+* `display::Symbol`: `:none` for no output or `:verbose` for diagnostic messages
+
+See [original MCL implementation](http://micans.org/mcl).
+"""
+@compat function mcl(adj::Matrix{Float64};
              add_loops::Bool = true,
              expansion::Number = 2, inflation::Number = 2.0,
              save_final_matrix::Bool = false,
              allow_singles::Bool = true,
-             max_iter = 100, tol::Number=1E-5,
-             display::Symbol=:none)
+             max_iter::Integer = 100, tol::Number=1E-5,
+             display::Symbol=:none)#::MCLResult FIXME uncomment when 0.4 support is dropped
 
     m, n = size(adj)
-    m == n || throw(ArgumentError("Square adjacency matrix expected"))
+    m == n || throw(DimensionMismatch("Square adjacency matrix expected"))
 
     if add_loops
         @inbounds for i in 1:size(adj, 1)
@@ -175,7 +176,8 @@ function mcl(adj::Matrix{Float64};
         _mcl_inflate!(next_mcl_adj, expanded, inflation)
 
         # normalize in columns
-        scale!(next_mcl_adj, map(x -> x != 0.0 ?  1.0/x : x, squeeze(sum(next_mcl_adj, 1), 1)))
+        scale!(next_mcl_adj, map(x -> x != 0.0 ? 1.0/x : x,
+                                 squeeze(sum(next_mcl_adj, 1), 1)))
 
         next_mcl_norm = vecnorm(next_mcl_adj)
         if !isfinite(next_mcl_norm)
@@ -183,16 +185,13 @@ function mcl(adj::Matrix{Float64};
             break
         end
         rel_delta = euclidean(next_mcl_adj, mcl_adj)/mcl_norm
-        if display == :verbose
-            info("MCL iter. #$niter: rel.Δ=", rel_delta)
-        end
-        converged = rel_delta <= tol
-        if converged break end
+        (display == :verbose) && info("MCL iter. #$niter: rel.Δ=", rel_delta)
+        (converged = rel_delta <= tol) && break
         # update (swap) MCL adjacency
         niter += 1
         mcl_adj, next_mcl_adj = next_mcl_adj, mcl_adj
         mcl_norm = next_mcl_norm
-        if mcl_norm < tol break end # matrix is zero
+        (mcl_norm < tol) && break # matrix is zero
     end
 
     if display != :none
@@ -203,10 +202,9 @@ function mcl(adj::Matrix{Float64};
         end
     end
 
-    if display == :verbose
-        info("Generating MCL clusters...")
-    end
-    el2clu, clu_sizes, nunassigned = _mcl_clusters(mcl_adj, allow_singles, tol / length(mcl_adj))
+    (display == :verbose) && info("Generating MCL clusters...")
+    el2clu, clu_sizes, nunassigned = _mcl_clusters(mcl_adj, allow_singles,
+                                                   tol/length(mcl_adj))
 
     MCLResult(save_final_matrix ? mcl_adj : Matrix{Float64}(0,0),
               el2clu, clu_sizes, nunassigned,
