@@ -5,6 +5,9 @@ using Clustering
 
 srand(34568)
 
+# test for nonsquare matrices
+@test_throws DimensionMismatch mcl(zeros(Float64, 4, 3))
+
 nodes = [:bat, :bit, :cat, :fit, :hat, :hit]
 edges = Tuple{Symbol, Symbol, Float64}[(:cat, :hat, 0.2), (:hat, :bat, 0.16),
                                        (:bat, :cat, 1.0), (:bat, :bit, 0.125),
