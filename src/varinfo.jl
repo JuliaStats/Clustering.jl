@@ -1,6 +1,7 @@
 # Variation of Information
+const _varinfo_default_variant = :Djoint
 
-function varinfo(k1::Int, a1::AbstractVector{Int}, 
+function information(k1::Int, a1::AbstractVector{Int},
                  k2::Int, a2::AbstractVector{Int})
 
     # check input arguments
@@ -45,13 +46,30 @@ function varinfo(k1::Int, a1::AbstractVector{Int},
         end
     end
 
-    return H1 + H2 - I * 2.0
+    return I, H1, H2
 end
 
-varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}) = 
-    varinfo(nclusters(R), assignments(R), k0, a0)
+function varinfo(k1::Int, a1::AbstractVector{Int},
+                 k2::Int, a2::AbstractVector{Int},
+                 variant::Symbol=_varinfo_default_variant)
+    I, H1, H2 = information(k1, a1, k2, a2)
+    if variant == :Djoint
+        v = H1 + H2 - I * 2.0
+    elseif variant == :Dmax
+        v = max(H1,H2) - I 
+    elseif variant == :djoint
+        v = (1 - 2*I/(H1+H2))
+    elseif variant == :dmax
+        v = 1 - (I/max(H1, H2))
+    end
+    return v
+end
 
-varinfo(R1::ClusteringResult, R2::ClusteringResult) = 
+varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}, variant::Symbol=_varinfo_default_variant) = 
+    varinfo(nclusters(R), assignments(R), k0, a0, variant)
+
+varinfo(R1::ClusteringResult, R2::ClusteringResult, variant::Symbol=_varinfo_default_variant) = 
     varinfo(nclusters(R1), assignments(R1), 
-            nclusters(R2), assignments(R2))
+            nclusters(R2), assignments(R2),
+            variant)
 
