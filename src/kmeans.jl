@@ -17,12 +17,14 @@ const _kmeans_default_init = :kmpp
 const _kmeans_default_maxiter = 100
 const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
+const _kmeans_default_n_init = 10
 
 function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
                                    weights=nothing,
                                    maxiter::Integer=_kmeans_default_maxiter, 
                                    tol::Real=_kmeans_default_tol,
                                    display::Symbol=_kmeans_default_display)
+								   
 
     m, n = size(X)
     m2, k = size(centers)
@@ -43,18 +45,37 @@ function kmeans(X::Matrix, k::Int;
                 weights=nothing,
                 init=_kmeans_default_init,
                 maxiter::Integer=_kmeans_default_maxiter, 
+				n_init::Integer=_kmeans_default_n_init,
                 tol::Real=_kmeans_default_tol,
                 display::Symbol=_kmeans_default_display)
+				
 
     m, n = size(X)
     (2 <= k < n) || error("k must have 2 <= k < n.")
-    iseeds = initseeds(init, X, k)
-    centers = copyseeds(X, iseeds)
-    kmeans!(X, centers; 
-            weights=weights, 
-            maxiter=maxiter,
-            tol=tol,
-            display=display)
+	n_init > 0 || error("n_init must be greater than 0")
+
+	lowestcost::Float64 = Inf
+	local bestresult::KmeansResult
+
+	for i = 1:n_init
+
+		iseeds = initseeds(init, X, k)
+		centers = copyseeds(X, iseeds)
+		result = kmeans!(X, centers; 
+						 weights=weights, 
+						 maxiter=maxiter,
+					     tol=tol,
+						 display=display)
+
+		if result.totalcost < lowestcost 
+			lowestcost = result.totalcost
+			bestresult = result
+		end
+
+	end
+	
+	return bestresult
+
 end
 
 #### Core implementation
@@ -72,86 +93,88 @@ function _kmeans!{T<:AbstractFloat}(
     tol::Real,                      # in: tolerance of change at convergence 
     displevel::Int)                 # in: the level of display
 
-    # initialize
 
-    k = size(centers, 2)
-    to_update = Array(Bool, k) # indicators of whether a center needs to be updated
-    unused = Int[]
-    num_affected::Int = k # number of centers, to which the distances need to be recomputed
+	
+	# initialize
 
-    dmat = pairwise(SqEuclidean(), centers, x)
-    dmat = convert(Array{T}, dmat) #Can be removed if one day Distance.result_type(SqEuclidean(), T, T) == T
-    update_assignments!(dmat, true, assignments, costs, counts, to_update, unused)
-    objv = w == nothing ? sum(costs) : dot(w, costs)
+	k = size(centers, 2)
+	to_update = Array(Bool, k) # indicators of whether a center needs to be updated
+	unused = Int[]
+	num_affected::Int = k # number of centers, to which the distances need to be recomputed
 
-    # main loop
-    t = 0
-    converged = false
-    if displevel >= 2
-        @printf "%7s %18s %18s | %8s \n" "Iters" "objv" "objv-change" "affected"
-        println("-------------------------------------------------------------")
-        @printf("%7d %18.6e\n", t, objv)
-    end
+	dmat = pairwise(SqEuclidean(), centers, x)
+	dmat = convert(Array{T}, dmat) #Can be removed if one day Distance.result_type(SqEuclidean(), T, T) == T
+	update_assignments!(dmat, true, assignments, costs, counts, to_update, unused)
+	objv = w == nothing ? sum(costs) : dot(w, costs)
 
-    while !converged && t < maxiter
-        t = t + 1
+	# main loop
+	t = 0
+	converged = false
+	if displevel >= 2
+		@printf "%7s %18s %18s | %8s \n" "Iters" "objv" "objv-change" "affected"
+		println("-------------------------------------------------------------")
+		@printf("%7d %18.6e\n", t, objv)
+	end
 
-        # update (affected) centers
+	while !converged && t < maxiter
+		t = t + 1
 
-        update_centers!(x, w, assignments, to_update, centers, cweights)
+		# update (affected) centers
 
-        if !isempty(unused)
-            repick_unused_centers(x, costs, centers, unused)
-        end
+		update_centers!(x, w, assignments, to_update, centers, cweights)
 
-        # update pairwise distance matrix
+		if !isempty(unused)
+			repick_unused_centers(x, costs, centers, unused)
+		end
 
-        if !isempty(unused)
-            to_update[unused] = true
-        end
+		# update pairwise distance matrix
 
-        if t == 1 || num_affected > 0.75 * k
-            pairwise!(dmat, SqEuclidean(), centers, x)
-        else
-            # if only a small subset is affected, only compute for that subset
-            affected_inds = find(to_update)
-            dmat_p = pairwise(SqEuclidean(), centers[:, affected_inds], x)
-            dmat[affected_inds, :] = dmat_p
-        end
+		if !isempty(unused)
+			to_update[unused] = true
+		end
 
-        # update assignments
+		if t == 1 || num_affected > 0.75 * k
+			pairwise!(dmat, SqEuclidean(), centers, x)
+		else
+			# if only a small subset is affected, only compute for that subset
+			affected_inds = find(to_update)
+			dmat_p = pairwise(SqEuclidean(), centers[:, affected_inds], x)
+			dmat[affected_inds, :] = dmat_p
+		end
 
-        update_assignments!(dmat, false, assignments, costs, counts, to_update, unused)
-        num_affected = sum(to_update) + length(unused)
+		# update assignments
 
-        # compute change of objective and determine convergence
+		update_assignments!(dmat, false, assignments, costs, counts, to_update, unused)
+		num_affected = sum(to_update) + length(unused)
 
-        prev_objv = objv
-        objv = w == nothing ? sum(costs) : dot(w, costs)
-        objv_change = objv - prev_objv
+		# compute change of objective and determine convergence
 
-        if objv_change > tol
-            warn("The objective value changes towards an opposite direction")
-        end
+		prev_objv = objv
+		objv = w == nothing ? sum(costs) : dot(w, costs)
+		objv_change = objv - prev_objv
 
-        if abs(objv_change) < tol
-            converged = true
-        end
+		if objv_change > tol
+			warn("The objective value changes towards an opposite direction")
+		end
 
-        # display iteration information (if asked)
+		if abs(objv_change) < tol
+			converged = true
+		end
 
-        if displevel >= 2
-            @printf("%7d %18.6e %18.6e | %8d\n", t, objv, objv_change, num_affected)
-        end
-    end
+		# display iteration information (if asked)
 
-    if displevel >= 1
-        if converged
-            println("K-means converged with $t iterations (objv = $objv)")
-        else
-            println("K-means terminated without convergence after $t iterations (objv = $objv)")
-        end
-    end
+		if displevel >= 2
+			@printf("%7d %18.6e %18.6e | %8d\n", t, objv, objv_change, num_affected)
+		end
+	end
+
+	if displevel >= 1
+		if converged
+			println("K-means converged with $t iterations (objv = $objv)")
+		else
+			println("K-means terminated without convergence after $t iterations (objv = $objv)")
+		end
+	end
 
     return KmeansResult(centers, assignments, costs, counts, cweights, 
             @compat(Float64(objv)), t, converged)
