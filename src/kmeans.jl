@@ -24,7 +24,6 @@ function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
                                    maxiter::Integer=_kmeans_default_maxiter, 
                                    tol::Real=_kmeans_default_tol,
                                    display::Symbol=_kmeans_default_display)
-								   
 
     m, n = size(X)
     m2, k = size(centers)
@@ -45,14 +44,14 @@ function kmeans(X::Matrix, k::Int;
                 weights=nothing,
                 init=_kmeans_default_init,
                 maxiter::Integer=_kmeans_default_maxiter, 
-				n_init::Integer=_kmeans_default_n_init,
+                n_init::Integer=_kmeans_default_n_init,
                 tol::Real=_kmeans_default_tol,
                 display::Symbol=_kmeans_default_display)
 				
 
     m, n = size(X)
     (2 <= k < n) || error("k must have 2 <= k < n.")
-	n_init > 0 || error("n_init must be greater than 0")
+	n_init > 0 || throw(ArgumentError("n_init must be greater than 0"))
 
 	lowestcost::Float64 = Inf
 	local bestresult::KmeansResult
