@@ -48,7 +48,6 @@ function kmeans(X::Matrix, k::Int;
                 tol::Real=_kmeans_default_tol,
                 display::Symbol=_kmeans_default_display)
 
-
     m, n = size(X)
     (2 <= k < n) || error("k must have 2 <= k < n.")
     n_init > 0 || throw(ArgumentError("n_init must be greater than 0"))
