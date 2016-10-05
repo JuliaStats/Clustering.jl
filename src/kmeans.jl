@@ -87,8 +87,6 @@ function _kmeans!{T<:AbstractFloat}(
     maxiter::Int,                   # in: maximum number of iterations 
     tol::Real,                      # in: tolerance of change at convergence 
     displevel::Int)                 # in: the level of display
-
-
     
     # initialize
 
