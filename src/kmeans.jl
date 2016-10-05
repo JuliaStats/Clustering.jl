@@ -9,7 +9,7 @@ type KmeansResult{T<:AbstractFloat} <: ClusteringResult
     counts::Vector{Int}        # number of samples assigned to each cluster (k)
     cweights::Vector{Float64}  # cluster weights (k)
     totalcost::Float64         # total cost (i.e. objective) (k)
-    iterations::Int            # number of elapsed iterations 
+    iterations::Int            # number of elapsed iterations
     converged::Bool            # whether the procedure converged
 end
 
@@ -21,7 +21,7 @@ const _kmeans_default_n_init = 10
 
 function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
                                    weights=nothing,
-                                   maxiter::Integer=_kmeans_default_maxiter, 
+                                   maxiter::Integer=_kmeans_default_maxiter,
                                    tol::Real=_kmeans_default_tol,
                                    display::Symbol=_kmeans_default_display)
 
@@ -35,19 +35,19 @@ function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
     counts = Array(Int, k)
     cweights = Array(Float64, k)
 
-    _kmeans!(X, conv_weights(T, n, weights), centers, 
-             assignments, costs, counts, cweights, 
+    _kmeans!(X, conv_weights(T, n, weights), centers,
+             assignments, costs, counts, cweights,
              round(Int, maxiter), tol, display_level(display))
 end
 
-function kmeans(X::Matrix, k::Int; 
+function kmeans(X::Matrix, k::Int;
                 weights=nothing,
                 init=_kmeans_default_init,
-                maxiter::Integer=_kmeans_default_maxiter, 
+                maxiter::Integer=_kmeans_default_maxiter,
                 n_init::Integer=_kmeans_default_n_init,
                 tol::Real=_kmeans_default_tol,
                 display::Symbol=_kmeans_default_display)
-                
+
 
     m, n = size(X)
     (2 <= k < n) || error("k must have 2 <= k < n.")
@@ -59,13 +59,13 @@ function kmeans(X::Matrix, k::Int;
     for i = 1:n_init
         iseeds = initseeds(init, X, k)
         centers = copyseeds(X, iseeds)
-        result = kmeans!(X, centers; 
-                         weights=weights, 
+        result = kmeans!(X, centers;
+                         weights=weights,
                          maxiter=maxiter,
                          tol=tol,
                          display=display)
 
-        if result.totalcost < lowestcost 
+        if result.totalcost < lowestcost
             lowestcost = result.totalcost
             bestresult = result
         end
@@ -84,10 +84,10 @@ function _kmeans!{T<:AbstractFloat}(
     costs::Vector{T},               # out: costs of the resultant assignments (n)
     counts::Vector{Int},            # out: the number of samples assigned to each cluster (k)
     cweights::Vector{Float64},      # out: the weights of each cluster
-    maxiter::Int,                   # in: maximum number of iterations 
-    tol::Real,                      # in: tolerance of change at convergence 
+    maxiter::Int,                   # in: maximum number of iterations
+    tol::Real,                      # in: tolerance of change at convergence
     displevel::Int)                 # in: the level of display
-    
+
     # initialize
 
     k = size(centers, 2)
@@ -169,7 +169,7 @@ function _kmeans!{T<:AbstractFloat}(
         end
     end
 
-    return KmeansResult(centers, assignments, costs, counts, cweights, 
+    return KmeansResult(centers, assignments, costs, counts, cweights,
             @compat(Float64(objv)), t, converged)
 end
 
@@ -261,7 +261,7 @@ function update_centers!{T<:AbstractFloat}(
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
-    # initialize center weights 
+    # initialize center weights
     for i = 1 : k
         if to_update[i]
             cweights[i] = 0.
@@ -315,7 +315,7 @@ function update_centers!{T<:AbstractFloat}(
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
-    # initialize center weights 
+    # initialize center weights
     for i = 1 : k
         if to_update[i]
             cweights[i] = 0.
@@ -330,7 +330,7 @@ function update_centers!{T<:AbstractFloat}(
         if wj > 0
             @inbounds cj = assignments[j]
             1 <= cj <= k || error("assignment out of boundary.")
-            
+
             if to_update[cj]
                 rj = view(centers, :, cj)
                 xj = view(x, :, j)
