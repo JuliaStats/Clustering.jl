@@ -57,7 +57,6 @@ function kmeans(X::Matrix, k::Int;
     local bestresult::KmeansResult
 
     for i = 1:n_init
-
         iseeds = initseeds(init, X, k)
         centers = copyseeds(X, iseeds)
         result = kmeans!(X, centers; 
@@ -70,11 +69,8 @@ function kmeans(X::Matrix, k::Int;
             lowestcost = result.totalcost
             bestresult = result
         end
-
     end
-    
     return bestresult
-
 end
 
 #### Core implementation
