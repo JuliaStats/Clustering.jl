@@ -2,7 +2,7 @@
 
 ##### common types
 
-abstract ClusteringResult
+@compat abstract type ClusteringResult end
 
 # generic functions
 
@@ -22,7 +22,7 @@ end
 
 ##### convert display symbol to disp level
 
-display_level(s::Symbol) = 
+display_level(s::Symbol) =
     s == :none ? 0 :
     s == :final ? 1 :
     s == :iter ? 2 :

@@ -76,9 +76,9 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
     ## For each i < j compute d[i,j] (this is already given)
     d = full(ds)                #  we need a local copy
     nc = size(d,1)
-    mr = Array(Int, nc-1)       # min row
-    mc = Array(Int, nc-1)       # min col
-    h = Array(T, nc-1)          # height
+    mr = Vector{Int}(nc-1)       # min row
+    mc = Vector{Int}(nc-1)       # min col
+    h = Vector{T}(nc-1)          # height
     merges = -collect(1:nc)
     next = 1
     ## For each 0 < i <= n compute Nearest Neighbor N[i]
@@ -254,14 +254,14 @@ end
 ##   if i>3 i -= 3 else i <- 1
 function hclust2{T<:Real}(d::Symmetric{T}, method::Function)
     nc = size(d,1)                      # number of clusters
-    mr = Array(Int, nc-1)               # min row
-    mc = Array(Int, nc-1)               # min col
-    h = Array(T, nc-1)                  # height
+    mr = Vector{Int}(nc-1)               # min row
+    mc = Vector{Int}(nc-1)               # min col
+    h = Vector{T}(nc-1)                  # height
     cl = [[x] for x in 1:nc]            # clusters
     merges = -collect(1:nc)
     next = 1
     i = 1
-    N = Array(Int, nc+1)
+    N = Vector{Int}(nc+1)
     N[1] = 1                            # arbitrary choice
     while nc > 1
         found=false
@@ -378,7 +378,7 @@ function cutree(hclust::Hclust; k::Int=1,
     all = vcat(clusters, nodes)
     all = all[map(length, all) .> 0]
     ## convert to a single array of cluster indices
-    res = Array(Int, nnodes)
+    res = Vector{Int}(nnodes)
     for (i,cl) in enumerate(all)
         res[cl] = i
     end

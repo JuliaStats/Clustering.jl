@@ -208,9 +208,11 @@ Accept cluster and update the clusters list
 * `core_selection :: Vector{Bool}`: selection of the core points of the cluster
 * `cluster_selection :: Vector{Bool}`: selection of all the cluster points
 """
-function accept_cluster!(clusters::Vector{DbscanCluster}, core_selection::BitArray{1}, cluster_selection::BitArray{1}, cluster_size::Int)
+function accept_cluster!(clusters::Vector{DbscanCluster}, core_selection::BitVector,
+        cluster_selection::BitVector, cluster_size::Int)
     core_idx = find(core_selection) # index list of the core members
-    boundary_selection = cluster_selection & ~core_selection
+    boundary_selection = cluster_selection .& (~).(core_selection) #TODO change to .~ core_selection
+                                                                            # when dropping 0.5
     boundary_idx = find(boundary_selection) # index list of the boundary members
     push!(clusters, DbscanCluster(cluster_size, core_idx, boundary_idx))
 end
