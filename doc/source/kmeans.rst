@@ -124,7 +124,9 @@ Example with plot
     
     using Clustering
     
-    features = array(iris[:, 1:4])'   # use matrix() on Julia v0.2
-    result = kmeans( features, 3 )    # onto 3 clusters
+    features = permutedims(convert(Array, iris[:,1:4]), [2, 1])   # use matrix() on Julia v0.2
+    result = kmeans( features, 3 )                                # onto 3 clusters
+    
+    using Gadfly
     
     plot(iris, x = "PetalLength", y = "PetalWidth", color = result.assignments, Geom.point)
