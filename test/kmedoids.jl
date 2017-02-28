@@ -30,7 +30,7 @@ R = kmedoids(costs, k)
 # group 3: [6, 8, 9], values: [21, 20, 22]
 #
 
-X = reshape(@compat(map(Float64, [1, 6, 2, 3, 7, 21, 8, 20, 22])), 1, 9)
+X = reshape(map(Float64, [1, 6, 2, 3, 7, 21, 8, 20, 22]), 1, 9)
 costs = pairwise(SqEuclidean(), X)
 
 R = kmedoids!(costs, [1, 2, 6])

@@ -92,7 +92,7 @@ function _mcl_inflate!(dest::Matrix{Float64}, src::Matrix{Complex128}, inflation
     src_norm = vecnorm(src)
     min_rel = -1E-3*src_norm
     min_img = 1E-3*src_norm
-    @inbounds for (i, el) in enumerate(src)
+    for (i, el) in enumerate(src)
         rel = real(el)
         img = imag(el)
         if rel < min_rel || (abs(img) > min_img && abs(img) > 1E-3*abs(rel))
@@ -130,7 +130,7 @@ Identify clusters in the weighted graph using Markov Clustering Algorithm (MCL).
 
 See [original MCL implementation](http://micans.org/mcl).
 """
-@compat function mcl(adj::Matrix{Float64};
+function mcl(adj::Matrix{Float64};
              add_loops::Bool = true,
              expansion::Number = 2, inflation::Number = 2.0,
              save_final_matrix::Bool = false,
