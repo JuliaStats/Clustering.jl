@@ -154,7 +154,7 @@ function _kmeans!{T<:AbstractFloat}(
     end
 
     return KmeansResult(centers, assignments, costs, counts, cweights,
-                    Float64(objv), t, converged)
+                        Float64(objv), t, converged)
 end
 
 

@@ -92,7 +92,7 @@ function _mcl_inflate!(dest::Matrix{Float64}, src::Matrix{Complex128}, inflation
     src_norm = vecnorm(src)
     min_rel = -1E-3*src_norm
     min_img = 1E-3*src_norm
-    for (i, el) in enumerate(src)
+    @inbounds for (i, el) in enumerate(src)
         rel = real(el)
         img = imag(el)
         if rel < min_rel || (abs(img) > min_img && abs(img) > 1E-3*abs(rel))
