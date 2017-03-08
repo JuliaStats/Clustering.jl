@@ -20,7 +20,7 @@ R = kmedoids(costs, k)
 @test R.assignments[R.medoids] == collect(1:k) # Every medoid should belong to its own cluster
 @test sum(R.counts) == n
 @test R.acosts == costs[sub2ind((n, n), R.medoids[R.assignments], 1:n)]
-@test_approx_eq sum(R.acosts) R.totalcost
+@test isapprox(sum(R.acosts), R.totalcost)
 @test R.converged
 
 
@@ -30,7 +30,7 @@ R = kmedoids(costs, k)
 # group 3: [6, 8, 9], values: [21, 20, 22]
 #
 
-X = reshape(@compat(map(Float64, [1, 6, 2, 3, 7, 21, 8, 20, 22])), 1, 9)
+X = reshape(map(Float64, [1, 6, 2, 3, 7, 21, 8, 20, 22]), 1, 9)
 costs = pairwise(SqEuclidean(), X)
 
 R = kmedoids!(costs, [1, 2, 6])
@@ -38,6 +38,6 @@ R = kmedoids!(costs, [1, 2, 6])
 @test R.medoids == [3, 5, 6]
 @test R.assignments == [1, 2, 1, 1, 2, 3, 2, 3, 3]
 @test R.counts == [3, 3, 3]
-@test_approx_eq R.acosts [1, 1, 0, 1, 0, 0, 1, 1, 1]
-@test_approx_eq R.totalcost 6.0
+@test all(isapprox.(R.acosts, [1, 1, 0, 1, 0, 0, 1, 1, 1]))
+@test isapprox(R.totalcost, 6.0)
 @test R.converged

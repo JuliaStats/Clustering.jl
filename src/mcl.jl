@@ -130,7 +130,7 @@ Identify clusters in the weighted graph using Markov Clustering Algorithm (MCL).
 
 See [original MCL implementation](http://micans.org/mcl).
 """
-@compat function mcl(adj::Matrix{Float64};
+function mcl(adj::Matrix{Float64};
              add_loops::Bool = true,
              expansion::Number = 2, inflation::Number = 2.0,
              save_final_matrix::Bool = false,

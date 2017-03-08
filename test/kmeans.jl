@@ -20,11 +20,11 @@ r = kmeans(x, k; maxiter=50)
 @test length(r.costs) == n
 @test length(r.counts) == k
 @test sum(r.counts) == n
-@test r.cweights == @compat(map(Float64, r.counts))
-@test_approx_eq sum(r.costs) r.totalcost
+@test r.cweights == map(Float64, r.counts)
+@test isapprox(sum(r.costs), r.totalcost)
 
 # non-weighted (float32)
-r = kmeans(@compat(map(Float32, x)), k; maxiter=50)
+r = kmeans(map(Float32, x), k; maxiter=50)
 @test isa(r, KmeansResult{Float32})
 @test size(r.centers) == (m, k)
 @test length(r.assignments) == n
@@ -32,8 +32,8 @@ r = kmeans(@compat(map(Float32, x)), k; maxiter=50)
 @test length(r.costs) == n
 @test length(r.counts) == k
 @test sum(r.counts) == n
-@test r.cweights == @compat(map(Float64, r.counts))
-@test_approx_eq sum(r.costs) r.totalcost
+@test r.cweights == map(Float64, r.counts)
+@test isapprox(sum(r.costs), r.totalcost)
 
 # weighted
 w = rand(n)
@@ -50,7 +50,6 @@ cw = zeros(k)
 for i = 1:n
     cw[r.assignments[i]] += w[i]
 end
-@test_approx_eq r.cweights cw
+@test isapprox(r.cweights, cw)
 
-@test_approx_eq dot(r.costs, w) r.totalcost
-
+@test isapprox(dot(r.costs, w), r.totalcost)

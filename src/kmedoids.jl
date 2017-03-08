@@ -9,7 +9,7 @@ type KmedoidsResult{T} <: ClusteringResult
     acosts::Vector{T}           # costs of the resultant assignments (n)
     counts::Vector{Int}         # number of samples assigned to each cluster (k)
     totalcost::Float64          # total assignment cost (i.e. objective) (k)
-    iterations::Int             # number of elapsed iterations 
+    iterations::Int             # number of elapsed iterations
     converged::Bool             # whether the procedure converged
 end
 
@@ -21,9 +21,9 @@ const _kmed_default_maxiter = 200
 const _kmed_default_tol = 1.0e-8
 const _kmed_default_display = :none
 
-function kmedoids{T<:Real}(costs::DenseMatrix{T}, k::Integer; 
-                           init=_kmed_default_init, 
-                           maxiter::Integer=_kmed_default_maxiter, 
+function kmedoids{T<:Real}(costs::DenseMatrix{T}, k::Integer;
+                           init=_kmed_default_init,
+                           maxiter::Integer=_kmed_default_maxiter,
                            tol::Real=_kmed_default_tol,
                            display::Symbol=_kmed_default_display)
     # check arguments
@@ -36,12 +36,12 @@ function kmedoids{T<:Real}(costs::DenseMatrix{T}, k::Integer;
     @assert length(medoids) == k
 
     # invoke core algorithm
-    _kmedoids!(medoids, costs, 
+    _kmedoids!(medoids, costs,
                round(Int, maxiter), tol, display_level(display))
 end
 
 function kmedoids!{T<:Real}(costs::DenseMatrix{T}, medoids::Vector{Int};
-                            maxiter::Integer=_kmed_default_maxiter, 
+                            maxiter::Integer=_kmed_default_maxiter,
                             tol::Real=_kmed_default_tol,
                             display::Symbol=_kmed_default_display)
 
@@ -51,7 +51,7 @@ function kmedoids!{T<:Real}(costs::DenseMatrix{T}, medoids::Vector{Int};
     length(medoids) <= n || error("Number of medoids should be less than n.")
 
     # invoke core algorithm
-    _kmedoids!(medoids, costs, 
+    _kmedoids!(medoids, costs,
                round(Int, maxiter), tol, display_level(display))
 end
 
@@ -65,19 +65,16 @@ function _kmedoids!{T<:Real}(medoids::Vector{Int},      # initialized medoids
                              displevel::Int)            # level of display
 
     # cost[i, j] is the cost of assigning sample j to the medoid i
-    
+
     n = size(costs, 1)
     k = length(medoids)
 
     # prepare storage
-    acosts = Array(T, n)
+    acosts = Vector{T}(n)
     counts = zeros(T, k)
-    assignments = Array(Int, n)
+    assignments = Vector{Int}(n)
 
-    groups = Array(Vector{Int}, k)
-    for i = 1:k
-        @inbounds groups[i] = Int[]
-    end
+    groups = [Int[] for i=1:k]
 
     # initialize assignments
     tcost, _ = _kmed_update_assignments!(costs, medoids, assignments, groups, acosts, true)
@@ -124,10 +121,10 @@ function _kmedoids!{T<:Real}(medoids::Vector{Int},      # initialized medoids
     # make output
     counts = Int[length(g) for g in groups]
     KmedoidsResult{T}(
-        medoids, 
-        assignments, 
+        medoids,
+        assignments,
         acosts,
-        counts, 
+        counts,
         tcost,
         t, converged)
 end
@@ -139,7 +136,7 @@ function _kmed_update_assignments!{T}(costs::DenseMatrix{T},        # in: (n, n)
                                       assignments::Vector{Int},     # out: (n,)
                                       groups::Vector{Vector{Int}},  # out: (k,)
                                       acosts::Vector{T},            # out: (n,)
-                                      isinit::Bool)                 # in    
+                                      isinit::Bool)                 # in
     n = size(costs, 1)
     k = length(medoids)
     ch = 0
@@ -190,5 +187,3 @@ function _find_medoid(costs::DenseMatrix, grp::Vector{Int})
     p = indmin(sum(costs[grp, grp], 2))
     return grp[p]::Int
 end
-
-

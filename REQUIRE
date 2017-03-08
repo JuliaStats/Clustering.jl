@@ -1,5 +1,5 @@
-julia 0.4
-Compat 0.8.5
+julia 0.5
+Compat 0.18
 Distances 0.3.1
 NearestNeighbors 0.0.3
 StatsBase 0.9.0

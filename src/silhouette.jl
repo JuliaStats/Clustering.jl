@@ -50,8 +50,8 @@ function silhouettes{T<:Real}(assignments::Vector{Int},
     # compute a and b
     # a: average distance w.r.t. the assigned cluster
     # b: the minimum average distance w.r.t. other cluster
-    a = Array(Float64, n)
-    b = Array(Float64, n)
+    a = Vector{Float64}(n)
+    b = Vector{Float64}(n)
 
     for j = 1:n
         l = assignments[j]

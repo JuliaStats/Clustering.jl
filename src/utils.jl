@@ -2,7 +2,7 @@
 
 ##### common types
 
-abstract ClusteringResult
+@compat abstract type ClusteringResult end
 
 # generic functions
 
@@ -13,7 +13,7 @@ assignments(R::ClusteringResult) = R.assignments
 
 ##### convert weight options
 
-conv_weights{T}(::Type{T}, n::Int, w::@compat(Void)) = nothing
+conv_weights{T}(::Type{T}, n::Int, w::Void) = nothing
 
 function conv_weights{T}(::Type{T}, n::Int, w::Vector)
     length(w) == n || throw(DimensionMismatch("Incorrect length of weights."))
@@ -22,7 +22,7 @@ end
 
 ##### convert display symbol to disp level
 
-display_level(s::Symbol) = 
+display_level(s::Symbol) =
     s == :none ? 0 :
     s == :final ? 1 :
     s == :iter ? 2 :
