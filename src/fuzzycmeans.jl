@@ -2,7 +2,7 @@
 
 ## Interface
 
-struct FuzzyCMeansResult{T<:AbstractFloat} <: ClusteringResult
+immutable FuzzyCMeansResult{T<:AbstractFloat} <: ClusteringResult
     centers::Matrix{T}          # cluster centers (d x C)
     weights::Matrix{T}          # assigned weights (n x C)
     iterations::Int             # number of elasped iterations
@@ -44,7 +44,7 @@ const _fcmeans_default_maxiter = 100
 const _fcmeans_default_tol = 1.0e-3
 const _fcmeans_default_display = :none
 
-function fuzzy_cmeans(
+function fuzzy_cmeans{T<:Real}(
     data::Matrix{T},
     C::Int,
     fuzziness::Real;
@@ -52,7 +52,7 @@ function fuzzy_cmeans(
     tol::Real = _fcmeans_default_tol,
     dist_metric::Metric = Euclidean(),
     display::Symbol = _fcmeans_default_display
-    ) where T<:Real
+    )
 
     nrows, ncols = size(data)
     2 <= C < ncols || error("C must have 2 <= C < n")
@@ -63,7 +63,7 @@ end
 
 ## Core implementation
 
-function _fuzzy_cmeans(
+function _fuzzy_cmeans{T<:Real}(
     data::Matrix{T},                                # data matrix
     C::Int,                                         # total number of classes
     fuzziness::Real,                                # fuzziness
@@ -71,7 +71,7 @@ function _fuzzy_cmeans(
     tol::Real,                                      # tolerance
     dist_metric::Metric,                            # metric to calculate distance
     displevel::Int                                  # the level of display
-    ) where T<:Real
+    )
 
     nrows, ncols = size(data)
 
