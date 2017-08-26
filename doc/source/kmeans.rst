@@ -3,7 +3,7 @@ K-means
 
 `K-means <http://en.wikipedia.org/wiki/K_means>`_ is a classic method for clustering or vector quantization. The K-means algorithms produces a fixed number of clusters, each associated with a *center* (also known as a *prototype*), and each sample belongs to a cluster with the nearest center. 
 
-From a mathematical standpoint, K-means is an coordinate descent algorithm to solve the following optimization problem:
+From a mathematical standpoint, K-means is a coordinate descent algorithm to solve the following optimization problem:
 
 .. math::
 
@@ -124,7 +124,9 @@ Example with plot
     
     using Clustering
     
-    features = array(iris[:, 1:4])'   # use matrix() on Julia v0.2
-    result = kmeans( features, 3 )    # onto 3 clusters
+    features = permutedims(convert(Array, iris[:,1:4]), [2, 1])   # use matrix() on Julia v0.2
+    result = kmeans( features, 3 )                                # onto 3 clusters
+    
+    using Gadfly
     
     plot(iris, x = "PetalLength", y = "PetalWidth", color = result.assignments, Geom.point)

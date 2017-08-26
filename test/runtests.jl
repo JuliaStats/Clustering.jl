@@ -1,3 +1,4 @@
+include("../src/Clustering.jl")
 using Compat
 
 tests = ["seeding",
@@ -5,7 +6,8 @@ tests = ["seeding",
          "kmedoids",
          "affprop",
          "dbscan",
-         "silhouette", 
+         "fuzzycmeans",
+         "silhouette",
          "varinfo",
          "randindex",
          "hclust",

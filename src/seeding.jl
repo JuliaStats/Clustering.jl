@@ -2,39 +2,39 @@
 #
 #   Each algorithm is represented by a subtype of SeedingAlgorithm
 #
-#   Let alg be an instance of such an algorithm, then it should 
+#   Let alg be an instance of such an algorithm, then it should
 #   support the following usage:
 #
 #       initseeds!(iseeds, alg, X)
 #       initseeds_by_costs!(iseeds, alg, costs)
 #
-#   Here: 
+#   Here:
 #       - iseeds:   a vector of resultant indexes of the chosen seeds
 #       - alg:      the seeding algorithm instance
 #       - X:        the data matrix, each column being a sample
 #       - costs:    pre-computed pairwise cost matrix.
-#   
+#
 #   This function returns iseeds
 #
 
-abstract SeedingAlgorithm
+@compat abstract type SeedingAlgorithm end
 
-initseeds(alg::SeedingAlgorithm, X::RealMatrix, k::Integer) = 
-    initseeds!(Array(Int, k), alg, X)
+initseeds(alg::SeedingAlgorithm, X::RealMatrix, k::Integer) =
+    initseeds!(Vector{Int}(k), alg, X)
 
-initseeds_by_costs(alg::SeedingAlgorithm, costs::RealMatrix, k::Integer) = 
-    initseeds_by_costs!(Array(Int, k), alg, costs)
+initseeds_by_costs(alg::SeedingAlgorithm, costs::RealMatrix, k::Integer) =
+    initseeds_by_costs!(Vector{Int}(k), alg, costs)
 
-seeding_algorithm(s::Symbol) = 
+seeding_algorithm(s::Symbol) =
     s == :rand ? RandSeedAlg() :
     s == :kmpp ? KmppAlg() :
     s == :kmcen ? KmCentralityAlg() :
     error("Unknown seeding algorithm $s")
 
-initseeds(algname::Symbol, X::RealMatrix, k::Integer) = 
+initseeds(algname::Symbol, X::RealMatrix, k::Integer) =
     initseeds(seeding_algorithm(algname), X, k)::Vector{Int}
 
-initseeds_by_costs(algname::Symbol, costs::RealMatrix, k::Integer) = 
+initseeds_by_costs(algname::Symbol, costs::RealMatrix, k::Integer) =
     initseeds_by_costs(seeding_algorithm(algname), costs, k)
 
 initseeds(iseeds::Vector{Int}, X::RealMatrix, k::Integer) = iseeds
@@ -53,8 +53,8 @@ function copyseeds!(S::DenseMatrix, X::DenseMatrix, iseeds::AbstractVector)
     return S
 end
 
-copyseeds{T}(X::DenseMatrix{T}, iseeds::AbstractVector) = 
-    copyseeds!(Array(T, size(X,1), length(iseeds)), X, iseeds)
+copyseeds{T}(X::DenseMatrix{T}, iseeds::AbstractVector) =
+    copyseeds!(Matrix{T}(size(X,1), length(iseeds)), X, iseeds)
 
 function check_seeding_args(n::Integer, k::Integer)
     k >= 1 || error("The number of seeds must be positive.")
@@ -69,17 +69,17 @@ end
 
 type RandSeedAlg <: SeedingAlgorithm end
 
-initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::RealMatrix) = 
+initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::RealMatrix) =
     sample!(1:size(X,2), iseeds; replace=false)
 
-initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::RealMatrix) = 
+initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::RealMatrix) =
     sample!(1:size(X,2), iseeds; replace=false)
 
 
 # Kmeans++ seeding
 #
-#   D. Arthur and S. Vassilvitskii (2007). 
-#   k-means++: the advantages of careful seeding. 
+#   D. Arthur and S. Vassilvitskii (2007).
+#   k-means++: the advantages of careful seeding.
 #   18th Annual ACM-SIAM symposium on Discrete algorithms, 2007.
 #
 
@@ -115,7 +115,7 @@ function initseeds!(iseeds::IntegerVector, alg::KmppAlg, X::RealMatrix, metric::
     return iseeds
 end
 
-initseeds!(iseeds::IntegerVector, alg::KmppAlg, X::RealMatrix) = 
+initseeds!(iseeds::IntegerVector, alg::KmppAlg, X::RealMatrix) =
     initseeds!(iseeds, alg, X, SqEuclidean())
 
 function initseeds_by_costs!(iseeds::IntegerVector, alg::KmppAlg, costs::RealMatrix)
@@ -173,20 +173,18 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg, costs:
     #           = costs[i,j] * coefs[i]
     #
     # So this is matrix-vector multiplication
-    scores = costs'coefs 
-    
+    scores = costs'coefs
+
     # lower score indicates better seeds
-    sp = sortperm(scores) 
+    sp = sortperm(scores)
     for i = 1:k
         @inbounds iseeds[i] = sp[i]
     end
     return iseeds
 end
 
-initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::RealMatrix, metric::PreMetric) = 
+initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::RealMatrix, metric::PreMetric) =
     initseeds_by_costs!(iseeds, alg, pairwise(metric, X))
 
-initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::RealMatrix) = 
+initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::RealMatrix) =
     initseeds!(iseeds, alg, X, SqEuclidean())
-
-

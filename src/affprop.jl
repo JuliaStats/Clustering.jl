@@ -54,8 +54,8 @@ function _affinityprop{T<:AbstractFloat}(S::DenseMatrix{T},
     A = zeros(T, n, n)  # availabilities
 
     # prepare storages
-    Rt = Array(T, n, n)
-    At = Array(T, n, n)
+    Rt = Matrix{T}(n, n)
+    At = Matrix{T}(n, n)
 
     if displevel >= 2
         @printf "%7s %12s | %8s \n" "Iters" "objv-change" "exemplars"
@@ -106,9 +106,9 @@ end
 function _afp_compute_r!{T}(R::Matrix{T}, S::DenseMatrix{T}, A::Matrix{T})
     n = size(S, 1)
 
-    I1 = Array(Int, n)  # I1[i] is the column index of the maximum element in (A+S)[i,:]
-    Y1 = Array(T, n)    # Y1[i] is the maximum element in (A+S)[i,:]
-    Y2 = Array(T, n)    # Y2[i] is the second maximum element in (A+S)[i,:]
+    I1 = Vector{Int}(n)  # I1[i] is the column index of the maximum element in (A+S)[i,:]
+    Y1 = Vector{T}(n)    # Y1[i] is the maximum element in (A+S)[i,:]
+    Y2 = Vector{T}(n)    # Y2[i] is the second maximum element in (A+S)[i,:]
         
     # Find the first and second maximum elements along each row
     @inbounds for i = 1:n
@@ -218,7 +218,7 @@ function _afp_get_assignments(S::DenseMatrix, exemplars::Vector{Int})
     n = size(S, 1)
     k = length(exemplars)
     Se = S[:, exemplars]
-    a = Array(Int, n)
+    a = Vector{Int}(n)
     cnts = zeros(Int, k)
     for i = 1:n
         p = 1
