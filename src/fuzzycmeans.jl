@@ -4,7 +4,7 @@
 
 immutable FuzzyCMeansResult{T<:AbstractFloat} <: ClusteringResult
     centers::Matrix{T}          # cluster centers (d x C)
-    weights::Matrix{T}          # assigned weights (n x C)
+    weights::Matrix{Float64}    # assigned weights (n x C)
     iterations::Int             # number of elasped iterations
     converged::Bool             # wheather the procedure converged
 end
@@ -28,9 +28,10 @@ end
 
 function update_centers!(centers, data, weights, fuzziness)
     nrows, ncols = size(weights)
+    T = eltype(centers)
     for j in 1:ncols
-        num = zeros(Float64, size(data[:,1]))
-        den = 0.0
+        num = zeros(T, size(data,1))
+        den = zero(T)
         for i in 1:nrows
             δm = weights[i,j]^fuzziness
             num += δm * data[:,i]
@@ -56,6 +57,7 @@ function fuzzy_cmeans{T<:Real}(
 
     nrows, ncols = size(data)
     2 <= C < ncols || error("C must have 2 <= C < n")
+    1 < fuzziness || error("fuzziness must be greater than 1")
 
     _fuzzy_cmeans(data, C, fuzziness, maxiter, tol, dist_metric, display_level(display))
 
@@ -79,14 +81,15 @@ function _fuzzy_cmeans{T<:Real}(
     weights = rand(Float64, ncols, C)
     weights ./= sum(weights, 2)
 
-    centers = fill(0.0, nrows, C)
+    centers = zeros(T, (nrows, C))
     prev_centers = identity.(centers)
 
     δ = Inf
     iter = 0
 
     if displevel >= 2
-        prog = ProgressThresh(tol, "Converging:")
+        @printf "%7s %18s\n" "Iters" "center-change"
+        println("----------------------------")
     end
 
     while iter < maxiter && δ > tol
@@ -96,7 +99,7 @@ function _fuzzy_cmeans{T<:Real}(
         copy!(prev_centers, centers)
         iter += 1
         if displevel >= 2
-            ProgressMeter.update!(prog, δ, showvalues = [(:Iteration, iter)])
+            @printf("%7d %18.6e\n", iter, δ)
         end
     end
 

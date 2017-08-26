@@ -5,7 +5,6 @@ module Clustering
     using Distances
     using NearestNeighbors
     using StatsBase
-    using ProgressMeter
 
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts
