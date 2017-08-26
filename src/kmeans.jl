@@ -39,7 +39,7 @@ function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
              round(Int, maxiter), tol, display_level(display))
 end
 
-function kmeans(X::Matrix, k::Int;
+function kmeans{T<:AbstractFloat}(X::Matrix{T}, k::Int;
                 weights=nothing,
                 init=_kmeans_default_init,
                 maxiter::Integer=_kmeans_default_maxiter,
