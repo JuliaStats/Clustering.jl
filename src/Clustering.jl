@@ -38,6 +38,9 @@ module Clustering
     # dbscan
     DbscanResult, DbscanCluster, dbscan,
 
+    # fuzzy_cmeans
+    fuzzy_cmeans, FuzzyCMeansResult,
+
     # silhouette
     silhouettes,
 
@@ -63,6 +66,7 @@ module Clustering
     include("affprop.jl")
     include("dbscan.jl")
     include("mcl.jl")
+    include("fuzzycmeans.jl")
 
     include("silhouette.jl")
     include("randindex.jl")
