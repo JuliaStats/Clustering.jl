@@ -22,7 +22,8 @@ function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
                                    weights=nothing,
                                    maxiter::Integer=_kmeans_default_maxiter,
                                    tol::Real=_kmeans_default_tol,
-                                   display::Symbol=_kmeans_default_display)
+                                   display::Symbol=_kmeans_default_display,
+                                   distance::SemiMetric=SqEuclidean())
 
     m, n = size(X)
     m2, k = size(centers)
@@ -36,7 +37,7 @@ function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
 
     _kmeans!(X, conv_weights(T, n, weights), centers,
              assignments, costs, counts, cweights,
-             round(Int, maxiter), tol, display_level(display))
+             round(Int, maxiter), tol, display_level(display), distance)
 end
 
 function kmeans{T<:AbstractFloat}(X::Matrix{T}, k::Int;
@@ -44,7 +45,8 @@ function kmeans{T<:AbstractFloat}(X::Matrix{T}, k::Int;
                 init=_kmeans_default_init,
                 maxiter::Integer=_kmeans_default_maxiter,
                 tol::Real=_kmeans_default_tol,
-                display::Symbol=_kmeans_default_display)
+                display::Symbol=_kmeans_default_display,
+                distance::SemiMetric=SqEuclidean())
 
     m, n = size(X)
     (2 <= k < n) || error("k must have 2 <= k < n.")
@@ -54,7 +56,8 @@ function kmeans{T<:AbstractFloat}(X::Matrix{T}, k::Int;
             weights=weights,
             maxiter=maxiter,
             tol=tol,
-            display=display)
+            display=display,
+            distance=distance)
 end
 
 #### Core implementation
@@ -70,7 +73,8 @@ function _kmeans!{T<:AbstractFloat}(
     cweights::Vector{Float64},      # out: the weights of each cluster
     maxiter::Int,                   # in: maximum number of iterations
     tol::Real,                      # in: tolerance of change at convergence
-    displevel::Int)                 # in: the level of display
+    displevel::Int,                 # in: the level of display
+    distance::SemiMetric)             # in: function to calculate the distance with
 
     # initialize
 
@@ -79,7 +83,7 @@ function _kmeans!{T<:AbstractFloat}(
     unused = Int[]
     num_affected::Int = k # number of centers, to which the distances need to be recomputed
 
-    dmat = pairwise(SqEuclidean(), centers, x)
+    dmat = pairwise(distance, centers, x)
     dmat = convert(Array{T}, dmat) #Can be removed if one day Distance.result_type(SqEuclidean(), T, T) == T
     update_assignments!(dmat, true, assignments, costs, counts, to_update, unused)
     objv = w == nothing ? sum(costs) : dot(w, costs)
@@ -111,11 +115,11 @@ function _kmeans!{T<:AbstractFloat}(
         end
 
         if t == 1 || num_affected > 0.75 * k
-            pairwise!(dmat, SqEuclidean(), centers, x)
+            pairwise!(dmat, distance, centers, x)
         else
             # if only a small subset is affected, only compute for that subset
             affected_inds = find(to_update)
-            dmat_p = pairwise(SqEuclidean(), centers[:, affected_inds], x)
+            dmat_p = pairwise(distance, centers[:, affected_inds], x)
             dmat[affected_inds, :] = dmat_p
         end
 
