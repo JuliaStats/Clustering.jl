@@ -48,6 +48,17 @@ catMethodExamples <- function(method="single") {
   }
 }
 
+catMethodExamples <- function(method="ward.D2") {
+  for (i in 2:20) {
+    for (j in 1:3) { # three examples of each size
+      D = matrix(rnorm(i*i), i) * matrix(sample(c(1,0), i*i, replace=TRUE), i) + matrix(rnorm(i*i), i)*0.01
+      D = D + t(D)
+      catExample(hclust(as.dist(D), method), D, method)
+      catExample(hclust(as.dist(abs(D)), method), abs(D), method)
+    }
+  }
+}
+
 # save a Julia file full of test examples
 set.seed(1)
 sink("hclust-generated-examples.jl")
@@ -55,5 +66,6 @@ cat("examples = [")
 catMethodExamples("complete")
 catMethodExamples("average")
 catMethodExamples("single")
+catMethodExamples("ward.D2")
 cat("]\n")
 sink()
