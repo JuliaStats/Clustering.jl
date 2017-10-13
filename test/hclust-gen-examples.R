@@ -37,17 +37,13 @@ catExample <- function(h, D, method) {
   cat("]\n),\n")
 }
 
-catMethodExamples <- function(method="single", jmethodname="") {
-  if (jmethodname == "") {
-    # default
-    jmethodname_ = method
-  } 
+catMethodExamples <- function(rmethod="single", jmethod="single") {
   for (i in 2:20) {
     for (j in 1:3) { # three examples of each size
       D = matrix(rnorm(i*i), i) * matrix(sample(c(1,0), i*i, replace=TRUE), i) + matrix(rnorm(i*i), i)*0.01
       D = D + t(D)
-      catExample(hclust(as.dist(D), method), D, jmethodname)
-      catExample(hclust(as.dist(abs(D)), method), abs(D), jmethodname)
+      catExample(hclust(as.dist(D), rmethod), D, jmethod)
+      catExample(hclust(as.dist(abs(D)), rmethod), abs(D), jmethod)
     }
   }
 }
@@ -57,9 +53,10 @@ catMethodExamples <- function(method="single", jmethodname="") {
 set.seed(1)
 sink("hclust-generated-examples.jl")
 cat("examples = [")
-catMethodExamples("complete","")
-catMethodExamples("average","")
-catMethodExamples("single","")
+catMethodExamples("complete","complete")
+catMethodExamples("average","average")
+catMethodExamples("single","single")
+catMethodExamples("ward.D","ward1")
 catMethodExamples("ward.D2","ward2")
 cat("]\n")
 sink()
