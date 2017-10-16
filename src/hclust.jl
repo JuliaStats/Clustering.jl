@@ -336,34 +336,34 @@ function hclust_lw{T<:Real}(ds::Symmetric{T}, method::Symbol)
 
     triindex(n::Int64, i::Int64,j::Int64) = j + (i-1)*n - ((i*(i+1)) >> 1);
 
-    if method==:ward1
-        dscpy = [ds[r,c] for r=1:(nc-1) for c=(r+1):nc]
+    if method == :ward1
+        dscpy = [ds[r,c] for r = 1:(nc-1) for c = (r+1):nc]
     elseif method == :ward2
-        dscpy = [ds[r,c] for r=1:(nc-1) for c=(r+1):nc].^2
+        dscpy = [ds[r,c]*ds[r,c] for r = 1:(nc-1) for c = (r+1):nc]
     else
-        error("method ", method, " is unsupported by hclust_lw().")
+        ArgumentError("Method is unsupported. Currently supported methods are :ward1 and :ward2.")
     end
 
-    merges = -collect(1:nc)
-    membr = ones(Float64, nc)
+    merges = collect(-1:-1:-nc)
+    membr = ones(nc)
     checkme = trues(nc)
-    nearestneighbor = zeros(Int64, nc-1)
-    distancetonearestneighbor = zeros(Float64, nc-1)
+    nn = zeros(Int64, nc-1)
+    distancetonn = zeros(nc-1)
 
     jm = 0; im = 0; jj = 0;
 
     # create list of nearest neighbors
-    for i=1:(nc-1)
+    for i = 1:(nc-1)
         dmin = Inf
-        for j=(i+1):nc
+        for j = (i+1):nc
             ind = triindex(nc,i,j)
             if dscpy[ind] < dmin
                 dmin = dscpy[ind]
                 jm = j
             end
         end
-        nearestneighbor[i] = jm
-        distancetonearestneighbor[i] = dmin
+        nn[i] = jm
+        distancetonn[i] = dmin
     end
 
     # main clustering loop
@@ -371,46 +371,48 @@ function hclust_lw{T<:Real}(ds::Symmetric{T}, method::Symbol)
 
         # check list of nearest neighbors to determine next merge
         dmin = Inf
-        for i=1:(nc-1)
-            if (checkme[i]==true)
-                if (distancetonearestneighbor[i] < dmin)
-                    dmin = distancetonearestneighbor[i]
+        for i = 1:(nc-1)
+            if checkme[i] == true
+                if distancetonn[i] < dmin
+                    dmin = distancetonn[i]
                     im = i
-                    jm = nearestneighbor[i]
+                    jm = nn[i]
                 end
             end
         end
 
         # merge
-        i2 = min(im,jm) # lower element in the clustering pair
-        j2 = max(im,jm) # upper element in the clustering pair
+        i2 = min(im, jm) # lower element in the clustering pair
+        j2 = max(im, jm) # upper element in the clustering pair
 
         # do merge
         mr[nc-nclust+1] = merges[i2]
         mc[nc-nclust+1] = merges[j2]
         h[nc-nclust+1] = dmin
 
-        merges[i2] = nc-nclust+1
+        merges[i2] = nc - nclust + 1
         merges[j2] = merges[nclust]
 
         checkme[j2] = false
 
         # update dscpy matrix for new cluster
-        for k=1:nc
-            ind3=triindex(nc,i2,j2)
-            if (checkme[k] && (k!=i2))
+        for k = 1:nc
+            ind3 = triindex(nc, i2, j2)
+            if checkme[k] && (k != i2)
                 # Lance-Williams updating
-                if (i2<k)
-                    ind1 = triindex(nc,i2,k)
+                if i2 < k
+                    ind1 = triindex(nc, i2, k)
                 else
-                    ind1 = triindex(nc,k,i2)
+                    ind1 = triindex(nc, k, i2)
                 end
-                if (j2<k)
-                    ind2 = triindex(nc,j2,k)
+                if j2 < k
+                    ind2 = triindex(nc, j2, k)
                 else
-                    ind2 = triindex(nc,k,j2)
+                    ind2 = triindex(nc, k, j2)
                 end
-                dscpy[ind1] = ((membr[i2] + membr[k])*dscpy[ind1] + (membr[j2] + membr[k])*dscpy[ind2] - membr[k]*dscpy[ind3]) / (membr[i2]+membr[j2]+membr[k])
+                dscpy[ind1] = ( (membr[i2] + membr[k])*dscpy[ind1] +
+                    (membr[j2] + membr[k])*dscpy[ind2] -
+                    membr[k]*dscpy[ind3] ) / (membr[i2]+membr[j2]+membr[k])
             end
         end
 
@@ -418,28 +420,28 @@ function hclust_lw{T<:Real}(ds::Symmetric{T}, method::Symbol)
         membr[i2] = membr[i2] + membr[j2]
 
         # update list of nearest neighbors
-        for i=1:(nc-1)
-            if (checkme[i]==true)
+        for i = 1:(nc-1)
+            if checkme[i] == true
                 dmin = Inf
-                for j=(i+1):nc
-                    if (checkme[j]==true)
-                        ind = triindex(nc,i,j)
+                for j = (i+1):nc
+                    if checkme[j] == true
+                        ind = triindex(nc, i, j)
                         if dscpy[ind] < dmin
                             dmin = dscpy[ind]
                             jj = j
                         end
                     end
                 end
-                nearestneighbor[i] = jj
-                distancetonearestneighbor[i] = dmin
+                nn[i] = jj
+                distancetonn[i] = dmin
             end
         end
 
     end # main clustering loop
 
     # take root if we use ward2
-    if (method == :ward2)
-        h=sqrt.(h)
+    if method == :ward2
+        h .= sqrt.(h)
     end
 
     ## fix order for presenting result
@@ -467,7 +469,6 @@ function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
     inds = Any[]
     merge = h[1]
     for i in 1:size(merge)[1]
-
         inds1 = merge[i,1] < 0 ? -merge[i,1] : inds[merge[i,1]]
         inds2 = merge[i,2] < 0 ? -merge[i,2] : inds[merge[i,2]]
         push!(inds, [inds1; inds2])
