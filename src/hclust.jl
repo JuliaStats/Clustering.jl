@@ -1,4 +1,4 @@
-## hclust.jl (c) 2014 David A. van Leeuwen
+## hclust.jl (c) 2014, 2017 David A. van Leeuwen
 ## Hierarchical clustering, similar to R's hclust()
 
 ## Algorithms are based upon C. F. Olson, Parallel Computing 21 (1995) 1313--1325.
@@ -67,7 +67,7 @@ end
 ## Efficient single link algorithm, according to Olson, O(n^2), fig 2.
 ## Verified against R's implementation, correct, and about 2.5 x faster
 ## For each i < j compute D(i,j) (this is already given)
-## For each 0 < i <= n compute Nearest Neighbor N(i)
+## For each 0 < i ≤ n compute Nearest Neighbor N(i)
 ## Repeat n-1 times
 ##   find i,j that minimize D(i,j)
 ##   merge clusters i and j
@@ -81,18 +81,18 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
     h = Vector{T}(nc-1)          # height
     merges = -collect(1:nc)
     next = 1
-    ## For each 0 < i <= n compute Nearest Neighbor N[i]
+    ## For each 0 < i ≤ n compute Nearest Neighbor N[i]
     N = zeros(Int, nc)
-    for k = 1:nc
+    for k in 1:nc
         mindist = Inf
         mk = 0
-        for i = 1:(k-1)
+        for i in 1:(k-1)
             if d[i,k] < mindist
                 mindist = d[i,k]
                 mk = i
             end
         end
-        for j = (k+1):nc
+        for j in (k+1):nc
             if d[k,j] < mindist
                 mindist = d[k,j]
                 mk = j
@@ -132,31 +132,31 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
         h[next] = mindist
         merges[i] = next
         merges[j] = merges[nc]
-        ## update d, split in ranges k<i, i<k<j, j<k<=nc
-        for k = 1:(i-1)         # k < i
+        ## update d, split in ranges k<i, i<k<j, j<k≤nc
+        for k in 1:(i-1)         # k < i
             if d[k,i] > d[k,j]
                 d[k,i] = d[k,j]
             end
         end
-        for k = (i+1):(j-1)     # i < k < j
+        for k in (i+1):(j-1)     # i < k < j
             if d[i,k] > d[k,j]
                 d[i,k] = d[k,j]
             end
         end
-        for k = (j+1):nc        # j < k <= nc
+        for k in (j+1):nc        # j < k ≤ nc
             if d[i,k] > d[j,k]
                 d[i,k] = d[j,k]
             end
         end
         ## move the last row/col into j
-        for k=1:(j-1)           # k==nc,
+        for k in 1:(j-1)           # k==nc,
             d[k,j] = d[k,nc]
         end
-        for k=(j+1):(nc-1)
+        for k in (j+1):(nc-1)
             d[j,k] = d[k,nc]
         end
         ## update N[k], k !in (i,j)
-        for k=1:nc
+        for k in 1:nc
             if N[k] == j       # update nearest neigbors != i
                 N[k] = i
             elseif N[k] == nc
@@ -170,13 +170,13 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
         ## finally we need to update N[i], because it was nearest to j
         mindist = Inf
         mk = 0
-        for k=1:(i-1)
+        for k in 1:(i-1)
             if d[k,i] < mindist
                 mindist = d[k,i]
                 mk = k
             end
         end
-        for k = (i+1):nc
+        for k in (i+1):nc
             if d[i,k] < mindist
                 mindist = d[i,k]
                 mk = k
@@ -193,29 +193,29 @@ end
 
 function slicemaximum{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int})
     maxdist = -Inf
-    for i in cl1 for j in cl2
+    for i in cl1, j in cl2
         if d[i,j] > maxdist
             maxdist = d[i,j]
         end
-    end end
+    end
     maxdist
 end
 
 function sliceminimum{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int})
     mindist = Inf
-    for i in cl1 for j in cl2
+    for i in cl1, j in cl2
         if d[i,j] < mindist
             mindist = d[i,j]
         end
-    end end
+    end
     mindist
 end
 
 function slicemean{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int})
     s = zero(T)
-    for i in cl1 for j in cl2
+    for i in cl1, j in cl2
         s += d[i,j]
-    end end
+    end
     s / (length(cl1)*length(cl2))
 end
 
@@ -243,7 +243,7 @@ end
 ## Another nearest neighbor algorithm, for reducible metrics
 ## From C. F. Olson, Parallel Computing 21 (1995) 1313--1325, fig 5
 ## Verfied against R implementation for mean and maximum, correct but ~ 5x slower
-## Pick c1: 0 <= c1 <= n random
+## Pick c1: 0 ≤ c1 ≤ n random
 ## i <- 1
 ## repeat n-1 times
 ##   repeat
@@ -264,7 +264,7 @@ function hclust2{T<:Real}(d::Symmetric{T}, method::Function)
     N = Vector{Int}(nc+1)
     N[1] = 1                            # arbitrary choice
     while nc > 1
-        found=false
+        found = false
         mindist = Inf
         while !found
             i += 1
@@ -298,13 +298,13 @@ function hclust2{T<:Real}(d::Symmetric{T}, method::Function)
         ## then perform the actual merge
         cl[lo] = vcat(cl[lo], cl[high])
         cl[high] = cl[nc]
-        if i>3
+        if i > 3
             i -= 3
         else
             i = 1
         end
         ## replace any nearest neighbor referring to nc
-        for k=1:i
+        for k in 1:i
             if N[k] == nc
                 N[k] = high
             end
@@ -360,11 +360,11 @@ function cutree(hclust::Hclust; k::Int=1,
     nodes = [[i::Int] for i=1:nnodes]
     N = nnodes - k
     i = 1
-    while i<=N && hclust.height[i] <= h
+    while i ≤ N && hclust.height[i] ≤ h
         both = vec(hclust.merge[i,:])
         new = Int[]
             for x in both
-                if x<0
+                if x < 0
                     push!(new, -x)
                     nodes[-x] = []
                 else
@@ -379,7 +379,7 @@ function cutree(hclust::Hclust; k::Int=1,
     all = all[map(length, all) .> 0]
     ## convert to a single array of cluster indices
     res = Vector{Int}(nnodes)
-    for (i,cl) in enumerate(all)
+    for (i, cl) in enumerate(all)
         res[cl] = i
     end
     res
@@ -388,9 +388,9 @@ end
 ## some diagnostic functions, not exported
 function printupper(d::Matrix)
     n = size(d,1)
-    for i = 1:(n-1)
+    for i in 1:(n-1)
         print(" " ^ ((i-1) * 6))
-        for j = (i+1):n
+        for j in (i+1):n
             print(@sprintf("%5.2f ", d[i,j]))
         end
         println()
