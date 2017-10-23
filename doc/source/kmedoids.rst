@@ -17,7 +17,7 @@ This package implements a K-means style algorithm instead of PAM, which is consi
     .. code-block:: julia
 
         type KmedoidsResult{T} <: ClusteringResult
-            medoids::Vector{Int}        # indices of methoids (k)
+            medoids::Vector{Int}        # indices of medoids (k)
             assignments::Vector{Int}    # assignments (n)
             acosts::Vector{T}           # costs of the resultant assignments (n)
             counts::Vector{Int}         # number of samples assigned to each cluster (k)
