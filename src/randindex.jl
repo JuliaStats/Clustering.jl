@@ -26,7 +26,11 @@ function randindex(c1,c2)
 
     if t1 == nc
         # avoid division by zero; if k=1, define Rand = 0
-        ARI = 0
+        if n == 1
+            ARI = 0.
+        else
+            ARI = 1.
+        end
     else
         # adjusted Rand - Hubert & Arabie 1985
         ARI = (A-nc)/(t1-nc)
