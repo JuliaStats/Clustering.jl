@@ -55,7 +55,11 @@ module Clustering
     Hclust, hclust, cutree,
 
     # MCL
-    mcl, MCLResult
+    mcl, MCLResult,
+
+    # V-measure
+    vmeasure
+
 
     ## source files
 
@@ -72,6 +76,7 @@ module Clustering
     include("silhouette.jl")
     include("randindex.jl")
     include("varinfo.jl")
+    include("vmeasure.jl")
 
     include("hclust.jl")
 
