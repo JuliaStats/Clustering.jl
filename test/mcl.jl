@@ -58,3 +58,16 @@ res = mcl(diagm([1.0, 1.0]), display=:none, allow_singles=false)
 @test length(res.counts) == 0
 @test res.assignments == [0, 0]
 @test res.nunassigned == 2
+
+# use sparse matrix
+res = mcl(sparse(adj_matrix), display=:none, expansion=2)
+@test isa(res, MCLResult)
+@test length(res.assignments) == length(nodes)
+@test res.nunassigned == 0
+
+@test_throws ArgumentError mcl(sparse(adj_matrix), display=:none, expansion=2.1)
+
+# use Float32 input
+res = mcl(convert(Matrix{Float32},adj_matrix), display=:none, expansion=2)
+@test isa(res, MCLResult{Float32})
+@test eltype(res.mcl_adj) === Float32
