@@ -35,6 +35,12 @@ end
 @test res.nunassigned == 0
 @test res.assignments == [1, 2, 1, 2, 1, 2]
 
+# test with integer inflation value
+res = mcl(adj_matrix, display=:none, inflation=2)
+@test isa(res, MCLResult)
+@test length(res.assignments) == length(nodes)
+@test res.nunassigned == 0
+
 # test non-integral expansion (show not raise an exception)
 res = mcl(adj_matrix, display=:none, inflation=1.5, expansion=1.5, save_final_matrix=true)
 @test isa(res, MCLResult)
