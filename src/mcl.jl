@@ -6,7 +6,7 @@
 Result returned by `mcl()`.
 """
 immutable MCLResult <: ClusteringResult
-    mcl_adj::Matrix{Float64}    # final MCL adjacency matrix (equailibrium state matrix if converged)
+    mcl_adj::Matrix{Float64}    # final MCL adjacency matrix (equilibrium state matrix if converged)
     assignments::Vector{Int}    # element-to-cluster assignments (n)
     counts::Vector{Int}         # number of samples assigned to each cluster (k)
     nunassigned::Int            # number of single elements not assigned to any cluster
@@ -69,44 +69,23 @@ function _mcl_clusters(mcl_adj::Matrix{Float64}, allow_singles::Bool, zero_tol::
     clu_ixs, clu_sizes, unassigned_count
 end
 
-# adjacency matrix expansion (matrix-wise raising to a given integer power) kernel
-# FIXME `_mcl_expand!()` that does not allocate new expanded matrix
-function _mcl_expand(src::Matrix, expansion::Integer)
-    src ^ expansion
-end
-
-# adjacency matrix expansion (matrix-wise raising to a given power) kernel
-# FIXME `_mcl_expand!()` that does not allocate new expanded matrix
-function _mcl_expand(src::Matrix, expansion::Number)
-    # we have to implement the workarond for matrix-power because of julia bug #16930
-    isinteger(expansion) && return _mcl_expand(src, Integer(real(expansion)))
-    v, X = eig(src)
-    # FIXME type instability here, revisit when #16930 is fixed
-    (eltype(v) <: Complex) || (any(v.<0) && (v = complex(v)))
-    Xinv = ishermitian(src) ? X' : inv(X)
-    X * Diagonal(v.^expansion) * Xinv
+# adjacency matrix inflation (element-wise raising to a given power) kernel
+function _mcl_inflate!{T<:Real}(dest::Matrix{Float64}, src::Matrix{T}, inflation::Integer)
+    map!(el -> el^inflation, dest, src)
 end
 
 # adjacency matrix inflation (element-wise raising to a given power) kernel
-function _mcl_inflate!(dest::Matrix{Float64}, src::Matrix{Complex128}, inflation::Number)
-    src_norm = vecnorm(src)
-    min_rel = -1E-3*src_norm
-    min_img = 1E-3*src_norm
-    @inbounds for (i, el) in enumerate(src)
-        rel = real(el)
-        img = imag(el)
-        if rel < min_rel || (abs(img) > min_img && abs(img) > 1E-3*abs(rel))
-            throw(InexactError())
-        end
-        dest[i] = max(0.0, rel)^inflation
+function _mcl_inflate!{T<:Number}(dest::Matrix{Float64}, src::Matrix{T}, inflation::Number)
+    map!(el -> real((el+0im)^inflation), dest, src)
+end
+
+# adjacency matrix pruning
+function _mcl_prune!(src::Matrix{Float64}, prune_tol::Number)
+    for i in 1:size(src,2)
+        c = view(src, :, i)
+        θ = mean(c)*prune_tol
+        c[c .< θ] = 0.0
     end
-    return dest
-end
-
-# adjacency matrix inflation (element-wise raising to a given power) kernel
-function _mcl_inflate!(dest::Matrix{Float64}, src::Matrix{Float64}, inflation::Number)
-    any(src .< -1E-3*vecnorm(src)) && throw(InexactError())
-    map!(el -> max(0.0, el)^inflation, dest, src)
 end
 
 """
@@ -126,18 +105,18 @@ Identify clusters in the weighted graph using Markov Clustering Algorithm (MCL).
   MCL doesn't converge
 * `max_iter::Integer`: max number of MCL iterations
 * `tol::Number`: MCL adjacency matrix convergence threshold
+# `prune_tol::Number`: Threshold pruning constant
 * `display::Symbol`: `:none` for no output or `:verbose` for diagnostic messages
 
 See [original MCL implementation](http://micans.org/mcl).
 """
-function mcl(adj::Matrix{Float64};
-             add_loops::Bool = true,
-             expansion::Number = 2, inflation::Number = 2.0,
-             save_final_matrix::Bool = false,
-             allow_singles::Bool = true,
-             max_iter::Integer = 100, tol::Number=1E-5,
-             display::Symbol=:none)#::MCLResult FIXME uncomment when 0.4 support is dropped
-
+function mcl{T<:Number}(adj::Matrix{T};
+                        add_loops::Bool = true,
+                        expansion::Number = 2, inflation::Number = 2.0,
+                        save_final_matrix::Bool = false,
+                        allow_singles::Bool = true,
+                        max_iter::Integer = 100, tol::Number=1.0e-5,
+                        prune_tol::Number=1.0e-5, display::Symbol=:none)
     m, n = size(adj)
     m == n || throw(DimensionMismatch("Square adjacency matrix expected"))
 
@@ -165,8 +144,9 @@ function mcl(adj::Matrix{Float64};
     converged = false
     rel_delta = NaN
     while !converged && niter < max_iter
-        expanded = _mcl_expand(mcl_adj, expansion)
+        expanded = mcl_adj^expansion
         _mcl_inflate!(next_mcl_adj, expanded, inflation)
+        _mcl_prune!(next_mcl_adj, prune_tol)
 
         # normalize in columns
         scale!(next_mcl_adj, map(x -> x != 0.0 ? 1.0/x : x,
@@ -199,7 +179,7 @@ function mcl(adj::Matrix{Float64};
     el2clu, clu_sizes, nunassigned = _mcl_clusters(mcl_adj, allow_singles,
                                                    tol/length(mcl_adj))
 
-    MCLResult(save_final_matrix ? mcl_adj : Matrix{Float64}(0,0),
+    return MCLResult(save_final_matrix ? mcl_adj : Matrix{Float64}(0,0),
               el2clu, clu_sizes, nunassigned,
               niter, rel_delta, converged)
 end
