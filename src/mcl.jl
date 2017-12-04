@@ -5,8 +5,8 @@
 
 Result returned by `mcl()`.
 """
-immutable MCLResult{T<:Real} <: ClusteringResult
-    mcl_adj::AbstractMatrix{T}    # final MCL adjacency matrix (equilibrium state matrix if converged)
+immutable MCLResult <: ClusteringResult
+    mcl_adj::AbstractMatrix     # final MCL adjacency matrix (equilibrium state matrix if converged)
     assignments::Vector{Int}    # element-to-cluster assignments (n)
     counts::Vector{Int}         # number of samples assigned to each cluster (k)
     nunassigned::Int            # number of single elements not assigned to any cluster
@@ -96,7 +96,7 @@ function _mcl_inflate!(dest::AbstractMatrix, src::AbstractMatrix, inflation::Num
 end
 
 # adjacency matrix pruning
-function _mcl_prune!{T<:Number}(mtx::AbstractMatrix{T}, prune_tol::Number)
+function _mcl_prune!(mtx::AbstractMatrix, prune_tol::Number)
     for i in 1:size(mtx,2)
         c = view(mtx, :, i)
         θ = mean(c)*prune_tol
@@ -201,6 +201,6 @@ function mcl{T<:Real}(adj::AbstractMatrix{T};
     el2clu, clu_sizes, nunassigned = _mcl_clusters(mcl_adj, allow_singles,
                                                    tol/length(mcl_adj))
 
-    return MCLResult{T}(save_final_matrix ? mcl_adj : similar(mcl_adj, (0,0)),
+    return MCLResult(save_final_matrix ? mcl_adj : similar(mcl_adj, (0,0)),
               el2clu, clu_sizes, nunassigned, niter, rel_delta, converged)
 end
