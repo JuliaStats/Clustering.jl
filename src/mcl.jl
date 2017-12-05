@@ -134,7 +134,7 @@ Ref: Stijn van Dongen, "Graph clustering by flow simulation", 2001
 """
 function mcl{T<:Real}(adj::AbstractMatrix{T};
                       add_loops::Bool = true,
-                      expansion::Number = 2, inflation::Number = 2.0,
+                      expansion::Number = 2, inflation::Number = 2,
                       save_final_matrix::Bool = false,
                       allow_singles::Bool = true,
                       max_iter::Integer = 100, tol::Number=1.0e-5,
