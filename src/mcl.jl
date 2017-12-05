@@ -82,16 +82,16 @@ function _mcl_expand(src::AbstractMatrix, expansion::Number)
     end
 end
 
-# integral power inflation
-el_inflate(el::Number, inflation::Integer) = el^inflation
+# integral power inflation (single matrix element)
+_mcl_el_inflate(el::Number, inflation::Integer) = el^inflation
 
-# non-integral power inflation
-el_inflate(el::Number, inflation::Number) = real((el+0im)^inflation)
+# non-integral power inflation (single matrix element)
+_mcl_el_inflate(el::Number, inflation::Number) = real((el+0im)^inflation)
 
 # adjacency matrix inflation (element-wise raising to a given power) kernel
 function _mcl_inflate!(dest::AbstractMatrix, src::AbstractMatrix, inflation::Number)
     @inbounds for i in eachindex(src)
-        dest[i] = el_inflate(src[i], inflation)
+        dest[i] = _mcl_el_inflate(src[i], inflation)
     end
 end
 
