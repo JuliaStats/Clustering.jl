@@ -9,7 +9,6 @@ struct Hclust{T<:Real}
     merge::Matrix{Int}
     height::Vector{T}
     order::Vector{Int}
-    labels::Vector
     linkage::Symbol
 end
 
@@ -345,8 +344,7 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
         push!(inds, [inds1; inds2])
     end
 
-    ## label is just a placeholder for the moment
-    Hclust(h..., inds[end], collect(1:size(sd,1)), linkage)
+    Hclust(h..., inds[end], linkage)
 end
 
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)
