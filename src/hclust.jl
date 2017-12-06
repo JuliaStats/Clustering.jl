@@ -43,7 +43,7 @@ _isrordered(i::Integer, j::Integer) =
 ## This probably scales O(n^3) or worse. We can use it to check correctness
 function hclust_n3(d::AbstractMatrix, linkage::Function)
     assertdistancematrix(d)
-    T = eltype(method(d, Int[], Int[]))
+    T = eltype(method(d, 1:0, 1:0))
     mr = Int[]                  # min row
     mc = Int[]                  # min col
     h = T[]                     # height
@@ -202,12 +202,12 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
     return hcat(mr, mc), h
 end
 
-
 ## functions to compute maximum, minimum, mean for just a slice of an array
+## FIXME: method(view(d, cl1, cl2)) would be much more generic, but it leads to extra allocations
 
-function slicemaximum(d::AbstractMatrix, cl1::Vector{Int}, cl2::Vector{Int})
+function slicemaximum(d::AbstractMatrix, cl1::AbstractVector{Int}, cl2::AbstractVector{Int})
     maxdist = typemin(eltype(d))
-    for i in cl1, j in cl2
+    @inbounds for j in cl2, i in cl1
         if d[i,j] > maxdist
             maxdist = d[i,j]
         end
@@ -215,9 +215,9 @@ function slicemaximum(d::AbstractMatrix, cl1::Vector{Int}, cl2::Vector{Int})
     maxdist
 end
 
-function sliceminimum(d::AbstractMatrix, cl1::Vector{Int}, cl2::Vector{Int})
+function sliceminimum(d::AbstractMatrix, cl1::AbstractVector{Int}, cl2::AbstractVector{Int})
     mindist = typemax(eltype(d))
-    for i in cl1, j in cl2
+    @inbounds for j in cl2, i in cl1
         if d[i,j] < mindist
             mindist = d[i,j]
         end
@@ -225,10 +225,14 @@ function sliceminimum(d::AbstractMatrix, cl1::Vector{Int}, cl2::Vector{Int})
     mindist
 end
 
-function slicemean(d::AbstractMatrix, cl1::Vector{Int}, cl2::Vector{Int})
+function slicemean(d::AbstractMatrix, cl1::AbstractVector{Int}, cl2::AbstractVector{Int})
     s = zero(eltype(d))
-    for i in cl1, j in cl2
-        s += d[i,j]
+    @inbounds for j in cl2
+        sj = zero(eltype(d))
+        for i in cl1
+            sj += d[i,j]
+        end
+        s += sj
     end
     s / (length(cl1)*length(cl2))
 end
@@ -264,7 +268,7 @@ end
 ##   merge c[i] and nearest neigbor c[i]
 ##   if i>3 i -= 3 else i <- 1
 function hclust2(d::AbstractMatrix, linkage::Function)
-    T = eltype(linkage(d, Int[], Int[]))
+    T = eltype(linkage(d, 1:0, 1:0))
     n = size(d,1)                       # number of datapoints
     mleft = Vector{Int}()               # id of left merged subtree
     mright = Vector{Int}()              # id of right merged subtree
@@ -365,14 +369,14 @@ end
 
 ## cut a tree at height `h' or to `k' clusters
 function cutree(hclust::Hclust; k::Int=1,
-                h::Real=maximum(hclust.heights))
+                h::Real=height(hclust))
     clusters = Vector{Int}[]
     n = nnodes(hclust)
     nodes = [[i] for i=1:n]
     N = n - k
     i = 1
     while i ≤ N && hclust.heights[i] ≤ h
-        both = vec(hclust.merges[i,:])
+        both = view(hclust.merges, i, :)
         new = Int[]
             for x in both
                 if x < 0

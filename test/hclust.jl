@@ -41,7 +41,7 @@ end
 @testset "hclust_n3()" begin
     # no thorough testing (it's O(N³)), just test one example
     example_n3 = examples[10]
-    hclu_n3 = Clustering.hclust_n3(example_n3["D"], maximum)
+    hclu_n3 = Clustering.hclust_n3(example_n3["D"], Clustering.slicemaximum)
     @test hclu_n3[1] == example_n3["merge"]
     @test hclu_n3[2] ≈ example_n3["height"] atol=1e-5
 end
