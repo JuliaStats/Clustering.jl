@@ -35,8 +35,9 @@ end
 
 ## This seems to work like R's implementation, but it is extremely inefficient
 ## This probably scales O(n^3) or worse. We can use it to check correctness
-function hclust_n3(d::AbstractMatrix{T}, linkage::Function) where T<:Real
+function hclust_n3(d::AbstractMatrix, linkage::Function)
     assertdistancematrix(d)
+    T = eltype(method(d, Int[], Int[]))
     mr = Int[]                  # min row
     mc = Int[]                  # min col
     h = T[]                     # height
@@ -44,7 +45,7 @@ function hclust_n3(d::AbstractMatrix{T}, linkage::Function) where T<:Real
     cl = collect(-(1:nc))       # segment to cluster attribution, initially negative
     next = 1                    # next cluster label
     while next < nc
-        mindist = Inf
+        mindist = typemax(T)
         mi = mj = 0
         cli = unique(cl)
         mask = falses(nc)
@@ -52,7 +53,7 @@ function hclust_n3(d::AbstractMatrix{T}, linkage::Function) where T<:Real
             cols = cl .== cli[j]
             for i in (j+1):length(cli)
                 rows = cl .== cli[i]
-                distance = linkage(d[rows,cols]) # very expensive
+                distance = linkage(d, rows, cols) # very expensive
                 if distance < mindist
                     mindist = distance
                     mi = cli[i]
@@ -88,7 +89,7 @@ end
 ##   update D(i,j) and N(i) accordingly
 function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
     ## For each i < j compute d[i,j] (this is already given)
-    d = Matrix(ds)                #  we need a local copy
+    d = Matrix(ds)                      #  we need a local copy
     nc = size(d,1)
     mr = Vector{Int}(undef, nc-1)       # min row
     mc = Vector{Int}(undef, nc-1)       # min col
@@ -98,7 +99,7 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
     ## For each 0 < i ≤ n compute Nearest Neighbor N[i]
     N = zeros(Int, nc)
     for k in 1:nc
-        mindist = Inf
+        mindist = typemax(T)
         mk = 0
         for i in 1:(k-1)
             if d[i,k] < mindist
@@ -182,7 +183,7 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
         nc -= 1
         next += 1
         ## finally we need to update N[i], because it was nearest to j
-        mindist = Inf
+        mindist = typemax(T)
         mk = 0
         for k in 1:(i-1)
             if d[k,i] < mindist
@@ -205,8 +206,8 @@ end
 
 ## functions to compute maximum, minimum, mean for just a slice of an array
 
-function slicemaximum(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int}) where T<:Real
-    maxdist = -Inf
+function slicemaximum(d::AbstractMatrix, cl1::Vector{Int}, cl2::Vector{Int})
+    maxdist = typemin(eltype(d))
     for i in cl1, j in cl2
         if d[i,j] > maxdist
             maxdist = d[i,j]
@@ -215,8 +216,8 @@ function slicemaximum(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int}) 
     maxdist
 end
 
-function sliceminimum(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int}) where T<:Real
-    mindist = Inf
+function sliceminimum(d::AbstractMatrix, cl1::Vector{Int}, cl2::Vector{Int})
+    mindist = typemax(eltype(d))
     for i in cl1, j in cl2
         if d[i,j] < mindist
             mindist = d[i,j]
@@ -225,8 +226,8 @@ function sliceminimum(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int}) 
     mindist
 end
 
-function slicemean(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int}) where T<:Real
-    s = zero(T)
+function slicemean(d::AbstractMatrix, cl1::Vector{Int}, cl2::Vector{Int})
+    s = zero(eltype(d))
     for i in cl1, j in cl2
         s += d[i,j]
     end
@@ -266,7 +267,8 @@ end
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
 ##   merge c[i] and nearest neigbor c[i]
 ##   if i>3 i -= 3 else i <- 1
-function hclust2(d::AbstractMatrix{T}, linkage::Function) where T<:Real
+function hclust2(d::AbstractMatrix, linkage::Function)
+    T = eltype(linkage(d, Int[], Int[]))
     nc = size(d,1)                      # number of clusters
     mr = Vector{Int}(undef, nc-1)       # min row
     mc = Vector{Int}(undef, nc-1)       # min col
@@ -279,11 +281,11 @@ function hclust2(d::AbstractMatrix{T}, linkage::Function) where T<:Real
     N[1] = 1                            # arbitrary choice
     while nc > 1
         found = false
-        mindist = Inf
+        mindist = typemax(T)
         while !found
             i += 1
             mi = 0
-            mindist = Inf
+            mindist = typemax(T)
             Nim1 = N[i-1]
             ## c[i] = nearest neigbour c[i-1]
             for j = 1:nc if Nim1 != j
