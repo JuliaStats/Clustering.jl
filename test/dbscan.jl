@@ -49,6 +49,6 @@ clusters = dbscan(points, 0.3, min_neighbors=2, min_cluster_size=100, leafsize=2
 
 # Issue #84
 clusters = dbscan(convert(Matrix{Float32}, points), 0.3f0, min_neighbors=2, min_cluster_size=100, leafsize=20)
-@test clusters[1].core_indices == inds_1
-@test clusters[2].core_indices == inds_2
-@test clusters[3].core_indices == inds_3
+@test length(clusters) == 3
+clusters = dbscan(convert(Matrix{Float32}, points), 0.3, min_neighbors=2, min_cluster_size=100, leafsize=20)
+@test length(clusters) == 3
