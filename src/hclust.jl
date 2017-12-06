@@ -382,29 +382,38 @@ end
 function cutree(hclu::Hclust; k::Int=1, h::Real=height(hclu))
     clusters = Vector{Int}[]
     n = nnodes(hclu)
-    nodes = [[i] for i=1:n]
+    unmerged = fill(true, n) # if a node is not merged to a cluster
     cutm = n - k    # how many tree merges to do
     i = 1
     while i ≤ cutm && hclu.heights[i] ≤ h
         both = view(hclu.merges, i, :)
         newclu = Int[]
         for x in both
-            if x < 0
+            if x < 0 # -x is a leaf node
                 push!(newclu, -x)
-                nodes[-x] = []
-            else
+                unmerged[-x] = false
+            else # x is a cluster, merge to newclu
                 append!(newclu, clusters[x])
-                clusters[x] = []
+                empty!(clusters[x])
             end
         end
         push!(clusters, newclu)
         i += 1
     end
-    all = filter!(!isempty, vcat(clusters, nodes))
-    ## convert to a single array of cluster indices
+    ## build an array of cluster indices
     res = fill(0, n)
-    for (i, cl) in enumerate(all)
-        res[cl] .= i
+    clix = 1 # index of the next cluster
+    for clu in clusters
+        isempty(clu) && continue
+        res[clu] .= clix
+        clix += 1
+    end
+    # add unmerged nodes as individual clusters
+    @inbounds for i in eachindex(unmerged)
+        if unmerged[i]
+            res[i] = clix
+            clix += 1
+        end
     end
     return res
 end
