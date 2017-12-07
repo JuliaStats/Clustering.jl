@@ -132,15 +132,15 @@ points = randn(3, 10000)
 clusters = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20) # clusters with less than 20 points will be discarded
 ```
 """
-function dbscan{T <: AbstractFloat, N}(points::Array{T, N}, radius::Real; leafsize::Int = 20, kwargs ...)
+function dbscan(points::AbstractMatrix, radius::Real; leafsize::Int = 20, kwargs ...)
     kdtree = KDTree(points; leafsize=leafsize)
     return _dbscan(kdtree, points, radius; kwargs ...)
 end
 
 
 """ An implementation of DBSCAN algorithm that keeps track of both the core and boundary points """
-function _dbscan{T<:AbstractFloat}(kdtree::KDTree, points::Matrix{T}, radius::T;
-                                   min_neighbors::Int = 1, min_cluster_size::Int = 1)
+function _dbscan(kdtree::KDTree, points::AbstractMatrix, radius::Real;
+                 min_neighbors::Int = 1, min_cluster_size::Int = 1)
     dim, num_points = size(points)
     num_points <= dim && throw(ArgumentError("points has $dim rows and $num_points columns. Must be a D x N matric with D < N"))
     0 <= radius || throw(ArgumentError("radius $radius must be ≥ 0"))
