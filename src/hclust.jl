@@ -27,7 +27,7 @@ function hclust_n3(d::AbstractMatrix{T}, method::Function) where T<:Real
     mc = Int[]                  # min col
     h = T[]                     # height
     nc = size(d,1)              # number of clusters
-    cl = -[1:nc]                # segment to cluster attribution, initially negative
+    cl = collect(-(1:nc))       # segment to cluster attribution, initially negative
     next = 1                    # next cluster label
     while next < nc
         mindist = Inf
@@ -79,7 +79,7 @@ function hclust_minimum(ds::Symmetric{T}) where T<:Real
     mr = Vector{Int}(undef, nc-1)       # min row
     mc = Vector{Int}(undef, nc-1)       # min col
     h = Vector{T}(undef, nc-1)          # height
-    merges = -collect(1:nc)
+    merges = collect(-(1:nc))
     next = 1
     ## For each 0 < i ≤ n compute Nearest Neighbor N[i]
     N = zeros(Int, nc)
@@ -258,7 +258,7 @@ function hclust2(d::Symmetric{T}, method::Function) where T<:Real
     mc = Vector{Int}(undef, nc-1)               # min col
     h = Vector{T}(undef, nc-1)                  # height
     cl = [[x] for x in 1:nc]            # clusters
-    merges = -collect(1:nc)
+    merges = collect(-(1:nc))
     next = 1
     i = 1
     N = Vector{Int}(undef, nc+1)
