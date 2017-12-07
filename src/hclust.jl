@@ -344,6 +344,38 @@ function hclust2(d::AbstractMatrix, linkage::Function)
     hcat(mleft[o], mright[o]), h[o]
 end
 
+# compute resulting leaves (original datapoints) permutation
+# given a sequence of tree nodes merges
+function hclust_perm(merges::AbstractMatrix)
+    n = size(merges, 1) + 1 # number of datapoints
+    perm = fill(1, n)       # resulting permutation
+    inds = fill(0, n)       # index of subtree that contain given datapoint
+    mask = fill(false, n)   # temporary mask of elements in the given subtree
+    @inbounds for i in 1:size(merges, 1)
+        m1 = merges[i,1]
+        m2 = merges[i,2]
+        # count the number of elements in the left subtree and update their membership
+        if m1 < 0
+            inds[-m1] = i
+            nm1 = 1
+        else
+            map!(ind -> ind == m1, mask, inds)
+            inds[mask] = i
+            nm1 = sum(mask)
+        end
+        # elements in the right subtree are moved nm1 positions from the start
+        if m2 < 0
+            inds[-m2] = i
+            perm[-m2] += nm1
+        else
+            map!(ind -> ind == m2, mask, inds)
+            inds[mask] = i
+            perm[mask] += nm1
+        end
+    end
+    return perm
+end
+
 ## this calls the routine that gives the correct answer, fastest
 ## linkage names are inspired by R's hclust
 function hclust(d::AbstractMatrix; linkage::Symbol = :single,
@@ -364,16 +396,7 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
         throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
 
-    # compute an ordering of the leaves
-    inds = Any[]
-    merge = h[1]
-    for i in 1:size(merge)[1]
-        inds1 = merge[i,1] < 0 ? -merge[i,1] : inds[merge[i,1]]
-        inds2 = merge[i,2] < 0 ? -merge[i,2] : inds[merge[i,2]]
-        push!(inds, [inds1; inds2])
-    end
-
-    Hclust(h..., inds[end], linkage)
+    Hclust(h..., invperm(hclust_perm(h[1])), linkage)
 end
 
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)
