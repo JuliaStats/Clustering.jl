@@ -33,17 +33,17 @@ function hclust_n3(d::AbstractMatrix{T}, method::Function) where T<:Real
         mindist = Inf
         mi = mj = 0
         cli = unique(cl)
-        mask = BitVector(nc)
-        for j in 1:length(cli)           # loop over for lower triangular indices, i>j
+        mask = falses(nc)
+        for j in 1:length(cli)  # loop over for lower triangular indices, i>j
             cols = cl .== cli[j]
             for i in (j+1):length(cli)
-                rows = cl.==cli[i]
+                rows = cl .== cli[i]
                 distance = method(d[rows,cols]) # very expensive
                 if distance < mindist
                     mindist = distance
                     mi = cli[i]
                     mj = cli[j]
-                    mask = cols | rows
+                    mask .= cols .| rows
                 end
             end
         end
@@ -58,7 +58,7 @@ function hclust_n3(d::AbstractMatrix{T}, method::Function) where T<:Real
             push!(mc, mi)
         end
         push!(h, mindist)
-        cl[mask] = next
+        cl[mask] .= next
         next += 1
     end
     hcat(mr, mc), h
