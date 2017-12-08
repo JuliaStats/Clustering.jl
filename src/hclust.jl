@@ -33,6 +33,12 @@ function assertdistancematrix(d::AbstractMatrix)
     issymmetric(d) || throw(ArgumentError("Distance matrix should be symmetric."))
 end
 
+## R's order of trees
+_isrordered(i::Integer, j::Integer) =
+    i < 0 && j < 0 && i > j ||  # leaves (datapoints) are sorted in ascending order
+    i > 0 && j > 0 && i < j ||  # if i-th tree was created before j-th one, it goes first
+    i < 0 && j > 0              # leaves go before trees
+
 ## This seems to work like R's implementation, but it is extremely inefficient
 ## This probably scales O(n^3) or worse. We can use it to check correctness
 function hclust_n3(d::AbstractMatrix, linkage::Function)
@@ -62,16 +68,11 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
                 end
             end
         end
-        ## simulate R's order
-        if mi < 0 && mj < 0 && mi > mj ||
-            mi > 0 && mj > 0 && mi < mj ||
-            mi < 0 && mj > 0
-            push!(mr, mi)
-            push!(mc, mj)
-        else
-            push!(mr, mj)
-            push!(mc, mi)
+        if !_isrordered(mi, mj)
+            mi, mj = mj, mi
         end
+        push!(mr, mi)
+        push!(mc, mj)
         push!(h, mindist)
         cl[mask] .= next
         next += 1
@@ -135,15 +136,13 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
             i, j = j, i     # make sure i < j
         end
         ## update result, compatible to R's order.  It must be possible to do this simpler than this...
-        if merges[i] < 0 && merges[j] < 0 && merges[i] > merges[j] ||
-            merges[i] > 0 && merges[j] > 0 && merges[i] < merges[j] ||
-            merges[i] < 0 && merges[j] > 0
-            mr[next] = merges[i]
-            mc[next] = merges[j]
-        else
-            mr[next] = merges[j]
-            mc[next] = merges[i]
+        @inbounds mi = merges[i]
+        @inbounds mj = merges[j]
+        if !_isrordered(mi, mj)
+            mi, mj = mj, mi
         end
+        mr[next] = mi
+        mc[next] = mj
         h[next] = mindist
         merges[i] = next
         merges[j] = merges[nc]
@@ -245,10 +244,7 @@ function rorder!(mr, mc, h)
         if mc[i] > 0
             mc[i] = io[mc[i]]
         end
-        ## R's order of pairs
-        if ! (mr[i] < 0 && mc[i] < 0 && mr[i] > mc[i] ||
-              mr[i] > 0 && mc[i] > 0 && mr[i] < mc[i] ||
-              mr[i] < 0 && mc[i] > 0)
+        if !_isrordered(mr[i], mc[i])
             mr[i], mc[i] = mc[i], mr[i]
         end
     end
