@@ -50,17 +50,19 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
     n = size(d,1)               # number of datapoints (leaf nodes)
     node2cl = collect(-(1:n))   # datapoint to tree attribution, initially all leaves
     next = 1                    # next cluster label
+    cols = fill(false, n)
+    rows = fill(false, n)
+    mask = falses(n)
     while next < n
         NNmindist = typemax(T)
         NNi = NNj = 0           # indices of nearest neighbors clusters
         cl = unique(node2cl)    # active tree ids
-        mask = falses(n)
         for j in eachindex(cl)  # loop over for lower triangular indices, i>j
             clj = cl[j]
-            cols = node2cl .== clj
+            cols .= node2cl .== clj
             for i in (j+1):length(cl)
                 cli = cl[i]
-                rows = node2cl .== cli
+                rows .= node2cl .== cli
                 dist = linkage(d, rows, cols) # very expensive
                 if (NNi == 0) || (dist < NNmindist)
                     NNmindist = dist
