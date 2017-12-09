@@ -1,7 +1,9 @@
-# Test v-measure
-
 using Base.Test
 using Clustering
+
+# Tests are taken from the fig. 2 of the referenced paper:
+# V-Measure: A conditional entropy-based external cluster evaluation measure,
+# Andrew Rosenberg and Julia Hirschberg
 
 clus = [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3]
 v = vmeasure(clus, clus)
