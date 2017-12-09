@@ -57,10 +57,10 @@ end
 """V-measure between two clustering assignments.
 
 `β` parameter defines trade-off between homogeneity and completeness,
-if β is greater than 1 completeness is V-measure  weighted more strongly in the completeness,
-if β is less than 1, homogeneity is weighted more strongly.
+if `β` is greater than 1 completeness is V-measure  weighted more strongly in the completeness,
+if `β` is less than 1, homogeneity is weighted more strongly.
 
-Andrew Rosenberg and Julia Hirschberg, 2007. "V-Measure: A conditional entropy-based external cluster evaluation measure"
+*Ref:* Andrew Rosenberg and Julia Hirschberg, 2007. "V-Measure: A conditional entropy-based external cluster evaluation measure"
 """
 vmeasure(assign1::Vector{Int}, assign2::Vector{Int}; β = 1.0) =
     _vmeasure(counts(assign1,assign2,(1:maximum(assign1),1:maximum(assign2))), β = β)

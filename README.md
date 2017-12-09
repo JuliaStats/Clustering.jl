@@ -35,6 +35,7 @@ Pkg.add("Clustering")
 - Silhouettes
 - Variation of Information
 - Rand index
+- V-Measure
 
 ## Resources
 
