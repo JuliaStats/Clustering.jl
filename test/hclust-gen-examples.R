@@ -1,40 +1,41 @@
 # used to build the test examples for hclust in hclust_generated_examples.jl
 # run as: Rscript hclust_gen_examples.R
 
+catVector <- function(V) {
+  cat("[")
+  for (i in 1:length(V)) {
+    cat(V[i], ", ", sep="")
+  }
+  cat("]")
+}
+
+catMatrix <- function(M) {
+  cat("[")
+  for (i in 1:dim(M)[1]) {
+    for (j in 1:dim(M)[2]) {
+      cat(" ", M[i,j], sep="")
+    }
+    cat(";")
+  }
+  cat("]")
+}
+
 catExample <- function(h, D, method) {
-  cat("Dict{Any,Any}(\n\"method\" => :")
+  cat("Dict{String,Any}(\n\"method\" => :")
   cat(method)
   cat(",\n")
-  cat("\"D\" => [")
-  for (i in 1:dim(D)[1]) {
-    for (j in 1:dim(D)[2]) {
-      cat(" ")
-      cat(D[i,j])
-    }
-    cat(";")
-  }
-  cat("],\n")
-  cat("\"merge\" => [")
-  for (i in 1:dim(h$merge)[1]) {
-    for (j in 1:dim(h$merge)[2]) {
-      cat(" ")
-      cat(h$merge[i,j])
-    }
-    cat(";")
-  }
-  cat("],\n")
-  cat("\"order\" => [")
-  for (i in 1:length(h$order)) {
-    cat(h$order[i])
-    cat(", ")
-  }
-  cat("],\n")
-  cat("\"height\" => [")
-  for (i in 1:length(h$height)) {
-    cat(h$height[i])
-    cat(", ")
-  }
-  cat("]\n),\n")
+  cat("\"D\" => ")
+  catMatrix(D)
+  cat(",\n")
+  cat("\"merge\" => ")
+  catMatrix(h$merge)
+  cat(",\n")
+  cat("\"order\" => ")
+  catVector(h$order)
+  cat(",\n")
+  cat("\"height\" => ")
+  catVector(h$height)
+  cat("\n)")
 }
 
 catMethodExamples <- function(method="single") {
@@ -43,7 +44,9 @@ catMethodExamples <- function(method="single") {
       D = matrix(rnorm(i*i), i) * matrix(sample(c(1,0), i*i, replace=TRUE), i) + matrix(rnorm(i*i), i)*0.01
       D = D + t(D)
       catExample(hclust(as.dist(D), method), D, method)
+      cat(",\n")
       catExample(hclust(as.dist(abs(D)), method), abs(D), method)
+      cat(",\n")
     }
   }
 }
