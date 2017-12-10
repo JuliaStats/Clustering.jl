@@ -5,7 +5,7 @@
 
 ## This is also in types.jl, but that is not read...
 ## Mostly following R's hclust class
-mutable struct Hclust{T<:Real}
+struct Hclust{T<:Real}
     merge::Matrix{Int}
     height::Vector{T}
     order::Vector{Int}
