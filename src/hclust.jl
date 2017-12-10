@@ -132,7 +132,7 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
         i = 1
         NNmindist = i < NN[i] ? d[i, NN[i]] : d[NN[i], i]
         for k in 2:length(NN)   # O(n)
-            dist = k < NN[k] ? d[k,NN[k]] : d[NN[k],k]
+            @inbounds dist = k < NN[k] ? d[k,NN[k]] : d[NN[k],k]
             if dist < NNmindist
                 NNmindist = dist
                 i = k
@@ -154,17 +154,17 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
         trees[i] = length(h) # assign new id to the merged tree
         ## update d, split in ranges k<i, i<k<j, j<k≤nc
         for k in 1:(i-1)         # k < i
-            if d[k,i] > d[k,j]
+            @inbounds if d[k,i] > d[k,j]
                 d[k,i] = d[k,j]
             end
         end
         for k in (i+1):(j-1)     # i < k < j
-            if d[i,k] > d[k,j]
+            @inbounds if d[i,k] > d[k,j]
                 d[i,k] = d[k,j]
             end
         end
         for k in (j+1):nc        # j < k ≤ nc
-            if d[i,k] > d[j,k]
+            @inbounds if d[i,k] > d[j,k]
                 d[i,k] = d[j,k]
             end
         end
@@ -175,10 +175,10 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
             NN[j] = NN[last_tree]
             ## move the last row/col into j
             for k in 1:(j-1)     # k < j ≤ nc
-                d[k,j] = d[k,nc]
+                @inbounds d[k,j] = d[k,nc]
             end
             for k in (j+1):(nc-1)# j < k < nc
-                d[j,k] = d[k,nc]
+                @inbounds d[j,k] = d[k,nc]
             end
         end
         pop!(NN)
@@ -195,13 +195,13 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
         NNmindist = typemax(T)
         NNi = 0
         for k in 1:(i-1)
-            if (NNi == 0) || (d[k,i] < NNmindist)
+            @inbounds if (NNi == 0) || (d[k,i] < NNmindist)
                 NNmindist = d[k,i]
                 NNi = k
             end
         end
         for k in (i+1):length(trees)
-            if (NNi == 0) || (d[i,k] < NNmindist)
+            @inbounds if (NNi == 0) || (d[i,k] < NNmindist)
                 NNmindist = d[i,k]
                 NNi = k
             end
