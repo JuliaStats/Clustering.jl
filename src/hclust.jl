@@ -47,34 +47,36 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
     mr = Int[]                  # min row
     mc = Int[]                  # min col
     h = T[]                     # height
-    nc = size(d,1)              # number of clusters
-    cl = collect(-(1:nc))       # segment to cluster attribution, initially negative
+    n = size(d,1)               # number of datapoints (leaf nodes)
+    node2cl = collect(-(1:n))   # datapoint to tree attribution, initially all leaves
     next = 1                    # next cluster label
-    while next < nc
-        mindist = typemax(T)
-        mi = mj = 0
-        cli = unique(cl)
-        mask = falses(nc)
-        for j in 1:length(cli)  # loop over for lower triangular indices, i>j
-            cols = cl .== cli[j]
-            for i in (j+1):length(cli)
-                rows = cl .== cli[i]
-                distance = linkage(d, rows, cols) # very expensive
-                if distance < mindist
-                    mindist = distance
-                    mi = cli[i]
-                    mj = cli[j]
+    while next < n
+        NNmindist = typemax(T)
+        NNi = NNj = 0           # indices of nearest neighbors clusters
+        cl = unique(node2cl)    # active tree ids
+        mask = falses(n)
+        for j in eachindex(cl)  # loop over for lower triangular indices, i>j
+            clj = cl[j]
+            cols = node2cl .== clj
+            for i in (j+1):length(cl)
+                cli = cl[i]
+                rows = node2cl .== cli
+                dist = linkage(d, rows, cols) # very expensive
+                if dist < NNmindist
+                    NNmindist = dist
+                    NNi = cli
+                    NNj = clj
                     mask .= cols .| rows
                 end
             end
         end
-        if !_isrordered(mi, mj)
-            mi, mj = mj, mi
+        if !_isrordered(NNi, NNj)
+            NNi, NNj = NNj, NNi
         end
-        push!(mr, mi)
-        push!(mc, mj)
-        push!(h, mindist)
-        cl[mask] .= next
+        push!(mr, NNi)
+        push!(mc, NNj)
+        push!(h, NNmindist)
+        node2cl[mask] .= next
         next += 1
     end
     hcat(mr, mc), h
@@ -83,69 +85,63 @@ end
 ## Efficient single link algorithm, according to Olson, O(n^2), fig 2.
 ## Verified against R's implementation, correct, and about 2.5 x faster
 ## For each i < j compute D(i,j) (this is already given)
-## For each 0 < i ≤ n compute Nearest Neighbor N(i)
+## For each 0 < i ≤ n compute Nearest Neighbor NN(i)
 ## Repeat n-1 times
 ##   find i,j that minimize D(i,j)
 ##   merge clusters i and j
-##   update D(i,j) and N(i) accordingly
+##   update D(i,j) and NN(i) accordingly
 function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
-    ## For each i < j compute d[i,j] (this is already given)
-    d = Matrix(ds)                      #  we need a local copy
-    nc = size(d,1)
-    mr = Vector{Int}(undef, nc-1)       # min row
-    mc = Vector{Int}(undef, nc-1)       # min col
-    h = Vector{T}(undef, nc-1)          # height
-    merges = collect(-(1:nc))
-    next = 1
-    ## For each 0 < i ≤ n compute Nearest Neighbor N[i]
-    N = zeros(Int, nc)
-    for k in 1:nc
-        mindist = typemax(T)
-        mk = 0
-        for i in 1:(k-1)
-            if d[i,k] < mindist
-                mindist = d[i,k]
-                mk = i
+    d = Matrix(ds)      # active trees distances, only upper (i < j) is used
+    n = size(d,1)       # number of points (leaf nodes)
+    ## For each 0 < i ≤ n compute Nearest Neighbor NN[i]
+    NN = zeros(Int, n)  # nearest neighbor of i-th tree
+    for i in 1:n
+        NNmindist = typemax(T)
+        NNi = 0
+        for k in 1:(i-1)
+            if d[k,i] < NNmindist
+                NNmindist = d[k,i]
+                NNi = k
             end
         end
-        for j in (k+1):nc
-            if d[k,j] < mindist
-                mindist = d[k,j]
-                mk = j
+        for k in (i+1):n
+            if d[i,k] < NNmindist
+                NNmindist = d[i,k]
+                NNi = k
             end
         end
-        N[k] = mk
+        NN[i] = NNi
     end
     ## the main loop
-    while nc > 1                # O(n)
-        mindist = d[1,N[1]]
+    mleft = Vector{Int}()       # merged left tree
+    mright = Vector{Int}()      # merged right tree
+    h = Vector{T}()             # tree height
+    trees = collect(-(1:n))     # indices of active trees, initialized to all leaves
+    while length(trees) > 1     # O(n)
+        # find a pair of nearest trees, i and j
+        NNmindist = d[1,NN[1]]
         i = 1
-        for k in 2:nc           # O(n)
-            if k < N[k]
-                distance = d[k,N[k]]
-            else
-                distance = d[N[k],k]
-            end
-            if distance < mindist
-                mindist = distance
+        for k in 2:length(NN)   # O(n)
+            dist = k < NN[k] ? d[k,NN[k]] : d[NN[k],k]
+            if dist < NNmindist
+                NNmindist = dist
                 i = k
             end
         end
-        j = N[i]
+        j = NN[i]
         if i > j
             i, j = j, i     # make sure i < j
         end
         ## update result, compatible to R's order.  It must be possible to do this simpler than this...
-        @inbounds mi = merges[i]
-        @inbounds mj = merges[j]
+        @inbounds mi = trees[i]
+        @inbounds mj = trees[j]
         if !_isrordered(mi, mj)
             mi, mj = mj, mi
         end
-        mr[next] = mi
-        mc[next] = mj
-        h[next] = mindist
-        merges[i] = next
-        merges[j] = merges[nc]
+        push!(mleft, mi)
+        push!(mright, mj)
+        push!(h, NNmindist)
+        trees[i] = length(h) # assign new id to the merged tree
         ## update d, split in ranges k<i, i<k<j, j<k≤nc
         for k in 1:(i-1)         # k < i
             if d[k,i] > d[k,j]
@@ -162,42 +158,46 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
                 d[i,k] = d[j,k]
             end
         end
-        ## move the last row/col into j
-        for k in 1:(j-1)           # k==nc,
-            d[k,j] = d[k,nc]
-        end
-        for k in (j+1):(nc-1)
-            d[j,k] = d[k,nc]
-        end
-        ## update N[k], k !in (i,j)
-        for k in 1:nc
-            if N[k] == j       # update nearest neigbors != i
-                N[k] = i
-            elseif N[k] == nc
-                N[k] = j
+        # reassign last tree to position j
+        last_tree = length(trees)
+        if j < last_tree
+            trees[j] = trees[last_tree]
+            NN[j] = NN[last_tree]
+            ## move the last row/col into j
+            for k in 1:(j-1)     # k < j ≤ nc
+                d[k,j] = d[k,nc]
+            end
+            for k in (j+1):(nc-1)# j < k < nc
+                d[j,k] = d[k,nc]
             end
         end
-        N[j] = N[nc]            # update N[j]
-        ## update nc, next
-        nc -= 1
-        next += 1
-        ## finally we need to update N[i], because it was nearest to j
-        mindist = typemax(T)
-        mk = 0
+        pop!(NN)
+        pop!(trees)
+        ## update NN[k]
+        for k in eachindex(NN)
+            if NN[k] == j        # j is merged into i (only valid for the min!)
+                NN[k] = i
+            elseif NN[k] == last_tree # last_tree is moved into j
+                NN[k] = j
+            end
+        end
+        ## finally we need to update NN[i], because it was nearest to j
+        NNmindist = typemax(T)
+        NNi = 0
         for k in 1:(i-1)
-            if d[k,i] < mindist
-                mindist = d[k,i]
-                mk = k
+            if d[k,i] < NNmindist
+                NNmindist = d[k,i]
+                NNi = k
             end
         end
-        for k in (i+1):nc
-            if d[i,k] < mindist
-                mindist = d[i,k]
-                mk = k
+        for k in (i+1):length(trees)
+            if d[i,k] < NNmindist
+                NNmindist = d[i,k]
+                NNi = k
             end
         end
-        N[i] = mk
-#        for n in N[1:nc] print(n, " ") end; println()
+        NN[i] = NNi
+#        for n in NN[1:nc] print(n, " ") end; println()
     end
     return hcat(mr, mc), h
 end
@@ -237,7 +237,8 @@ function slicemean(d::AbstractMatrix, cl1::AbstractVector{Int}, cl2::AbstractVec
     s / (length(cl1)*length(cl2))
 end
 
-## This reorders the pairs to be compatible with R's hclust()
+## reorders the tree merges by the height of resulting trees
+## (to be compatible with R's hclust())
 function rorder!(mr, mc, h)
     o = sortperm(h)
     io = invperm(o)
@@ -263,9 +264,9 @@ end
 ## repeat n-1 times
 ##   repeat
 ##     i++
-##     c[i] = nearest neigbour c[i-1]
+##     c[i] = nearest neighbor c[i-1]
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
-##   merge c[i] and nearest neigbor c[i]
+##   merge c[i] and nearest neighbor c[i]
 ##   if i>3 i -= 3 else i <- 1
 function hclust2(d::AbstractMatrix, linkage::Function)
     T = eltype(linkage(d, 1:0, 1:0))
