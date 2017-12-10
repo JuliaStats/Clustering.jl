@@ -379,26 +379,25 @@ end
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)
 
 ## cut a tree at height `h' or to `k' clusters
-function cutree(hclust::Hclust; k::Int=1,
-                h::Real=height(hclust))
+function cutree(hclu::Hclust; k::Int=1, h::Real=height(hclu))
     clusters = Vector{Int}[]
-    n = nnodes(hclust)
+    n = nnodes(hclu)
     nodes = [[i] for i=1:n]
-    N = n - k
+    cutm = n - k    # how many tree merges to do
     i = 1
-    while i ≤ N && hclust.heights[i] ≤ h
-        both = view(hclust.merges, i, :)
-        new = Int[]
-            for x in both
-                if x < 0
-                    push!(new, -x)
-                    nodes[-x] = []
-                else
-                    append!(new, clusters[x])
-                    clusters[x] = []
-                end
+    while i ≤ cutm && hclu.heights[i] ≤ h
+        both = view(hclu.merges, i, :)
+        newclu = Int[]
+        for x in both
+            if x < 0
+                push!(newclu, -x)
+                nodes[-x] = []
+            else
+                append!(newclu, clusters[x])
+                clusters[x] = []
             end
-        push!(clusters, new)
+        end
+        push!(clusters, newclu)
         i += 1
     end
     all = filter!(!isempty, vcat(clusters, nodes))
