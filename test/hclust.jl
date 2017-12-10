@@ -3,6 +3,20 @@ using Test
 
 @testset "hclust() (hierarchical clustering)" begin
 
+@testset "param checks" begin
+    D = rand(5, 5)
+    Dsym = D + D'
+    Dnan = copy(Dsym)
+    Dnan[1, 3] = Dnan[3, 1] = NaN
+    @testset "hclust()" begin
+        @test_throws ErrorException hclust(Dsym, :typo)
+        @test_throws ErrorException hclust(D, :single)
+        @test_throws ErrorException hclust(Dnan, :single)
+    end
+    hclu = @inferred(hclust(Dsym, :single))
+    @test hclu isa Clustering.Hclust
+end
+
 # load the examples array
 include("hclust-generated-examples.jl")
 

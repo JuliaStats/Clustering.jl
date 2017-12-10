@@ -72,7 +72,7 @@ end
 ##   find i,j that minimize D(i,j)
 ##   merge clusters i and j
 ##   update D(i,j) and N(i) accordingly
-function hclust_minimum(ds::Symmetric{T}) where T<:Real
+function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
     ## For each i < j compute d[i,j] (this is already given)
     d = Matrix(ds)                #  we need a local copy
     nc = size(d,1)
@@ -252,11 +252,11 @@ end
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
 ##   merge c[i] and nearest neigbor c[i]
 ##   if i>3 i -= 3 else i <- 1
-function hclust2(d::Symmetric{T}, method::Function) where T<:Real
+function hclust2(d::AbstractMatrix{T}, method::Function) where T<:Real
     nc = size(d,1)                      # number of clusters
-    mr = Vector{Int}(undef, nc-1)               # min row
-    mc = Vector{Int}(undef, nc-1)               # min col
-    h = Vector{T}(undef, nc-1)                  # height
+    mr = Vector{Int}(undef, nc-1)       # min row
+    mc = Vector{Int}(undef, nc-1)       # min col
+    h = Vector{T}(undef, nc-1)          # height
     cl = [[x] for x in 1:nc]            # clusters
     merges = collect(-(1:nc))
     next = 1
@@ -318,14 +318,20 @@ end
 
 ## this calls the routine that gives the correct answer, fastest
 ## method names are inspired by R's hclust
-function hclust(d::Symmetric{T}, method::Symbol) where T<:Real
-    nc = size(d,1)
+function hclust(d::AbstractMatrix, method::Symbol = :single,
+                uplo::Union{Symbol, Nothing} = nothing)
+    if uplo !== nothing
+        sd = Symmetric(d, uplo) # use upper/lower part of d
+    else
+        assertdistancematrix(d)
+        sd = d
+    end
     if method == :single
-        h = hclust_minimum(d)
+        h = hclust_minimum(sd)
     elseif method == :complete
-        h = hclust2(d, slicemaximum)
+        h = hclust2(sd, slicemaximum)
     elseif method == :average
-        h = hclust2(d, slicemean)
+        h = hclust2(sd, slicemean)
     else
         error("Unsupported method ", method)
     end
@@ -340,15 +346,7 @@ function hclust(d::Symmetric{T}, method::Symbol) where T<:Real
     end
 
     ## label is just a placeholder for the moment
-    Hclust(h..., inds[end], collect(1:nc), method)
-end
-
-## uplo may be Char for v0.3, Symbol for v0.4
-hclust(d::AbstractMatrix{T}, method::Symbol, uplo) where {T<:Real} = hclust(Symmetric(d, uplo), method)
-
-function hclust(d::AbstractMatrix{T}, method::Symbol) where T<:Real
-    assertdistancematrix(d)
-    hclust(Symmetric(d), method)
+    Hclust(h..., inds[end], collect(1:size(sd,1)), method)
 end
 
 
