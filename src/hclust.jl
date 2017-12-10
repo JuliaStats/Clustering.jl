@@ -82,6 +82,33 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
     hcat(mr, mc), h
 end
 
+# nearest neighbor to i-th node given symmetric distance matrix d;
+# returns 0 if no nearest neighbor (1×1 matrix)
+function nearest_neighbor(d::AbstractMatrix, i::Integer, N::Integer=size(d, 1))
+    (N <= 1) && return 0, NaN
+    # initialize with the first non-i node
+    @inbounds if i > 1
+        NNi = 1
+        NNdist = d[NNi, i]
+    else
+        NNi = 2
+        NNdist = d[i, NNi]
+    end
+    @inbounds for j in (NNi+1):(i-1)
+        if NNdist > d[j, i]
+            NNi = j
+            NNdist = d[j, i]
+        end
+    end
+    @inbounds for j in (i+1):N
+        if NNdist > d[i, j]
+            NNi = j
+            NNdist = d[i, j]
+        end
+    end
+    return NNi, NNdist
+end
+
 ## Efficient single link algorithm, according to Olson, O(n^2), fig 2.
 ## Verified against R's implementation, correct, and about 2.5 x faster
 ## For each i < j compute D(i,j) (this is already given)
@@ -94,24 +121,7 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
     d = Matrix(ds)      # active trees distances, only upper (i < j) is used
     n = size(d,1)       # number of points (leaf nodes)
     ## For each 0 < i ≤ n compute Nearest Neighbor NN[i]
-    NN = zeros(Int, n)  # nearest neighbor of i-th tree
-    for i in 1:n
-        NNmindist = typemax(T)
-        NNi = 0
-        for k in 1:(i-1)
-            if d[k,i] < NNmindist
-                NNmindist = d[k,i]
-                NNi = k
-            end
-        end
-        for k in (i+1):n
-            if d[i,k] < NNmindist
-                NNmindist = d[i,k]
-                NNi = k
-            end
-        end
-        NN[i] = NNi
-    end
+    NN = [nearest_neighbor(d, i, n)[1] for i in 1:n]
     ## the main loop
     mleft = Vector{Int}()       # merged left tree
     mright = Vector{Int}()      # merged right tree
@@ -119,8 +129,8 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
     trees = collect(-(1:n))     # indices of active trees, initialized to all leaves
     while length(trees) > 1     # O(n)
         # find a pair of nearest trees, i and j
-        NNmindist = d[1,NN[1]]
         i = 1
+        NNmindist = i < NN[i] ? d[i, NN[i]] : d[NN[i], i]
         for k in 2:length(NN)   # O(n)
             dist = k < NN[k] ? d[k,NN[k]] : d[NN[k],k]
             if dist < NNmindist
