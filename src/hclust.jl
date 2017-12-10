@@ -265,67 +265,68 @@ end
 ##   if i>3 i -= 3 else i <- 1
 function hclust2(d::AbstractMatrix, linkage::Function)
     T = eltype(linkage(d, Int[], Int[]))
-    nc = size(d,1)                      # number of clusters
-    mr = Vector{Int}(undef, nc-1)       # min row
-    mc = Vector{Int}(undef, nc-1)       # min col
-    h = Vector{T}(undef, nc-1)          # height
-    cl = [[x] for x in 1:nc]            # clusters
-    merges = collect(-(1:nc))
-    next = 1
-    i = 1
-    N = Vector{Int}(undef, nc+1)
-    N[1] = 1                            # arbitrary choice
-    while nc > 1
-        found = false
-        mindist = typemax(T)
-        while !found
-            i += 1
-            mi = 0
-            mindist = typemax(T)
-            Nim1 = N[i-1]
-            ## c[i] = nearest neigbour c[i-1]
-            for j = 1:nc if Nim1 != j
-                distance = linkage(d, cl[Nim1], cl[j])
-                if distance < mindist
-                    mindist = distance
-                    mi = j
+    n = size(d,1)                       # number of datapoints
+    mleft = Vector{Int}()               # id of left merged subtree
+    mright = Vector{Int}()              # id of right merged subtree
+    h = Vector{T}()                     # tree height
+    cl = [[x] for x in 1:n]             # elements of active trees
+    trees = collect(-(1:n))             # ids of active trees
+    NN = [1]                            # nearest neighbors chain of tree indices, init by random tree index
+    while length(trees) > 1
+        # search for a pair of closest clusters,
+        # they would be mutual nearest neighbors on top of the NN stack
+        NNmindist = typemax(T)
+        while true
+            NNtop = NN[end]
+            els_top = cl[NNtop]
+            ## find NNnext: the nearest neighbor of NNtop and the next stack top
+            NNnext = NNtop > 1 ? 1 : 2
+            NNmindist = linkage(d, els_top, cl[NNnext])
+            for k in (NNnext+1):length(cl) if k != NNtop
+                dist = linkage(d, cl[k], els_top)
+                if dist < NNmindist
+                    NNmindist = dist
+                    NNnext = k
                 end
             end end
-            N[i] = mi           # N[i+1] is nearest neigbor to N[i]
-            found = i > 2 && N[i] == N[i-2]
-        end
-        ## merge c[i] and nearest neigbor c[i], i.e., c[i-1]
-        if N[i-1] < N[i]
-            lo, high = N[i-1], N[i]
-        else
-            lo, high = N[i], N[i-1]
-        end
-        ## first, store the result
-        mr[next] = merges[lo]
-        mc[next] = merges[high]
-        h[next] = mindist
-        merges[lo] = next
-        merges[high] = merges[nc]
-        next += 1
-        ## then perform the actual merge
-        cl[lo] = vcat(cl[lo], cl[high])
-        cl[high] = cl[nc]
-        if i > 3
-            i -= 3
-        else
-            i = 1
-        end
-        ## replace any nearest neighbor referring to nc
-        for k in 1:i
-            if N[k] == nc
-                N[k] = high
+            if length(NN) > 1 && NNnext == NN[end-1] # NNnext==NN[end-1] and NNtop=NN[end] are mutual n.neighbors
+                break
+            else
+                push!(NN, NNnext)   # grow the chain
             end
         end
-        nc -= 1
+        ## merge NN[end] and its nearest neighbor, i.e., NN[end-1]
+        NNlo = pop!(NN)
+        NNhi = pop!(NN)
+        if NNlo > NNhi
+             NNlo, NNhi = NNhi, NNlo
+        end
+        ## record the merge
+        push!(mright, trees[NNlo])
+        push!(mleft, trees[NNhi])
+        push!(h, NNmindist)
+        trees[NNlo] = length(h) # assign new id for the resulting tree
+        ## merge the elements of NNlo and NNhi
+        append!(cl[NNlo], cl[NNhi])
+        empty!(cl[NNhi])
+        ## replace any nearest neighbor referring to the last_tree with NNhi
+        last_tree = length(trees)
+        if NNhi < last_tree
+            cl[NNhi] = cl[last_tree]
+            trees[NNhi] = trees[last_tree]
+            for k in eachindex(NN)
+                if NN[k] == last_tree
+                    NN[k] = NNhi
+                end
+            end
+        end
+        pop!(trees)
+        pop!(cl)
+        isempty(NN) && push!(NN, 1) # restart NN chain
     end
     ## fix order for presenting result
-    o = rorder!(mr, mc, h)
-    hcat(mr[o], mc[o]), h[o]
+    o = rorder!(mleft, mright, h)
+    hcat(mleft[o], mright[o]), h[o]
 end
 
 ## this calls the routine that gives the correct answer, fastest
