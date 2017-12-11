@@ -1,70 +1,65 @@
-"""V-measure of contingency table"""
+# V-measure of contingency table
 function _vmeasure(A::Matrix{Int}; β = 1.0)
+    @assert β >= 0 "β should be nonnegative"
+
     C, K = size(A)
     N = sum(A)
 
     # Homogeneity
     hck = 0.0
     for k in 1:K
-        d = sum(A[:,k])
+        Ak = view(A, :, k)
+        d = sum(Ak)
         for c in 1:C
-            if A[c,k] != 0 && d != 0
-                hck += log(A[c,k]/d) * A[c,k]/N
+            if Ak[c] != 0 && d != 0
+                hck += log(Ak[c]/d) * Ak[c]/N
             end
         end
     end
     hck = -hck
 
-    hc = 0.0
-    for c in 1:C
-        n = sum(A[c,:]) / N
-        if n != 0.0
-            hc += log(n) * n
-        end
-    end
-    hc = -hc
+    hc = entropy(sum(A,2)./N)
 
-    h = (hc == 0.0 || hck == 0.0) ? 1 : 1 - hck/hc
+    h = (hc == 0.0 || hck == 0.0) ? 1.0 : 1.0 - hck/hc
 
     # Completeness
     hkc = 0.0
     for c in 1:C
-        d = sum(A[c,:])
+        Ac = view(A, c, :)
+        d = sum(Ac)
         for k in 1:K
-            if A[c,k] != 0 && d != 0
-                hkc += log(A[c,k]/d) * A[c,k]/N
+            if Ac[k] != 0 && d != 0
+                hkc += log(Ac[k]/d) * Ac[k]/N
             end
         end
     end
     hkc = -hkc
 
-    hk = 0.0
-    for k in 1:K
-        n = sum(A[:,k]) / N
-        if n != 0.0
-            hk += log(n) * n
-        end
-    end
-    hk = -hk
+    hk = entropy(sum(A,1)./N)
 
-    c = (hk == 0.0 || hkc == 0.0) ? 1 : 1 - hkc/hk
+    c = (hk == 0.0 || hkc == 0.0) ? 1.0 : 1.0 - hkc/hk
 
     # V-measure
     V_β = (1 + β)*h*c/(β*h + c)
     return V_β
 end
 
-"""V-measure between two clustering assignments.
+"""
+    vmeasure(assign1, assign2; β = 1.0 )
+
+V-measure between two clustering assignments.
+
+`assign1` and `assign2` can be either `ClusteringResult` objects or assignments vectors, `AbstractVector{Int}`.
 
 `β` parameter defines trade-off between homogeneity and completeness,
-if `β` is greater than 1 completeness is V-measure  weighted more strongly in the completeness,
+if `β` is greater than 1, completeness is weighted more strongly in the completeness,
 if `β` is less than 1, homogeneity is weighted more strongly.
 
 *Ref:* Andrew Rosenberg and Julia Hirschberg, 2007. "V-Measure: A conditional entropy-based external cluster evaluation measure"
 """
-vmeasure(assign1::Vector{Int}, assign2::Vector{Int}; β = 1.0) =
+function vmeasure(clusters1::Union{AbstractVector{Int}, ClusteringResult},
+                  clusters2::Union{AbstractVector{Int}, ClusteringResult}; β::Real = 1.0)
+    assign1 = isa(clusters1, AbstractVector) ? clusters1 : assignments(clusters1)
+    assign2 = isa(clusters2, AbstractVector) ? clusters2 : assignments(clusters2)
     _vmeasure(counts(assign1,assign2,(1:maximum(assign1),1:maximum(assign2))), β = β)
-vmeasure(R1::ClusteringResult, assign::Vector{Int}; β = 1.0) =
-    vmeasure(assignments(R), assign, β = β)
-vmeasure(R1::ClusteringResult, R2::ClusteringResult; β = 1.0) =
-    vmeasure(assignments(R1), assignments(R2), β = β)
+end

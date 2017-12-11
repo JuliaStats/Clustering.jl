@@ -51,15 +51,14 @@ module Clustering
     # randindex
     randindex,
 
+    # V-measure
+    vmeasure,
+
     # hclust
     Hclust, hclust, cutree,
 
     # MCL
-    mcl, MCLResult,
-
-    # V-measure
-    vmeasure
-
+    mcl, MCLResult
 
     ## source files
 
