@@ -316,6 +316,139 @@ function hclust2{T<:Real}(d::Symmetric{T}, method::Function)
     hcat(mr[o], mc[o]), h[o]
 end
 
+# Ward linkage algorithm, using a Lance-Williams formula.
+#
+# Based on the R-coded version of the Fortran function hclust.f, originally
+# written by Fionn Murtagh (1986) and modified for R by Ross Ihaka (1996), Fritz Leisch (2000)
+# and Martin Maechler (2001).
+#
+# As used in Murtagh, F. and P. Legendre,
+# “Ward’s hierarchical agglomerative clustering method: which algorithms implement Ward’s criterion?”
+# J. Classification 31(3) pp. 274--295, 2014
+#
+# currently supported methods: :ward1 and :ward2
+function hclust_lw{T<:Real}(ds::Symmetric{T}, method::Symbol)
+
+    nc = size(ds,1)                      # number of clusters
+    mr = Vector{Int64}(nc-1)               # min row
+    mc = Vector{Int64}(nc-1)               # min col
+    h = Vector{T}(nc-1)                  # height
+
+    triindex(n::Int64, i::Int64,j::Int64) = j + (i-1)*n - ((i*(i+1)) >> 1);
+
+    if method == :ward1
+        dscpy = [ds[r,c] for r = 1:(nc-1) for c = (r+1):nc]
+    elseif method == :ward2
+        dscpy = [ds[r,c]*ds[r,c] for r = 1:(nc-1) for c = (r+1):nc]
+    else
+        ArgumentError("Method is unsupported. Currently supported methods are :ward1 and :ward2.")
+    end
+
+    merges = collect(-1:-1:-nc)
+    membr = ones(nc)
+    checkme = trues(nc)
+    nn = zeros(Int64, nc-1)
+    distancetonn = zeros(nc-1)
+
+    jm = 0; im = 0; jj = 0;
+
+    # create list of nearest neighbors
+    for i = 1:(nc-1)
+        dmin = Inf
+        for j = (i+1):nc
+            ind = triindex(nc,i,j)
+            if dscpy[ind] < dmin
+                dmin = dscpy[ind]
+                jm = j
+            end
+        end
+        nn[i] = jm
+        distancetonn[i] = dmin
+    end
+
+    # main clustering loop
+    for nclust = nc:-1:2
+
+        # check list of nearest neighbors to determine next merge
+        dmin = Inf
+        for i = 1:(nc-1)
+            if checkme[i] == true
+                if distancetonn[i] < dmin
+                    dmin = distancetonn[i]
+                    im = i
+                    jm = nn[i]
+                end
+            end
+        end
+
+        # merge
+        i2 = min(im, jm) # lower element in the clustering pair
+        j2 = max(im, jm) # upper element in the clustering pair
+
+        # do merge
+        mr[nc-nclust+1] = merges[i2]
+        mc[nc-nclust+1] = merges[j2]
+        h[nc-nclust+1] = dmin
+
+        merges[i2] = nc - nclust + 1
+        merges[j2] = merges[nclust]
+
+        checkme[j2] = false
+
+        # update dscpy matrix for new cluster
+        for k = 1:nc
+            ind3 = triindex(nc, i2, j2)
+            if checkme[k] && (k != i2)
+                # Lance-Williams updating
+                if i2 < k
+                    ind1 = triindex(nc, i2, k)
+                else
+                    ind1 = triindex(nc, k, i2)
+                end
+                if j2 < k
+                    ind2 = triindex(nc, j2, k)
+                else
+                    ind2 = triindex(nc, k, j2)
+                end
+                dscpy[ind1] = ( (membr[i2] + membr[k])*dscpy[ind1] +
+                    (membr[j2] + membr[k])*dscpy[ind2] -
+                    membr[k]*dscpy[ind3] ) / (membr[i2]+membr[j2]+membr[k])
+            end
+        end
+
+        # update Lance-Williams coefficients
+        membr[i2] = membr[i2] + membr[j2]
+
+        # update list of nearest neighbors
+        for i = 1:(nc-1)
+            if checkme[i] == true
+                dmin = Inf
+                for j = (i+1):nc
+                    if checkme[j] == true
+                        ind = triindex(nc, i, j)
+                        if dscpy[ind] < dmin
+                            dmin = dscpy[ind]
+                            jj = j
+                        end
+                    end
+                end
+                nn[i] = jj
+                distancetonn[i] = dmin
+            end
+        end
+
+    end # main clustering loop
+
+    # take root if we use ward2
+    if method == :ward2
+        h .= sqrt.(h)
+    end
+
+    ## fix order for presenting result
+    o = rorder!(mr, mc, h)
+    hcat(mr[o], mc[o]), h[o]
+end
+
 ## this calls the routine that gives the correct answer, fastest
 ## method names are inspired by R's hclust
 function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
@@ -326,6 +459,8 @@ function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
         h = hclust2(d, slicemaximum)
     elseif method == :average
         h = hclust2(d, slicemean)
+    elseif (method == :ward1) || (method == :ward2)
+        h = hclust_lw(d, method)
     else
         error("Unsupported method ", method)
     end
