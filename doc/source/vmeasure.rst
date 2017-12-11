@@ -1,7 +1,7 @@
 V-measure
 =============
 
-The V-Measure is defined as the harmonic mean of homogeneity :math:`h` and completeness :math:`c` of the clustering. Both these measures can be expressed in terms of the mutual information and entropy measures originating from the field of information retrieval.
+The V-Measure is defined as the harmonic mean of homogeneity :math:`h` and completeness :math:`c` of the clustering. Both these measures can be expressed in terms of the mutual information and entropy measures of the information theory.
 
 .. math::
 
@@ -13,9 +13,9 @@ Homogeneity :math:`h` is maximized when each cluster contains elements of as few
 
     Andrew Rosenberg and Julia Hirschberg, 2007. "V-Measure: A conditional entropy-based external cluster evaluation measure"
 
-This package provides the ``vmeasure`` function that implements this metric:
+The metric is implemented by the ``vmeasure`` function:
 
-.. function:: vmeasure(assign1, assign2; β =1.0 )
+.. function:: vmeasure(assign1, assign2; β = 1.0 )
 
 	Compute V-measure value between two clustering assignments.
 
@@ -23,14 +23,14 @@ This package provides the ``vmeasure`` function that implements this metric:
 	:param assign2: the vector of assignments for the second clustering.
 	:param β: the weight of harmonic mean of homogeneity and completeness.
 
-	:return: It returns a v-measure value.
+	:return: It returns a V-measure value.
 
 .. function:: vmeasure(R, assign)
 
-    This method takes ``R``, an instance of ``ClusteringResult``, and the corresponding assignment vector ``assign`` as input, and computes v-measure value (see above).
+    This method takes ``R``, an instance of ``ClusteringResult``, and the corresponding assignment vector ``assign`` as input, and computes V-measure value (see above).
 
 .. function:: vmeasure(R1, R2)
 
-    This method takes ``R1`` and ``R2`` (both are instances of ``ClusteringResult``) and computes v-measure value (see above).
+    This method takes ``R1`` and ``R2`` (both are instances of ``ClusteringResult``) and computes V-measure value (see above).
 
 	It is equivalent to ``vmeasure(assignments(R1), assignments(R1))``.
