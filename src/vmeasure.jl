@@ -1,43 +1,23 @@
 # V-measure of contingency table
-function _vmeasure(A::Matrix{Int}; β = 1.0)
+function _vmeasure(A::AbstractMatrix{Int}; β::Real)
     @assert β >= 0 "β should be nonnegative"
 
-    C, K = size(A)
     N = sum(A)
+    (N == 0.0) && return 0.0
+
+    entA = entropy(A)
+    entArows = entropy(sum(A, 2))
+    entAcols = entropy(sum(A, 1))
+
+    hck = (entA - entAcols)/N
+    hkc = (entA - entArows)/N
+    hc = entArows/N + log(N)
+    hk = entAcols/N + log(N)
 
     # Homogeneity
-    hck = 0.0
-    for k in 1:K
-        Ak = view(A, :, k)
-        d = sum(Ak)
-        for c in 1:C
-            if Ak[c] != 0 && d != 0
-                hck += log(Ak[c]/d) * Ak[c]/N
-            end
-        end
-    end
-    hck = -hck
-
-    hc = entropy(sum(A,2)./N)
-
-    h = (hc == 0.0 || hck == 0.0) ? 1.0 : 1.0 - hck/hc
-
+    h = hc == 0.0 ? 1.0 : 1.0 - hck/hc
     # Completeness
-    hkc = 0.0
-    for c in 1:C
-        Ac = view(A, c, :)
-        d = sum(Ac)
-        for k in 1:K
-            if Ac[k] != 0 && d != 0
-                hkc += log(Ac[k]/d) * Ac[k]/N
-            end
-        end
-    end
-    hkc = -hkc
-
-    hk = entropy(sum(A,1)./N)
-
-    c = (hk == 0.0 || hkc == 0.0) ? 1.0 : 1.0 - hkc/hk
+    c = hk == 0.0 ? 1.0 : 1.0 - hkc/hk
 
     # V-measure
     V_β = (1 + β)*h*c/(β*h + c)
