@@ -1,13 +1,16 @@
-function randindex(c1,c2)
-    # rand_index - calculates Rand Indices to compare two partitions
-    # (AR, RI, MI, HI) = rand(c1,c2), where c1,c2 are vectors listing the
-    # class membership, returns the "Hubert & Arabie adjusted Rand index".
-    # (AR, RI, MI, HI) = rand(c1,c2) returns the adjusted Rand index,
-    # the unadjusted Rand index, "Mirkin's" index and "Hubert's" index.
-    #
-    # See L. Hubert and P. Arabie (1985) "Comparing Partitions" Journal of
-    # Classification 2:193-218
+"""
+## rand_index
+Calculates Rand Indices to compare two partitions
+(AR, RI, MI, HI) = rand(c1,c2), where c1,c2 are vectors listing the
+class membership, returns the "Hubert & Arabie adjusted Rand index".
+(AR, RI, MI, HI) = rand(c1,c2) returns the adjusted Rand index,
+the unadjusted Rand index, "Mirkin's" index and "Hubert's" index.
 
+See L. Hubert and P. Arabie (1985) "Comparing Partitions" Journal of
+Classification 2:193-218
+"""
+function randindex(c1,c2)
+    
     c = counts(c1,c2,(1:maximum(c1),1:maximum(c2))) # form contingency matrix
 
     n = round(Int,sum(c))
