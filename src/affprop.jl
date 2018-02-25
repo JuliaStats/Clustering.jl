@@ -21,7 +21,17 @@ const _afp_default_damp = 0.5
 const _afp_default_tol = 1.0e-6
 const _afp_default_display = :none
 
-function affinityprop{T<:AbstractFloat}(S::DenseMatrix{T}; 
+"""
+## affinityprop
+AffinityPropagation creates clusters by sending messages between pairs of samples until convergence.
+Time complexity - O(TN^2),
+Space complexity - O(N^2), where N is the number of samples and T is the number of iterations
+Reference:
+    Clustering by Passing Messages Between Data Points.
+    Brendan J. Frey and Delbert Dueck
+    Science, vol 315, pages 972-976, 2007.
+"""
+function affinityprop{T<:AbstractFloat}(S::DenseMatrix{T};
                                         maxiter::Integer=_afp_default_maxiter,
                                         tol::Real=_afp_default_tol,
                                         damp::Real=_afp_default_damp, 

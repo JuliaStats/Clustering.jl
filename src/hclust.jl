@@ -316,9 +316,18 @@ function hclust2{T<:Real}(d::Symmetric{T}, method::Function)
     hcat(mr[o], mc[o]), h[o]
 end
 
+"""
+## Hierarchical Clustering
+`hclust{T<:Real}(d::Symmetric{T}, method::Symbol)`
+
+Hierarchical clustering is a general family of clustering
+algorithms that build nested clusters by merging or splitting them successively.
+the algorithm is selected from {:single, :complete, :average}
+for sigle link, complete and average linkages respectively
+"""
+function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
 ## this calls the routine that gives the correct answer, fastest
 ## method names are inspired by R's hclust
-function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
     nc = size(d,1)
     if method == :single
         h = hclust_minimum(d)
