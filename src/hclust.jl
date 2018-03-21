@@ -82,10 +82,10 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
     merges = -collect(1:nc)
     next = 1
     ## For each 0 < i ≤ n compute Nearest Neighbor N[i]
-    N = zeros(Int, nc)
+    N = ones(Int, nc)
     for k in 1:nc
         mindist = Inf
-        mk = 0
+        mk = 1
         for i in 1:(k-1)
             if d[i,k] < mindist
                 mindist = d[i,k]
@@ -169,7 +169,7 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
         next += 1
         ## finally we need to update N[i], because it was nearest to j
         mindist = Inf
-        mk = 0
+        mk = 1
         for k in 1:(i-1)
             if d[k,i] < mindist
                 mindist = d[k,i]
