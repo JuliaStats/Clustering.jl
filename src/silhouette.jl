@@ -22,8 +22,8 @@ function sil_aggregate_dists{T<:Real}(k::Int, a::AbstractVector{Int}, dists::Den
 end
 
 
-function silhouettes{T<:Real}(assignments::Vector{Int}, 
-                              counts::AbstractVector{Int}, 
+function silhouettes{T<:Real}(assignments::Vector{Int},
+                              counts::AbstractVector{Int},
                               dists::DenseMatrix{T})
 
     n = length(assignments)
@@ -69,13 +69,17 @@ function silhouettes{T<:Real}(assignments::Vector{Int},
         b[j] = v
     end
 
-    # compute silhouette score 
+    # compute silhouette score
     sil = a   # reuse the memory of a for sil
     for j = 1:n
-        @inbounds sil[j] = (b[j] - a[j]) / max(a[j], b[j])
+        if counts[assignments[j]] == 1
+            sil[j] = 0
+        else
+            @inbounds sil[j] = (b[j] - a[j]) / max(a[j], b[j])
+        end
     end
     return sil
 end
 
-silhouettes(R::ClusteringResult, dists::DenseMatrix) = 
-    silhouettes(assignments(R), counts(R), dists) 
+silhouettes(R::ClusteringResult, dists::DenseMatrix) =
+    silhouettes(assignments(R), counts(R), dists)
