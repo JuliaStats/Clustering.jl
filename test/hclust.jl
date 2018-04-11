@@ -36,3 +36,10 @@ end
     hc = hclust(mdist, :single)
     cutree(hc, h=1)' == [1 2 2 2 2 2 2 3 2 2]
 end
+
+@test begin
+    mdist = Matrix{Int}(1, 1)
+    mdist[1, 1] = 0.0
+    hc = hclust(mdist, :single)
+    cutree(hc, h=1) == [1]
+end

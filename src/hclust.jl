@@ -79,6 +79,7 @@ function hclust_minimum{T<:Real}(ds::Symmetric{T})
     mr = Vector{Int}(nc-1)       # min row
     mc = Vector{Int}(nc-1)       # min col
     h = Vector{T}(nc-1)          # height
+    nc == 1 && return hcat(mr, mc), h
     merges = -collect(1:nc)
     next = 1
     ## For each 0 < i ≤ n compute Nearest Neighbor N[i]
@@ -333,6 +334,7 @@ function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
     # compute an ordering of the leaves
     inds = Any[]
     merge = h[1]
+
     for i in 1:size(merge)[1]
         inds1 = merge[i,1] < 0 ? -merge[i,1] : inds[merge[i,1]]
         inds2 = merge[i,2] < 0 ? -merge[i,2] : inds[merge[i,2]]
@@ -340,7 +342,8 @@ function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
     end
 
     ## label is just a placeholder for the moment
-    Hclust(h..., inds[end], collect(1:nc), method)
+    height = endof(inds) > 0 ? inds[end] : Int[]
+    Hclust(h..., height, collect(1:nc), method)
 end
 
 ## uplo may be Char for v0.3, Symbol for v0.4
@@ -354,7 +357,7 @@ end
 
 ## cut a tree at height `h' or to `k' clusters
 function cutree(hclust::Hclust; k::Int=1,
-                h::Real=maximum(hclust.height))
+                h::Real=length(hclust.height) > 0 ? maximum(hclust.height) : 0)
     clusters = Vector{Int}[]
     nnodes = length(hclust.labels)
     nodes = [[i::Int] for i=1:nnodes]
