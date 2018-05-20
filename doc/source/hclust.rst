@@ -37,6 +37,6 @@ Example:
 	:param k: Integer specifying the number of desired clusters.
 	:param h: Integer specifying the height at which to cut the tree.
 
-If both `k` and `h` are specified, it's guaranteed that the number of clusters is ``≤ k`` and their height ``≤ h``.
+If both `k` and `h` are specified, it's guaranteed that the number of clusters is ``≥ k`` and their height ``≤ h``.
 
 The output is a vector specifying the cluster index for each datapoint.
