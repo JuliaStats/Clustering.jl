@@ -19,3 +19,27 @@ for example in examples
         @test h.order[i] == example["order"][i]
     end
 end
+
+#When a completely disconnected node is presented, ensure the initialization to 0-index does not kick-in.
+@test begin
+    mdist = [  0.0    Inf         Inf         Inf         Inf         Inf         Inf         Inf        Inf         Inf;
+               Inf      0.0         0.108335  Inf         Inf         Inf         Inf         Inf        Inf         Inf;       
+               Inf      0.108335    0.0         0.108332  Inf         Inf         Inf         Inf        Inf         Inf;      
+               Inf    Inf           0.108332    0.0         0.858332    0.858332  Inf         Inf        Inf         Inf;      
+               Inf    Inf         Inf           0.858332    0.0         0.673       0.716667    1.93333  Inf         Inf;      
+               Inf    Inf         Inf           0.858332    0.673       0.0         0.716667  Inf        Inf         Inf;      
+               Inf    Inf         Inf         Inf           0.716667    0.716667    0.0       Inf          0.716667  Inf;      
+               Inf    Inf         Inf         Inf           1.93333   Inf         Inf           0.0        3.9145    Inf;      
+               Inf    Inf         Inf         Inf         Inf         Inf           0.716667    3.9145     0.0         0.524999;
+               Inf    Inf         Inf         Inf         Inf         Inf         Inf         Inf          0.524999    0.0]
+
+    hc = hclust(mdist, :single)
+    cutree(hc, h=1)' == [1 2 2 2 2 2 2 3 2 2]
+end
+
+@test begin
+    mdist = Matrix{Int}(1, 1)
+    mdist[1, 1] = 0.0
+    hc = hclust(mdist, :single)
+    cutree(hc, h=1) == [1]
+end
