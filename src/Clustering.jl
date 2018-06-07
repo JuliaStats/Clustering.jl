@@ -5,6 +5,7 @@ module Clustering
     using Distances
     using NearestNeighbors
     using StatsBase
+    using DataStructures
 
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts
@@ -54,7 +55,11 @@ module Clustering
     Hclust, hclust, cutree,
 
     # MCL
-    mcl, MCLResult
+    mcl, MCLResult,
+
+    # chinese_whispers
+    chinese_whispers, ChineseWhispersResult
+
 
     ## source files
 
@@ -66,6 +71,8 @@ module Clustering
     include("affprop.jl")
     include("dbscan.jl")
     include("mcl.jl")
+    include("chinesewhispers.jl")
+
     include("fuzzycmeans.jl")
 
     include("silhouette.jl")

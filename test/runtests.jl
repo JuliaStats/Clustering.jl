@@ -1,5 +1,6 @@
 include("../src/Clustering.jl")
 using Compat
+using Base.Test
 
 tests = ["seeding",
          "kmeans",
@@ -11,11 +12,14 @@ tests = ["seeding",
          "varinfo",
          "randindex",
          "hclust",
-         "mcl"]
+         "mcl",
+         "chinesewhispers"
+        ]
 
 println("Runing tests:")
 for t in tests
     fp = "$(t).jl"
-    println("* $fp ...")
-    include(fp)
+    @testset "$t" begin
+        include(fp)
+    end
 end
