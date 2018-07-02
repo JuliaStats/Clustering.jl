@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using Clustering
 using Distances
 
@@ -21,7 +21,7 @@ k = length(R.seeds)
 @test length(R.assignments) == n
 @test length(R.counts) == k
 for c = 1:k
-    @test countnz(R.assignments .== c) == R.counts[c]
+    @test count(==(c), R.assignments) == R.counts[c]
 end
 @test all(R.counts .>= 180)
 

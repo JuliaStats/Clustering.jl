@@ -1,6 +1,6 @@
 # Test variational information
 
-using Base.Test
+using Test
 using Clustering
 
 a1 = [1, 1, 1, 2, 2, 2, 3, 3, 3, 3]

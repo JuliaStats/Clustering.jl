@@ -1,4 +1,4 @@
-type KMeansOutput
+mutable struct KMeansOutput
   assignments::Vector{Int64}
   centers::Matrix{Float64}
   iterations::Int64
@@ -26,7 +26,7 @@ function show(io::IO, results::KMeansOutput)
   println(io)
 end
 
-type DPMeansOutput
+mutable struct DPMeansOutput
   assignments::Vector{Int64}
   centers::Matrix{Float64}
   k::Int64
@@ -58,7 +58,7 @@ function show(io::IO, results::DPMeansOutput)
 end
 
 ## Mostly following R's hclust class
-type Hclust{T<:Real}
+mutable struct Hclust{T<:Real}
     merge::Matrix{Int}
     height::Vector{T}
     order::Vector{Int}

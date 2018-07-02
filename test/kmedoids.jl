@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 
 using Distances
 using Clustering
@@ -19,7 +19,7 @@ R = kmedoids(costs, k)
 @test all(R.assignments .>= 1) && all(R.assignments .<= k)
 @test R.assignments[R.medoids] == collect(1:k) # Every medoid should belong to its own cluster
 @test sum(R.counts) == n
-@test R.acosts == costs[sub2ind((n, n), R.medoids[R.assignments], 1:n)]
+@test R.acosts == costs[LinearIndices((n, n))[CartesianIndex.(R.medoids[R.assignments], 1:n)]]
 @test isapprox(sum(R.acosts), R.totalcost)
 @test R.converged
 

@@ -8,7 +8,7 @@
 
 #### Interface
 
-type AffinityPropResult <: ClusteringResult
+mutable struct AffinityPropResult <: ClusteringResult
     exemplars::Vector{Int}      # indexes of exemplars (centers)
     assignments::Vector{Int}    # assignments for each point
     counts::Vector{Int}         # number of samples in each cluster
@@ -21,11 +21,11 @@ const _afp_default_damp = 0.5
 const _afp_default_tol = 1.0e-6
 const _afp_default_display = :none
 
-function affinityprop{T<:AbstractFloat}(S::DenseMatrix{T}; 
-                                        maxiter::Integer=_afp_default_maxiter,
-                                        tol::Real=_afp_default_tol,
-                                        damp::Real=_afp_default_damp, 
-                                        display::Symbol=_afp_default_display)
+function affinityprop(S::DenseMatrix{T}; 
+                      maxiter::Integer=_afp_default_maxiter,
+                      tol::Real=_afp_default_tol,
+                      damp::Real=_afp_default_damp, 
+                      display::Symbol=_afp_default_display) where T<:AbstractFloat
 
     # check arguments
     n = size(S, 1)
@@ -41,11 +41,11 @@ end
 
 #### Implementation
 
-function _affinityprop{T<:AbstractFloat}(S::DenseMatrix{T}, 
-                                         maxiter::Int, 
-                                         tol::Real,
-                                         damp::T, 
-                                         displevel::Int)
+function _affinityprop(S::DenseMatrix{T}, 
+                       maxiter::Int, 
+                       tol::Real,
+                       damp::T, 
+                       displevel::Int) where T<:AbstractFloat
     n = size(S, 1)
     n2 = n * n
 
@@ -54,8 +54,8 @@ function _affinityprop{T<:AbstractFloat}(S::DenseMatrix{T},
     A = zeros(T, n, n)  # availabilities
 
     # prepare storages
-    Rt = Matrix{T}(n, n)
-    At = Matrix{T}(n, n)
+    Rt = Matrix{T}(undef, n, n)
+    At = Matrix{T}(undef, n, n)
 
     if displevel >= 2
         @printf "%7s %12s | %8s \n" "Iters" "objv-change" "exemplars"
@@ -103,13 +103,13 @@ end
 
 
 # compute responsibilities
-function _afp_compute_r!{T}(R::Matrix{T}, S::DenseMatrix{T}, A::Matrix{T})
+function _afp_compute_r!(R::Matrix{T}, S::DenseMatrix{T}, A::Matrix{T}) where T
     n = size(S, 1)
 
-    I1 = Vector{Int}(n)  # I1[i] is the column index of the maximum element in (A+S)[i,:]
-    Y1 = Vector{T}(n)    # Y1[i] is the maximum element in (A+S)[i,:]
-    Y2 = Vector{T}(n)    # Y2[i] is the second maximum element in (A+S)[i,:]
-        
+    I1 = Vector{Int}(undef, n)  # I1[i] is the column index of the maximum element in (A+S)[i,:]
+    Y1 = Vector{T}(undef, n)    # Y1[i] is the maximum element in (A+S)[i,:]
+    Y2 = Vector{T}(undef, n)    # Y2[i] is the second maximum element in (A+S)[i,:]
+
     # Find the first and second maximum elements along each row
     @inbounds for i = 1:n
         v1 = A[i,1] + S[i,1]
@@ -147,7 +147,7 @@ function _afp_compute_r!{T}(R::Matrix{T}, S::DenseMatrix{T}, A::Matrix{T})
 end
 
 # compute availabilities
-function _afp_compute_a!{T}(A::Matrix{T}, R::Matrix{T})
+function _afp_compute_a!(A::Matrix{T}, R::Matrix{T}) where T
     n = size(R, 1)
     z = zero(T)
     for j = 1:n
@@ -181,7 +181,7 @@ function _afp_compute_a!{T}(A::Matrix{T}, R::Matrix{T})
 end
 
 # dampen update
-function _afp_dampen_update!{T}(x::Array{T}, xt::Array{T}, damp::T)
+function _afp_dampen_update!(x::Array{T}, xt::Array{T}, damp::T) where T
     ct = one(T) - damp
     for i = 1:length(x)
         @inbounds x[i] = ct * xt[i] + damp * x[i]
@@ -218,7 +218,7 @@ function _afp_get_assignments(S::DenseMatrix, exemplars::Vector{Int})
     n = size(S, 1)
     k = length(exemplars)
     Se = S[:, exemplars]
-    a = Vector{Int}(n)
+    a = Vector{Int}(undef, n)
     cnts = zeros(Int, k)
     for i = 1:n
         p = 1

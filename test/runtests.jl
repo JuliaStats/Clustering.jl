@@ -1,5 +1,11 @@
-include("../src/Clustering.jl")
-using Compat
+using Clustering
+using Test
+using Random
+using LinearAlgebra
+using SparseArrays
+if VERSION >= v"0.7.0-beta.85"
+    using Statistics
+end
 
 tests = ["seeding",
          "kmeans",

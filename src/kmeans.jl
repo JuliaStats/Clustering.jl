@@ -2,7 +2,7 @@
 
 #### Interface
 
-type KmeansResult{T<:AbstractFloat} <: ClusteringResult
+mutable struct KmeansResult{T<:AbstractFloat} <: ClusteringResult
     centers::Matrix{T}         # cluster centers (d x k)
     assignments::Vector{Int}   # assignments (n)
     costs::Vector{T}           # costs of the resultant assignments (n)
@@ -18,12 +18,12 @@ const _kmeans_default_maxiter = 100
 const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
 
-function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
-                                   weights=nothing,
-                                   maxiter::Integer=_kmeans_default_maxiter,
-                                   tol::Real=_kmeans_default_tol,
-                                   display::Symbol=_kmeans_default_display,
-                                   distance::SemiMetric=SqEuclidean())
+function kmeans!(X::Matrix{T}, centers::Matrix{T};
+                 weights=nothing,
+                 maxiter::Integer=_kmeans_default_maxiter,
+                 tol::Real=_kmeans_default_tol,
+                 display::Symbol=_kmeans_default_display,
+                 distance::SemiMetric=SqEuclidean()) where T<:AbstractFloat
 
     m, n = size(X)
     m2, k = size(centers)
@@ -32,21 +32,21 @@ function kmeans!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T};
 
     assignments = zeros(Int, n)
     costs = zeros(T, n)
-    counts = Vector{Int}(k)
-    cweights = Vector{Float64}(k)
+    counts = Vector{Int}(undef, k)
+    cweights = Vector{Float64}(undef, k)
 
     _kmeans!(X, conv_weights(T, n, weights), centers,
              assignments, costs, counts, cweights,
              round(Int, maxiter), tol, display_level(display), distance)
 end
 
-function kmeans{T<:AbstractFloat}(X::Matrix{T}, k::Int;
+function kmeans(X::Matrix{T}, k::Int;
                 weights=nothing,
                 init=_kmeans_default_init,
                 maxiter::Integer=_kmeans_default_maxiter,
                 tol::Real=_kmeans_default_tol,
                 display::Symbol=_kmeans_default_display,
-                distance::SemiMetric=SqEuclidean())
+                distance::SemiMetric=SqEuclidean()) where T<:AbstractFloat
 
     m, n = size(X)
     (2 <= k < n) || error("k must have 2 <= k < n.")
@@ -63,9 +63,9 @@ end
 #### Core implementation
 
 # core k-means skeleton
-function _kmeans!{T<:AbstractFloat}(
+function _kmeans!(
     x::Matrix{T},                   # in: sample matrix (d x n)
-    w::Union{Void, Vector{T}},      # in: sample weights (n)
+    w::Union{Nothing, Vector{T}},      # in: sample weights (n)
     centers::Matrix{T},             # in/out: matrix of centers (d x k)
     assignments::Vector{Int},       # out: vector of assignments (n)
     costs::Vector{T},               # out: costs of the resultant assignments (n)
@@ -74,12 +74,12 @@ function _kmeans!{T<:AbstractFloat}(
     maxiter::Int,                   # in: maximum number of iterations
     tol::Real,                      # in: tolerance of change at convergence
     displevel::Int,                 # in: the level of display
-    distance::SemiMetric)             # in: function to calculate the distance with
+    distance::SemiMetric) where T<:AbstractFloat             # in: function to calculate the distance with
 
     # initialize
 
     k = size(centers, 2)
-    to_update = Vector{Bool}(k) # indicators of whether a center needs to be updated
+    to_update = Vector{Bool}(undef, k) # indicators of whether a center needs to be updated
     unused = Int[]
     num_affected::Int = k # number of centers, to which the distances need to be recomputed
 
@@ -118,7 +118,7 @@ function _kmeans!{T<:AbstractFloat}(
             pairwise!(dmat, distance, centers, x)
         else
             # if only a small subset is affected, only compute for that subset
-            affected_inds = find(to_update)
+            affected_inds = findall(to_update)
             dmat_p = pairwise(distance, centers[:, affected_inds], x)
             dmat[affected_inds, :] = dmat_p
         end
@@ -135,7 +135,7 @@ function _kmeans!{T<:AbstractFloat}(
         objv_change = objv - prev_objv
 
         if objv_change > tol
-            warn("The objective value changes towards an opposite direction")
+            @warn("The objective value changes towards an opposite direction")
         end
 
         if abs(objv_change) < tol
@@ -166,14 +166,14 @@ end
 #  Updates assignments, costs, and counts based on
 #  an updated (squared) distance matrix
 #
-function update_assignments!{T<:AbstractFloat}(
+function update_assignments!(
     dmat::Matrix{T},            # in:  distance matrix (k x n)
     is_init::Bool,              # in:  whether it is the initial run
     assignments::Vector{Int},   # out: assignment vector (n)
     costs::Vector{T},           # out: costs of the resultant assignment (n)
     counts::Vector{Int},        # out: number of samples assigned to each cluster (k)
     to_update::Vector{Bool},    # out: whether a center needs update (k)
-    unused::Vector{Int})        # out: the list of centers get no samples assigned to it
+    unused::Vector{Int}) where T<:AbstractFloat        # out: the list of centers get no samples assigned to it
 
     k::Int, n::Int = size(dmat)
 
@@ -237,13 +237,13 @@ end
 #
 #  (specific to the case where samples are not weighted)
 #
-function update_centers!{T<:AbstractFloat}(
+function update_centers!(
     x::Matrix{T},                   # in: sample matrix (d x n)
-    w::Void,                        # in: sample weights
+    w::Nothing,                        # in: sample weights
     assignments::Vector{Int},       # in: assignments (n)
     to_update::Vector{Bool},        # in: whether a center needs update (k)
     centers::Matrix{T},             # out: updated centers (d x k)
-    cweights::Vector)               # out: updated cluster weights (k)
+    cweights::Vector) where T<:AbstractFloat               # out: updated cluster weights (k)
 
     d::Int = size(x, 1)
     n::Int = size(x, 2)
@@ -291,13 +291,13 @@ end
 #
 #  (specific to the case where samples are weighted)
 #
-function update_centers!{T<:AbstractFloat}(
+function update_centers!(
     x::Matrix{T},                   # in: sample matrix (d x n)
     weights::Vector{T},             # in: sample weights (n)
     assignments::Vector{Int},       # in: assignments (n)
     to_update::Vector{Bool},        # in: whether a center needs update (k)
     centers::Matrix{T},             # out: updated centers (d x k)
-    cweights::Vector)               # out: updated cluster weights (k)
+    cweights::Vector) where T<:AbstractFloat               # out: updated cluster weights (k)
 
     d::Int = size(x, 1)
     n::Int = size(x, 2)
@@ -352,11 +352,11 @@ end
 #
 #  Re-picks centers that get no samples assigned to them.
 #
-function repick_unused_centers{T<:AbstractFloat}(
+function repick_unused_centers(
     x::Matrix{T},           # in: the sample set (d x n)
     costs::Vector{T},       # in: the current assignment costs (n)
     centers::Matrix{T},     # to be updated: the centers (d x k)
-    unused::Vector{Int})    # in: the set of indices of centers to be updated
+    unused::Vector{Int}) where T<:AbstractFloat    # in: the set of indices of centers to be updated
 
     # pick new centers using a scheme like kmeans++
     ds = similar(costs)

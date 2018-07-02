@@ -5,7 +5,7 @@
 
 Result returned by `mcl()`.
 """
-immutable MCLResult <: ClusteringResult
+struct MCLResult <: ClusteringResult
     mcl_adj::AbstractMatrix     # final MCL adjacency matrix (equilibrium state matrix if converged)
     assignments::Vector{Int}    # element-to-cluster assignments (n)
     counts::Vector{Int}         # number of samples assigned to each cluster (k)
@@ -21,12 +21,16 @@ end
 # `zero_tol` is a minimal value to consider as an element-to-cluster assignment
 function _mcl_clusters(mcl_adj::AbstractMatrix, allow_singles::Bool, zero_tol::Float64 = 1E-20)
     # remove rows containing only zero elements and convert into a mask of nonzero elements
-    el2clu_mask = mcl_adj[squeeze(sum(mcl_adj, 2), 2) .> zero_tol, :] .> zero_tol
+    el2clu_mask = mcl_adj[squeeze(sum(mcl_adj, dims=2), dims=2) .> zero_tol, :] .> zero_tol
 
     # assign cluster indexes to each node
     # cluster index is the index of the first TRUE in a given column
-    clu_ixs = squeeze(mapslices(el_mask -> !isempty(el_mask) ? findmax(el_mask)[2] : 0,
-                                el2clu_mask, 1), 1)
+    @static if VERSION >= v"0.7.0-beta.73"
+        _ms = mapslices(el_mask->isempty(el_mask) ? 0 : argmax(el_mask), el2clu_mask, dims=1)
+    else
+        _ms = mapslices(el_mask->isempty(el_mask) ? 0 : argmax(el_mask), el2clu_mask, 1)
+    end
+    clu_ixs = squeeze(_ms, dims=1)
     clu_sizes = zeros(Int, size(el2clu_mask, 1))
     unassigned_count = 0
     @inbounds for clu_ix in clu_ixs
@@ -132,13 +136,13 @@ See [original MCL implementation](http://micans.org/mcl).
 
 Ref: Stijn van Dongen, "Graph clustering by flow simulation", 2001
 """
-function mcl{T<:Real}(adj::AbstractMatrix{T};
-                      add_loops::Bool = true,
-                      expansion::Number = 2, inflation::Number = 2,
-                      save_final_matrix::Bool = false,
-                      allow_singles::Bool = true,
-                      max_iter::Integer = 100, tol::Number=1.0e-5,
-                      prune_tol::Number=1.0e-5, display::Symbol=:none)
+function mcl(adj::AbstractMatrix{T};
+             add_loops::Bool = true,
+             expansion::Number = 2, inflation::Number = 2,
+             save_final_matrix::Bool = false,
+             allow_singles::Bool = true,
+             max_iter::Integer = 100, tol::Number=1.0e-5,
+             prune_tol::Number=1.0e-5, display::Symbol=:none) where T<:Real
     m, n = size(adj)
     m == n || throw(DimensionMismatch("Square adjacency matrix expected"))
 
@@ -151,8 +155,8 @@ function mcl{T<:Real}(adj::AbstractMatrix{T};
     # initialize the MCL adjacency matrix by normalized `adj` weights
     mcl_adj = copy(adj)
     # normalize in columns
-    scale!(mcl_adj, map(x -> x != 0.0 ?  1.0/x : x, squeeze(sum(mcl_adj, 1), 1)))
-    mcl_norm = vecnorm(mcl_adj)
+    rmul!(mcl_adj, Diagonal(map(x -> x != 0.0 ?  1.0/x : x, squeeze(sum(mcl_adj, dims=1), dims=1))))
+    mcl_norm = norm(mcl_adj)
     if !isfinite(mcl_norm)
         throw(OverflowError("The norm of the input adjacency matrix is not finite"))
     end
@@ -160,7 +164,7 @@ function mcl{T<:Real}(adj::AbstractMatrix{T};
 
     # do MCL iterations
     if display != :none
-        info("Starting MCL iterations...")
+        @info("Starting MCL iterations...")
     end
     niter = 0
     converged = false
@@ -171,12 +175,12 @@ function mcl{T<:Real}(adj::AbstractMatrix{T};
         _mcl_prune!(next_mcl_adj, prune_tol)
 
         # normalize in columns
-        scale!(next_mcl_adj, map(x -> x != 0.0 ? 1.0/x : x,
-                                 squeeze(sum(next_mcl_adj, 1), 1)))
+        rmul!(next_mcl_adj, Diagonal(map(x -> x != 0.0 ? 1.0/x : x,
+                                         squeeze(sum(next_mcl_adj, dims=1), dims=1))))
 
-        next_mcl_norm = vecnorm(next_mcl_adj)
+        next_mcl_norm = norm(next_mcl_adj)
         if !isfinite(next_mcl_norm)
-            warn("MCL adjacency matrix norm is not finite")
+            @warn("MCL adjacency matrix norm is not finite")
             break
         end
         rel_delta = euclidean(next_mcl_adj, mcl_adj)/mcl_norm
@@ -197,7 +201,7 @@ function mcl{T<:Real}(adj::AbstractMatrix{T};
         end
     end
 
-    (display == :verbose) && info("Generating MCL clusters...")
+    (display == :verbose) && @info("Generating MCL clusters...")
     el2clu, clu_sizes, nunassigned = _mcl_clusters(mcl_adj, allow_singles,
                                                    tol/length(mcl_adj))
 

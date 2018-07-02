@@ -2,7 +2,7 @@
 
 ##### common types
 
-@compat abstract type ClusteringResult end
+abstract type ClusteringResult end
 
 # generic functions
 
@@ -13,9 +13,9 @@ assignments(R::ClusteringResult) = R.assignments
 
 ##### convert weight options
 
-conv_weights{T}(::Type{T}, n::Int, w::Void) = nothing
+conv_weights(::Type{T}, n::Int, w::Nothing) where {T} = nothing
 
-function conv_weights{T}(::Type{T}, n::Int, w::Vector)
+function conv_weights(::Type{T}, n::Int, w::Vector) where T
     length(w) == n || throw(DimensionMismatch("Incorrect length of weights."))
     convert(Vector{T}, w)::Vector{T}
 end
