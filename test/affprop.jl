@@ -1,8 +1,10 @@
 # simple program to test affinity propagation
 
-using Base.Test
+using Test
 using Distances
 using Clustering
+using LinearAlgebra
+using Random
 
 srand(34568)
 
@@ -12,7 +14,7 @@ x = rand(d, n)
 S = -pairwise(Euclidean(), x, x)
 
 # set diagonal value to median value
-S = S - diagm(diag(S)) + median(S)*eye(size(S,1)) 
+S = S - diagm(0 => diag(S)) + median(S)*I
 
 R = affinityprop(S)
 
@@ -26,6 +28,6 @@ k = length(R.exemplars)
 @test length(R.counts) == k
 @test sum(R.counts) == n
 for i = 1:k
-    @test R.counts[i] == countnz(R.assignments .== i)
+    @test R.counts[i] == count(==(i), R.assignments)
 end
 

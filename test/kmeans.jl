@@ -1,8 +1,9 @@
 # simple program to test the new k-means (not ready yet)
 
-using Base.Test
+using Test
 using Clustering
 using Distances
+using LinearAlgebra
 
 import Distances.pairwise!
 
@@ -59,13 +60,13 @@ end
 
 
 # custom distance metric
-type MySqEuclidean <: SemiMetric end
+mutable struct MySqEuclidean <: SemiMetric end
 
 # redefinition of Distances.pairwise! for MySqEuclidean type
 function pairwise!(r::AbstractMatrix, dist::MySqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
-    At_mul_B!(r, a, b)
-    sa2 = sum(abs2, a, 1)
-    sb2 = sum(abs2, b, 1)
+    mul!(r, transpose(a), b)
+    sa2 = sum(abs2, a, dims=1)
+    sb2 = sum(abs2, b, dims=1)
     for j = 1 : size(r,2)
         sb = sb2[j]
         @simd for i = 1 : size(r,1)
@@ -86,6 +87,6 @@ r2 = kmeans(x, k; maxiter=50, init=:kmcen)
 @test sum(r.counts) == n
 @test r.cweights == map(Float64, r.counts)
 @test isapprox(sum(r.costs), r.totalcost)
-for fn in fieldnames(r)
+for fn in fieldnames(typeof(r))
     @test getfield(r, fn) == getfield(r2, fn)
 end

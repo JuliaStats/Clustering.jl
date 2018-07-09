@@ -11,8 +11,8 @@ function randindex(c1,c2)
     c = counts(c1,c2,(1:maximum(c1),1:maximum(c2))) # form contingency matrix
 
     n = round(Int,sum(c))
-    nis = sum(sum(c,2).^2)        # sum of squares of sums of rows
-    njs = sum(sum(c,1).^2)        # sum of squares of sums of columns
+    nis = sum(abs2, sum(c, dims=2))        # sum of squares of sums of rows
+    njs = sum(abs2, sum(c, dims=1))        # sum of squares of sums of columns
 
     t1 = binomial(n,2)            # total number of pairs of entities
     t2 = sum(c.^2)                # sum over rows & columnns of nij^2

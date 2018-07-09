@@ -1,5 +1,5 @@
 using Clustering
-using Base.Test
+using Test
 
 # load the examples array
 include("hclust-generated-examples.jl")

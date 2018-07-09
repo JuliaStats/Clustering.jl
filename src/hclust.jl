@@ -5,7 +5,7 @@
 
 ## This is also in types.jl, but that is not read...
 ## Mostly following R's hclust class
-type Hclust{T<:Real}
+mutable struct Hclust{T<:Real}
     merge::Matrix{Int}
     height::Vector{T}
     order::Vector{Int}
@@ -21,7 +21,7 @@ end
 
 ## This seems to work like R's implementation, but it is extremely inefficient
 ## This probably scales O(n^3) or worse. We can use it to check correctness
-function hclust_n3{T<:Real}(d::AbstractMatrix{T}, method::Function)
+function hclust_n3(d::AbstractMatrix{T}, method::Function) where T<:Real
     assertdistancematrix(d)
     mr = Int[]                  # min row
     mc = Int[]                  # min col
@@ -72,13 +72,13 @@ end
 ##   find i,j that minimize D(i,j)
 ##   merge clusters i and j
 ##   update D(i,j) and N(i) accordingly
-function hclust_minimum{T<:Real}(ds::Symmetric{T})
+function hclust_minimum(ds::Symmetric{T}) where T<:Real
     ## For each i < j compute d[i,j] (this is already given)
-    d = full(ds)                #  we need a local copy
+    d = Matrix(ds)                #  we need a local copy
     nc = size(d,1)
-    mr = Vector{Int}(nc-1)       # min row
-    mc = Vector{Int}(nc-1)       # min col
-    h = Vector{T}(nc-1)          # height
+    mr = Vector{Int}(undef, nc-1)       # min row
+    mc = Vector{Int}(undef, nc-1)       # min col
+    h = Vector{T}(undef, nc-1)          # height
     merges = -collect(1:nc)
     next = 1
     ## For each 0 < i ≤ n compute Nearest Neighbor N[i]
@@ -191,7 +191,7 @@ end
 
 ## functions to compute maximum, minimum, mean for just a slice of an array
 
-function slicemaximum{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int})
+function slicemaximum(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int}) where T<:Real
     maxdist = -Inf
     for i in cl1, j in cl2
         if d[i,j] > maxdist
@@ -201,7 +201,7 @@ function slicemaximum{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vect
     maxdist
 end
 
-function sliceminimum{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int})
+function sliceminimum(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int}) where T<:Real
     mindist = Inf
     for i in cl1, j in cl2
         if d[i,j] < mindist
@@ -211,7 +211,7 @@ function sliceminimum{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vect
     mindist
 end
 
-function slicemean{T<:Real}(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int})
+function slicemean(d::AbstractMatrix{T}, cl1::Vector{Int}, cl2::Vector{Int}) where T<:Real
     s = zero(T)
     for i in cl1, j in cl2
         s += d[i,j]
@@ -252,16 +252,16 @@ end
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
 ##   merge c[i] and nearest neigbor c[i]
 ##   if i>3 i -= 3 else i <- 1
-function hclust2{T<:Real}(d::Symmetric{T}, method::Function)
+function hclust2(d::Symmetric{T}, method::Function) where T<:Real
     nc = size(d,1)                      # number of clusters
-    mr = Vector{Int}(nc-1)               # min row
-    mc = Vector{Int}(nc-1)               # min col
-    h = Vector{T}(nc-1)                  # height
+    mr = Vector{Int}(undef, nc-1)               # min row
+    mc = Vector{Int}(undef, nc-1)               # min col
+    h = Vector{T}(undef, nc-1)                  # height
     cl = [[x] for x in 1:nc]            # clusters
     merges = -collect(1:nc)
     next = 1
     i = 1
-    N = Vector{Int}(nc+1)
+    N = Vector{Int}(undef, nc+1)
     N[1] = 1                            # arbitrary choice
     while nc > 1
         found = false
@@ -318,7 +318,7 @@ end
 
 ## this calls the routine that gives the correct answer, fastest
 ## method names are inspired by R's hclust
-function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
+function hclust(d::Symmetric{T}, method::Symbol) where T<:Real
     nc = size(d,1)
     if method == :single
         h = hclust_minimum(d)
@@ -344,9 +344,9 @@ function hclust{T<:Real}(d::Symmetric{T}, method::Symbol)
 end
 
 ## uplo may be Char for v0.3, Symbol for v0.4
-hclust{T<:Real}(d::AbstractMatrix{T}, method::Symbol, uplo) = hclust(Symmetric(d, uplo), method)
+hclust(d::AbstractMatrix{T}, method::Symbol, uplo) where {T<:Real} = hclust(Symmetric(d, uplo), method)
 
-function hclust{T<:Real}(d::AbstractMatrix{T}, method::Symbol)
+function hclust(d::AbstractMatrix{T}, method::Symbol) where T<:Real
     assertdistancematrix(d)
     hclust(Symmetric(d), method)
 end
@@ -378,7 +378,7 @@ function cutree(hclust::Hclust; k::Int=1,
     all = vcat(clusters, nodes)
     all = all[map(length, all) .> 0]
     ## convert to a single array of cluster indices
-    res = Vector{Int}(nnodes)
+    res = Vector{Int}(undef, nnodes)
     for (i, cl) in enumerate(all)
         res[cl] = i
     end

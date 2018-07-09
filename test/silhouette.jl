@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using Clustering
 
 D = [0 1 2 3

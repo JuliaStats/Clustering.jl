@@ -1,14 +1,19 @@
 __precompile__()
 
 module Clustering
-    using Compat
     using Distances
     using NearestNeighbors
     using StatsBase
 
+    using Printf
+    using LinearAlgebra
+    using SparseArrays
+    if VERSION >= v"0.7.0-beta.85"
+        using Statistics
+    end
+
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts
-    import Compat: view, issymmetric
 
     export
     # reexport from StatsBase

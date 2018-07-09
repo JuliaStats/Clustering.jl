@@ -17,13 +17,13 @@
 #   This function returns iseeds
 #
 
-@compat abstract type SeedingAlgorithm end
+abstract type SeedingAlgorithm end
 
 initseeds(alg::SeedingAlgorithm, X::RealMatrix, k::Integer) =
-    initseeds!(Vector{Int}(k), alg, X)
+    initseeds!(Vector{Int}(undef, k), alg, X)
 
 initseeds_by_costs(alg::SeedingAlgorithm, costs::RealMatrix, k::Integer) =
-    initseeds_by_costs!(Vector{Int}(k), alg, costs)
+    initseeds_by_costs!(Vector{Int}(undef, k), alg, costs)
 
 seeding_algorithm(s::Symbol) =
     s == :rand ? RandSeedAlg() :
@@ -48,13 +48,13 @@ function copyseeds!(S::DenseMatrix, X::DenseMatrix, iseeds::AbstractVector)
         throw(DimensionMismatch("Inconsistent array dimensions."))
 
     for j = 1:k
-        copy!(view(S,:,j), view(X,:,iseeds[j]))
+        copyto!(view(S,:,j), view(X,:,iseeds[j]))
     end
     return S
 end
 
-copyseeds{T}(X::DenseMatrix{T}, iseeds::AbstractVector) =
-    copyseeds!(Matrix{T}(size(X,1), length(iseeds)), X, iseeds)
+copyseeds(X::DenseMatrix{T}, iseeds::AbstractVector) where {T} =
+    copyseeds!(Matrix{T}(undef, size(X,1), length(iseeds)), X, iseeds)
 
 function check_seeding_args(n::Integer, k::Integer)
     k >= 1 || error("The number of seeds must be positive.")
@@ -67,7 +67,7 @@ end
 #   choose an arbitrary subset as seeds
 #
 
-type RandSeedAlg <: SeedingAlgorithm end
+mutable struct RandSeedAlg <: SeedingAlgorithm end
 
 initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::RealMatrix) =
     sample!(1:size(X,2), iseeds; replace=false)
@@ -83,7 +83,7 @@ initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::RealMatrix) =
 #   18th Annual ACM-SIAM symposium on Discrete algorithms, 2007.
 #
 
-type KmppAlg <: SeedingAlgorithm end
+mutable struct KmppAlg <: SeedingAlgorithm end
 
 function initseeds!(iseeds::IntegerVector, alg::KmppAlg, X::RealMatrix, metric::PreMetric)
     n = size(X, 2)
@@ -156,7 +156,7 @@ kmpp_by_costs(costs::RealMatrix, k::Int) = initseeds(KmppAlg(), costs, k)
 #   doi:10.1016/j.eswa.2008.01.039
 #
 
-type KmCentralityAlg <: SeedingAlgorithm end
+mutable struct KmCentralityAlg <: SeedingAlgorithm end
 
 function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg, costs::RealMatrix)
     n = size(costs, 1)
@@ -164,7 +164,7 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg, costs:
     k <= n || error("Attempted to select more seeds than samples.")
 
     # compute score for each item
-    coefs = vec(sum(costs, 2))
+    coefs = vec(sum(costs, dims=2))
     for i = 1:n
         @inbounds coefs[i] = inv(coefs[i])
     end

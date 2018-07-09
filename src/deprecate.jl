@@ -6,7 +6,7 @@
 # deprecated at 0.2.7
 #
 
-function randseed_initialize!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T})
+function randseed_initialize!(X::Matrix{T}, centers::Matrix{T}) where T<:AbstractFloat
     Base.depwarn("randseed_initialize! is deprecated. Please use initseeds! instead.", 
                  :randseed_initialize!)
 
@@ -15,7 +15,7 @@ function randseed_initialize!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T}
     copyseeds!(centers, X, iseeds)
 end
 
-function kmeanspp_initialize!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T})
+function kmeanspp_initialize!(X::Matrix{T}, centers::Matrix{T}) where T<:AbstractFloat
     Base.depwarn("kmeanspp_initialize! is deprecated. Please use initseeds! instead.", 
                  :kmeanspp_initialize!)
 
@@ -24,7 +24,7 @@ function kmeanspp_initialize!{T<:AbstractFloat}(X::Matrix{T}, centers::Matrix{T}
     copyseeds!(centers, X, iseeds)
 end
 
-function initial_medoids{T<:AbstractFloat}(costs::Matrix{T}, k::Int)
+function initial_medoids(costs::Matrix{T}, k::Int) where T<:AbstractFloat
     Base.depwarn("initial_medoids is deprecated. Please use initseeds_by_costs instead.", 
                  :initial_medoids)
 

@@ -4,7 +4,7 @@
 # this function returns r of size (k, n), such that
 # r[i, j] is the sum of distances of all points from cluster i to sample j
 #
-function sil_aggregate_dists{T<:Real}(k::Int, a::AbstractVector{Int}, dists::DenseMatrix{T})
+function sil_aggregate_dists(k::Int, a::AbstractVector{Int}, dists::DenseMatrix{T}) where T<:Real
     n = length(a)
     r = zeros(k, n)
     for j = 1:n
@@ -22,9 +22,9 @@ function sil_aggregate_dists{T<:Real}(k::Int, a::AbstractVector{Int}, dists::Den
 end
 
 
-function silhouettes{T<:Real}(assignments::Vector{Int}, 
-                              counts::AbstractVector{Int}, 
-                              dists::DenseMatrix{T})
+function silhouettes(assignments::Vector{Int}, 
+                     counts::AbstractVector{Int}, 
+                     dists::DenseMatrix{T}) where T<:Real
 
     n = length(assignments)
     k = length(counts)
@@ -50,8 +50,8 @@ function silhouettes{T<:Real}(assignments::Vector{Int},
     # compute a and b
     # a: average distance w.r.t. the assigned cluster
     # b: the minimum average distance w.r.t. other cluster
-    a = Vector{Float64}(n)
-    b = Vector{Float64}(n)
+    a = Vector{Float64}(undef, n)
+    b = Vector{Float64}(undef, n)
 
     for j = 1:n
         l = assignments[j]
