@@ -2,8 +2,9 @@ using Test
 
 using Distances
 using Clustering
+using Random
 
-srand(34568)
+seed!(34568)
 
 d = 3
 n = 200

@@ -4,10 +4,11 @@ using Test
 using Clustering
 using Distances
 using LinearAlgebra
+using Random
 
 import Distances.pairwise!
 
-srand(34568)
+seed!(34568)
 
 m = 3
 n = 1000

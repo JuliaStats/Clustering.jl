@@ -6,7 +6,7 @@ using Clustering
 using LinearAlgebra
 using Random
 
-srand(34568)
+seed!(34568)
 
 d = 10
 n = 500
