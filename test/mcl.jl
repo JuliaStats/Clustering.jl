@@ -2,8 +2,9 @@
 
 using Test
 using Clustering
+using Random
 
-srand(34568)
+seed!(34568)
 
 # test for nonsquare matrices
 @test_throws DimensionMismatch mcl(zeros(Float64, 4, 3))

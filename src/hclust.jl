@@ -380,7 +380,7 @@ function cutree(hclust::Hclust; k::Int=1,
     ## convert to a single array of cluster indices
     res = Vector{Int}(undef, nnodes)
     for (i, cl) in enumerate(all)
-        res[cl] = i
+        res[cl] .= i
     end
     res
 end

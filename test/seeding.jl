@@ -1,8 +1,9 @@
 using Clustering
 using Distances: SqEuclidean, pairwise
+using Random: seed!
 using Test
 
-srand(34568)
+seed!(34568)
 
 @assert RandSeedAlg <: SeedingAlgorithm
 @assert KmppAlg <: SeedingAlgorithm
