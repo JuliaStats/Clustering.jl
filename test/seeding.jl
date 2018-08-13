@@ -2,7 +2,7 @@ using Clustering
 using Distances: SqEuclidean, pairwise
 using Test
 
-srand(34568)
+Random.seed!(34568)
 
 @assert RandSeedAlg <: SeedingAlgorithm
 @assert KmppAlg <: SeedingAlgorithm

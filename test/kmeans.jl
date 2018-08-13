@@ -7,7 +7,7 @@ using LinearAlgebra
 
 import Distances.pairwise!
 
-srand(34568)
+Random.seed!(34568)
 
 m = 3
 n = 1000

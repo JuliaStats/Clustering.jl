@@ -2,7 +2,7 @@ using Test
 using Clustering
 using Distances
 
-srand(34568)
+Random.seed!(34568)
 
 X1 = randn(2, 200) .+ [0., 5.]
 X2 = randn(2, 200) .+ [-5., 0.]
@@ -25,13 +25,13 @@ for c = 1:k
 end
 @test all(R.counts .>= 180)
 
-srand(0)
+Random.seed!(0)
 p0 = randn(3, 1000)
 
-srand(1)
+Random.seed!(1)
 p1 = randn(3, 1000) .+ [3.0, 3.0, 0.0]
 
-srand(2)
+Random.seed!(2)
 p2 = randn(3, 1000) .+ [-3.0, -3.0, 0.0]
 
 points = [p0 p1 p2]

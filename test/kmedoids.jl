@@ -3,7 +3,7 @@ using Test
 using Distances
 using Clustering
 
-srand(34568)
+Random.seed!(34568)
 
 d = 3
 n = 200

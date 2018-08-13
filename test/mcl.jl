@@ -3,7 +3,7 @@
 using Test
 using Clustering
 
-srand(34568)
+Random.seed!(34568)
 
 # test for nonsquare matrices
 @test_throws DimensionMismatch mcl(zeros(Float64, 4, 3))
