@@ -6,6 +6,8 @@ using Clustering
 using LinearAlgebra
 using Random
 
+@testset "affinityprop() (affinity propagation)" begin
+
 Random.seed!(34568)
 
 d = 10
@@ -31,3 +33,4 @@ for i = 1:k
     @test R.counts[i] == count(==(i), R.assignments)
 end
 
+end

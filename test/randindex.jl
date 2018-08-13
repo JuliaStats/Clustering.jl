@@ -1,7 +1,9 @@
-# Test variational information
+# Test Rand index
 
 using Test
 using Clustering
+
+@testset "randindex() (Rand index)" begin
 
 a1 = [1, 1, 1, 2, 2, 2, 3, 3, 3, 3]
 a2 = [1, 1, 1, 1, 2, 2, 2, 2, 2, 2]
@@ -31,3 +33,5 @@ a3 = [3, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 @test HI  ≈ 0.422222 atol=1.0e-5
 
 @test randindex(a1, a2) == randindex(a2, a1)
+
+end
