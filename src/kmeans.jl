@@ -86,7 +86,7 @@ function _kmeans!(
     dmat = pairwise(distance, centers, x)
     dmat = convert(Array{T}, dmat) #Can be removed if one day Distance.result_type(SqEuclidean(), T, T) == T
     update_assignments!(dmat, true, assignments, costs, counts, to_update, unused)
-    objv = w == nothing ? sum(costs) : dot(w, costs)
+    objv = w === nothing ? sum(costs) : dot(w, costs)
 
     # main loop
     t = 0
@@ -131,7 +131,7 @@ function _kmeans!(
         # compute change of objective and determine convergence
 
         prev_objv = objv
-        objv = w == nothing ? sum(costs) : dot(w, costs)
+        objv = w === nothing ? sum(costs) : dot(w, costs)
         objv_change = objv - prev_objv
 
         if objv_change > tol
@@ -297,18 +297,15 @@ function update_centers!(
     assignments::Vector{Int},       # in: assignments (n)
     to_update::Vector{Bool},        # in: whether a center needs update (k)
     centers::Matrix{T},             # out: updated centers (d x k)
-    cweights::Vector) where T<:AbstractFloat               # out: updated cluster weights (k)
+    cweights::Vector                # out: updated cluster weights (k)
+) where T<:AbstractFloat
 
     d::Int = size(x, 1)
     n::Int = size(x, 2)
     k::Int = size(centers, 2)
 
     # initialize center weights
-    for i = 1 : k
-        if to_update[i]
-            cweights[i] = 0.
-        end
-    end
+    cweights[to_update] .= 0.0
 
     # accumulate columns
     # accumulate_cols_u!(centers, cweights, x, assignments, weights, to_update)
@@ -323,13 +320,9 @@ function update_centers!(
                 rj = view(centers, :, cj)
                 xj = view(x, :, j)
                 if cweights[cj] > 0
-                    for i = 1:d
-                        @inbounds rj[i] += xj[i] * wj
-                    end
+                    @inbounds rj .+= xj * wj
                 else
-                    for i = 1:d
-                        @inbounds rj[i] = xj[i] * wj
-                    end
+                    @inbounds rj .= xj * wj
                 end
                 cweights[cj] += wj
             end
@@ -339,11 +332,7 @@ function update_centers!(
     # sum ==> mean
     for j = 1:k
         if to_update[j]
-            @inbounds cj::T = 1 / cweights[j]
-            vj = view(centers,:,j)
-            for i = 1:d
-                @inbounds vj[i] *= cj
-            end
+            @inbounds centers[:, j] .*= 1 / cweights[j]
         end
     end
 end
