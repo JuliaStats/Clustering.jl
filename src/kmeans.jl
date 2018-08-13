@@ -111,7 +111,7 @@ function _kmeans!(
         # update pairwise distance matrix
 
         if !isempty(unused)
-            to_update[unused] = true
+            to_update[unused] .= true
         end
 
         if t == 1 || num_affected > 0.75 * k
@@ -120,7 +120,7 @@ function _kmeans!(
             # if only a small subset is affected, only compute for that subset
             affected_inds = findall(to_update)
             dmat_p = pairwise(distance, centers[:, affected_inds], x)
-            dmat[affected_inds, :] = dmat_p
+            dmat[affected_inds, :] .= dmat_p
         end
 
         # update assignments

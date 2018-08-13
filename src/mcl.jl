@@ -1,7 +1,7 @@
 # MCL (Markov CLustering algorithm)
 
 """
-    immutable MCLResult <: ClusteringResult
+    struct MCLResult <: ClusteringResult
 
 Result returned by `mcl()`.
 """
@@ -180,7 +180,7 @@ function mcl(adj::AbstractMatrix{T};
             break
         end
         rel_delta = euclidean(next_mcl_adj, mcl_adj)/mcl_norm
-        (display == :verbose) && info("MCL iter. #$niter: rel.Δ=", rel_delta)
+        (display == :verbose) && @info("MCL iter. #$niter: rel.Δ=", rel_delta)
         (converged = rel_delta <= tol) && break
         # update (swap) MCL adjacency
         niter += 1

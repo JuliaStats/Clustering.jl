@@ -375,14 +375,13 @@ function cutree(hclust::Hclust; k::Int=1,
         push!(clusters, new)
         i += 1
     end
-    all = vcat(clusters, nodes)
-    all = all[map(length, all) .> 0]
+    all = filter!(!isempty, vcat(clusters, nodes))
     ## convert to a single array of cluster indices
-    res = Vector{Int}(undef, nnodes)
+    res = fill(0, nnodes)
     for (i, cl) in enumerate(all)
-        res[cl] = i
+        res[cl] .= i
     end
-    res
+    return res
 end
 
 ## some diagnostic functions, not exported
