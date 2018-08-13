@@ -1,13 +1,13 @@
 # V-measure of contingency table
-function _vmeasure(A::AbstractMatrix{Int}; β::Real)
-    @assert β >= 0 "β should be nonnegative"
+function _vmeasure(A::AbstractMatrix{<:Integer}; β::Real)
+    (β >= 0) || throw(ArgumentError("β should be nonnegative"))
 
     N = sum(A)
     (N == 0.0) && return 0.0
 
     entA = entropy(A)
-    entArows = entropy(sum(A, 2))
-    entAcols = entropy(sum(A, 1))
+    entArows = entropy(sum(A, dims=2))
+    entAcols = entropy(sum(A, dims=1))
 
     hck = (entA - entAcols)/N
     hkc = (entA - entArows)/N
@@ -25,21 +25,24 @@ function _vmeasure(A::AbstractMatrix{Int}; β::Real)
 end
 
 """
-    vmeasure(assign1, assign2; β = 1.0 )
+    vmeasure(assign1, assign2; β = 1.0)
 
 V-measure between two clustering assignments.
 
-`assign1` and `assign2` can be either `ClusteringResult` objects or assignments vectors, `AbstractVector{Int}`.
+`assign1` and `assign2` can be either `ClusteringResult` objects or
+assignments vectors (`AbstractVector{<:Integer}`).
 
-`β` parameter defines trade-off between homogeneity and completeness,
-if `β` is greater than 1, completeness is weighted more strongly in the completeness,
-if `β` is less than 1, homogeneity is weighted more strongly.
+The `β` parameter defines trade-off between _homogeneity_ and _completeness_:
+ * if `β` is greater than 1, _completeness_ is weighted more strongly,
+ * if `β` is less than 1, _homogeneity_ is weighted more strongly.
 
 *Ref:* Andrew Rosenberg and Julia Hirschberg, 2007. "V-Measure: A conditional entropy-based external cluster evaluation measure"
 """
-function vmeasure(clusters1::Union{AbstractVector{Int}, ClusteringResult},
-                  clusters2::Union{AbstractVector{Int}, ClusteringResult}; β::Real = 1.0)
-    assign1 = isa(clusters1, AbstractVector) ? clusters1 : assignments(clusters1)
-    assign2 = isa(clusters2, AbstractVector) ? clusters2 : assignments(clusters2)
-    _vmeasure(counts(assign1,assign2,(1:maximum(assign1),1:maximum(assign2))), β = β)
+function vmeasure(assign1::Union{AbstractVector{<:Integer}, ClusteringResult},
+                  assign2::Union{AbstractVector{<:Integer}, ClusteringResult};
+                  β::Real = 1.0)
+    _assign1 = isa(assign1, AbstractVector) ? assign1 : assignments(assign1)
+    _assign2 = isa(assign2, AbstractVector) ? assign2 : assignments(assign2)
+    return _vmeasure(counts(_assign1, _assign2,
+                            (1:maximum(_assign1), 1:maximum(_assign2))), β=β)
 end
