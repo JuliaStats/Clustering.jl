@@ -25,7 +25,7 @@ r = kmeans(x, k; maxiter=50)
 @test length(r.counts) == k
 @test sum(r.counts) == n
 @test r.cweights == map(Float64, r.counts)
-@test isapprox(sum(r.costs), r.totalcost)
+@test sum(r.costs) ≈ r.totalcost
 
 # non-weighted (float32)
 r = kmeans(map(Float32, x), k; maxiter=50)
@@ -37,7 +37,7 @@ r = kmeans(map(Float32, x), k; maxiter=50)
 @test length(r.counts) == k
 @test sum(r.counts) == n
 @test r.cweights == map(Float64, r.counts)
-@test isapprox(sum(r.costs), r.totalcost)
+@test sum(r.costs) ≈ r.totalcost
 
 # weighted
 w = rand(n)
@@ -54,9 +54,8 @@ cw = zeros(k)
 for i = 1:n
     cw[r.assignments[i]] += w[i]
 end
-@test isapprox(r.cweights, cw)
-
-@test isapprox(dot(r.costs, w), r.totalcost)
+@test r.cweights ≈ cw
+@test dot(r.costs, w) ≈ r.totalcost
 
 
 # custom distance metric
@@ -86,7 +85,7 @@ r2 = kmeans(x, k; maxiter=50, init=:kmcen)
 @test length(r.counts) == k
 @test sum(r.counts) == n
 @test r.cweights == map(Float64, r.counts)
-@test isapprox(sum(r.costs), r.totalcost)
+@test sum(r.costs) ≈ r.totalcost
 for fn in fieldnames(typeof(r))
     @test getfield(r, fn) == getfield(r2, fn)
 end

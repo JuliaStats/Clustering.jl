@@ -12,9 +12,7 @@ for example in examples
             @test h.merge[j,i] == example["merge"][j,i]
         end
     end
-    for i in 1:length(h.height)
-        @test isapprox(h.height[i], example["height"][i], atol=1e-5)
-    end
+    @test h.height ≈ example["height"] atol=1e-5
     for i in 1:length(h.order)
         @test h.order[i] == example["order"][i]
     end

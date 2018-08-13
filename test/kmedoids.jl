@@ -38,6 +38,6 @@ R = kmedoids!(costs, [1, 2, 6])
 @test R.medoids == [3, 5, 6]
 @test R.assignments == [1, 2, 1, 1, 2, 3, 2, 3, 3]
 @test R.counts == [3, 3, 3]
-@test all(isapprox.(R.acosts, [1, 1, 0, 1, 0, 0, 1, 1, 1]))
-@test isapprox(R.totalcost, 6.0)
+@test R.acosts ≈ [1, 1, 0, 1, 0, 0, 1, 1, 1]
+@test R.totalcost ≈ 6.0
 @test R.converged
