@@ -1,5 +1,3 @@
-__precompile__()
-
 module Clustering
     using Distances
     using NearestNeighbors
@@ -8,9 +6,7 @@ module Clustering
     using Printf
     using LinearAlgebra
     using SparseArrays
-    if VERSION >= v"0.7.0-beta.85"
-        using Statistics
-    end
+    using Statistics
 
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts

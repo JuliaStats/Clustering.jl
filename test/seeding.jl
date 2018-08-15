@@ -2,11 +2,13 @@ using Clustering
 using Distances: SqEuclidean, pairwise
 using Test
 
-srand(34568)
+@testset "seeding" begin
 
-@assert RandSeedAlg <: SeedingAlgorithm
-@assert KmppAlg <: SeedingAlgorithm
-@assert KmCentralityAlg <: SeedingAlgorithm
+Random.seed!(34568)
+
+@test RandSeedAlg <: SeedingAlgorithm
+@test KmppAlg <: SeedingAlgorithm
+@test KmCentralityAlg <: SeedingAlgorithm
 
 alldistinct(x::Vector{Int}) = (length(Set(x)) == length(x))
 
@@ -31,48 +33,50 @@ C = pairwise(SqEuclidean(), X)
 
 md0 = min_interdist(X)
 
-## RandSeed
+@testset "RandSeed" begin
+    iseeds = initseeds(RandSeedAlg(), X, k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
 
-iseeds = initseeds(RandSeedAlg(), X, k)
-@test length(iseeds) == k
-@test alldistinct(iseeds)
+    iseeds = initseeds_by_costs(RandSeedAlg(), C, k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
 
-iseeds = initseeds_by_costs(RandSeedAlg(), C, k)
-@test length(iseeds) == k
-@test alldistinct(iseeds)
+    R = copyseeds(X, iseeds)
+    @test isa(R, Matrix{Float64})
+    @test R == X[:, iseeds]
+end
 
-R = copyseeds(X, iseeds)
-@test isa(R, Matrix{Float64})
-@test R == X[:, iseeds]
+@testset "Kmpp" begin
+    iseeds = initseeds(KmppAlg(), X, k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
 
-## Kmpp
+    iseeds = initseeds_by_costs(KmppAlg(), C, k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
 
-iseeds = initseeds(KmppAlg(), X, k)
-@test length(iseeds) == k
-@test alldistinct(iseeds)
+    @test min_interdist(X[:, iseeds]) > 20 * md0
 
-iseeds = initseeds_by_costs(KmppAlg(), C, k)
-@test length(iseeds) == k
-@test alldistinct(iseeds)
+    iseeds = kmpp(X, k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
 
-@test min_interdist(X[:, iseeds]) > 20 * md0
+    iseeds = kmpp_by_costs(C, k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+end
 
-iseeds = kmpp(X, k)
-@test length(iseeds) == k
-@test alldistinct(iseeds)
+@testset "Kmcentrality" begin
+    iseeds = initseeds(KmCentralityAlg(), X, k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
 
-iseeds = kmpp_by_costs(C, k)
-@test length(iseeds) == k
-@test alldistinct(iseeds)
+    iseeds = initseeds_by_costs(KmCentralityAlg(), C, k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
 
-## Kmcentrality
+    @test min_interdist(X[:, iseeds]) > 2 * md0
+end
 
-iseeds = initseeds(KmCentralityAlg(), X, k)
-@test length(iseeds) == k
-@test alldistinct(iseeds)
-
-iseeds = initseeds_by_costs(KmCentralityAlg(), C, k)
-@test length(iseeds) == k
-@test alldistinct(iseeds)
-
-@test min_interdist(X[:, iseeds]) > 2 * md0
+end

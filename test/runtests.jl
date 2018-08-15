@@ -3,9 +3,7 @@ using Test
 using Random
 using LinearAlgebra
 using SparseArrays
-if VERSION >= v"0.7.0-beta.85"
-    using Statistics
-end
+using Statistics
 
 tests = ["seeding",
          "kmeans",

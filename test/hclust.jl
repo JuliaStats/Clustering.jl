@@ -1,21 +1,25 @@
 using Clustering
 using Test
 
+@testset "hclust() (hierarchical clustering)" begin
+
 # load the examples array
 include("hclust-generated-examples.jl")
 
 # test to make sure many random examples match R's implementation
-for example in examples
+@testset "example #$i" for (i, example) in enumerate(examples)
     h = hclust(example["D"], example["method"])
-    for i in 1:size(h.merge)[2]
-        for j in 1:size(h.merge)[1]
-            @test h.merge[j,i] == example["merge"][j,i]
-        end
+    @test h.merge == example["merge"]
+    @test h.height ≈ example["height"] atol=1e-5
+    @test h.order == example["order"]
+
+    @testset "cutree()" begin
+        # FIXME compare with R cuttree() result
+        cutn2 = cutree(h, k=2)
+        @test cutn2 isa Vector{Int}
+        @test length(cutn2) == length(h.order)
+        @test all(cl -> 1 <= cl <= 2, cutn2)
     end
-    for i in 1:length(h.height)
-        @test isapprox(h.height[i], example["height"][i], atol=1e-5)
-    end
-    for i in 1:length(h.order)
-        @test h.order[i] == example["order"][i]
-    end
+end
+
 end
