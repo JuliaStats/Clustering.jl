@@ -425,20 +425,27 @@ function cutree(hclu::Hclust; k::Int=1, h::Real=height(hclu))
         push!(clusters, newclu)
         i += 1
     end
-    ## build an array of cluster indices
+    ## build an array of cluster indices (R's order)
     res = fill(0, n)
-    clix = 1 # index of the next cluster
+    # sort non-empty clusters by the minimal element index
+    filter!(!isempty, clusters)
+    permute!(clusters, sortperm(minimum.(clusters)))
+    i = findfirst(unmerged)
+    next = 1
     for clu in clusters
-        isempty(clu) && continue
-        res[clu] .= clix
-        clix += 1
-    end
-    # add unmerged nodes as individual clusters
-    @inbounds for i in eachindex(unmerged)
-        if unmerged[i]
-            res[i] = clix
-            clix += 1
+        cl1 = minimum(clu)
+        while (i !== nothing) && (i < cl1)
+            res[i] = next
+            next += 1
+            i = findnext(unmerged, i+1)
         end
+        res[clu] .= next
+        next += 1
+    end
+    while i !== nothing
+        res[i] = next
+        next += 1
+        i = findnext(unmerged, i+1)
     end
     return res
 end
