@@ -4,12 +4,23 @@
 ## Algorithms are based upon C. F. Olson, Parallel Computing 21 (1995) 1313--1325.
 
 ## This is also in types.jl, but that is not read...
-## Mostly following R's hclust class
+"""
+Hierarchical clustering of the data returned by `hclust()`.
+The data hierarchy is defined by the `merges` matrix:
+ - each row specifies which subtrees (referenced by their IDs) are merged into a higher-level subtree
+ - negative subtree `id` denotes leaf node and corresponds to the datapoint
+   at position `-id`
+ - positive `id` denotes nontrivial subtree:
+   the row `merges[id, :]` specifies its left and right subtrees,
+   and `heights[id]` -- its height.
+
+This type mostly follows R's `hclust` class.
+"""
 struct Hclust{T<:Real}
-    merges::Matrix{Int}
-    heights::Vector{T}
-    order::Vector{Int}
-    linkage::Symbol
+    merges::Matrix{Int} # the tree merge sequence. 1st column: left subtree, 2nd column: right subtree
+    heights::Vector{T}  # subtrees heights (aggregated distance between its elements)
+    order::Vector{Int}  # the order of datapoint (leaf node) indices in the final tree
+    linkage::Symbol     # subtree distance type (cluster linkage)
 end
 
 function assertdistancematrix(d::AbstractMatrix)
