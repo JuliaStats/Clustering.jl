@@ -9,7 +9,7 @@ using Test
     Dnan = copy(Dsym)
     Dnan[1, 3] = Dnan[3, 1] = NaN
     @testset "hclust()" begin
-        @test_throws ErrorException hclust(Dsym, linkage=:typo)
+        @test_throws ArgumentError hclust(Dsym, linkage=:typo)
         @test_throws ErrorException hclust(D, linkage=:single)
         @test_throws ErrorException hclust(Dnan, linkage=:single)
     end

@@ -333,7 +333,7 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
     elseif linkage == :average
         h = hclust2(sd, slicemean)
     else
-        error("Unsupported cluster linkage ", linkage)
+        throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
 
     # compute an ordering of the leaves
