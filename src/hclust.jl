@@ -23,6 +23,10 @@ struct Hclust{T<:Real}
     linkage::Symbol     # subtree distance type (cluster linkage)
 end
 
+nmerges(h::Hclust) = length(h.heights)  # number of tree merges
+nnodes(h::Hclust) = length(h.order)     # number of datapoints (leaf nodes)
+height(h::Hclust) = isempty(h.heights) ? typemin(eltype(h.heights)) : last(h.heights)
+
 function assertdistancematrix(d::AbstractMatrix)
     nr, nc = size(d)
     nr == nc || throw(DimensionMismatch("Distance matrix should be square."))
@@ -364,9 +368,9 @@ end
 function cutree(hclust::Hclust; k::Int=1,
                 h::Real=maximum(hclust.heights))
     clusters = Vector{Int}[]
-    nnodes = length(hclust.labels)
-    nodes = [[i::Int] for i=1:nnodes]
-    N = nnodes - k
+    n = nnodes(hclust)
+    nodes = [[i] for i=1:n]
+    N = n - k
     i = 1
     while i ≤ N && hclust.heights[i] ≤ h
         both = vec(hclust.merges[i,:])
@@ -385,7 +389,7 @@ function cutree(hclust::Hclust; k::Int=1,
     end
     all = filter!(!isempty, vcat(clusters, nodes))
     ## convert to a single array of cluster indices
-    res = fill(0, nnodes)
+    res = fill(0, n)
     for (i, cl) in enumerate(all)
         res[cl] .= i
     end
