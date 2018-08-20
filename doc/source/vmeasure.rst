@@ -15,19 +15,19 @@ Homogeneity :math:`h` is maximized when each cluster contains elements of as few
 
 The metric is implemented by the ``vmeasure`` function:
 
-.. function:: vmeasure(assign1, assign2; β = 1.0 )
+.. function:: vmeasure(assign1, assign2; β = 1.0)
 
 	Compute V-measure value between two clustering assignments.
 
 	:param assign1: the vector of assignments for the first clustering.
 	:param assign2: the vector of assignments for the second clustering.
-	:param β: the weight of harmonic mean of homogeneity and completeness.
+	:param β: the weight of harmonic mean of homogeneity and completeness. If β > 1, the completeness is weighted more strongly in the V-measure, if β < 1, homogeneity is weighted more strongly.
 
 	:return: It returns a V-measure value.
 
-.. function:: vmeasure(R, assign)
+.. function:: vmeasure(R1, assign2)
 
-    This method takes ``R``, an instance of ``ClusteringResult``, and the corresponding assignment vector ``assign`` as input, and computes V-measure value (see above).
+    This method takes ``R1``, an instance of ``ClusteringResult``, and the corresponding assignment vector ``assign2`` as input, and computes V-measure value (see above).
 
 .. function:: vmeasure(R1, R2)
 
