@@ -51,6 +51,9 @@ module Clustering
     # randindex
     randindex,
 
+    # V-measure
+    vmeasure,
+
     # hclust
     Hclust, hclust, cutree,
 
@@ -72,6 +75,7 @@ module Clustering
     include("silhouette.jl")
     include("randindex.jl")
     include("varinfo.jl")
+    include("vmeasure.jl")
 
     include("hclust.jl")
 

@@ -15,11 +15,11 @@ tests = ["seeding",
          "varinfo",
          "randindex",
          "hclust",
-         "mcl"]
+         "mcl",
+         "vmeasure"]
 
 println("Runing tests:")
 for t in tests
     fp = "$(t).jl"
-    println("* $fp ...")
     include(fp)
 end
