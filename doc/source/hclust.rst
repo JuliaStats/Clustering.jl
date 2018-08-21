@@ -5,21 +5,21 @@ Hierarchical Clustering
 
 **Functions**
 
-.. function:: hclust(D, method)
+.. function:: hclust(D; linkage=:single)
 
-	Perform hierarchical clustering on distance matrix `D` with specified method.
+	Perform hierarchical clustering on distance matrix `D` with specified cluster `linkage` function.
 
 	:param D: The pairwise distance matrix. ``D[i,j]`` is the distance between points ``i`` and ``j``.
-	:param method: A `Symbol` specifying how distance is measured between clusters (which determines the clusters that are merged on each iteration). Valid methods are:
+	:param linkage: A `Symbol` specifying how the distance between clusters (aka _cluster linkage_) is measured. It determines what clusters are merged on each iteration. Valid choices are:
 	- ``:single``: use the minimum distance between any of the members
 	- ``:average``: use the mean distance between any of the cluster's members
 	- ``:complete``: use the maximum distance between any of the members.
 
 The function returns an object of type `Hclust` with the fields
-	 - ``merge`` the clusters merged in order.  Leafs are indicated by negative numbers
-	 - ``height`` the distance at which the merges take place
+	 - ``merges`` the clusters merged in order.  Leafs are indicated by negative numbers
+	 - ``heights`` the distance at which the merges take place
 	 - ``order`` a preferred grouping for drawing a dendogram.
-	 - ``method`` the name of the clustering method.
+	 - ``linkage`` the cluster `linkage` used.
 
 Example:
 
@@ -27,7 +27,7 @@ Example:
 
 		D = rand(1000, 1000)
 		D += D'  # symmetric distance matrix (optional)
-		result = hclust(D, :single)
+		result = hclust(D, linkage=:single)
 
 .. function:: cutree(result; [k], [h])
 

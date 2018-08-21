@@ -10,7 +10,7 @@ mutable struct Hclust{T<:Real}
     height::Vector{T}
     order::Vector{Int}
     labels::Vector
-    method::Symbol
+    linkage::Symbol
 end
 
 function assertdistancematrix(d::AbstractMatrix)
@@ -21,7 +21,7 @@ end
 
 ## This seems to work like R's implementation, but it is extremely inefficient
 ## This probably scales O(n^3) or worse. We can use it to check correctness
-function hclust_n3(d::AbstractMatrix{T}, method::Function) where T<:Real
+function hclust_n3(d::AbstractMatrix{T}, linkage::Function) where T<:Real
     assertdistancematrix(d)
     mr = Int[]                  # min row
     mc = Int[]                  # min col
@@ -38,7 +38,7 @@ function hclust_n3(d::AbstractMatrix{T}, method::Function) where T<:Real
             cols = cl .== cli[j]
             for i in (j+1):length(cli)
                 rows = cl .== cli[i]
-                distance = method(d[rows,cols]) # very expensive
+                distance = linkage(d[rows,cols]) # very expensive
                 if distance < mindist
                     mindist = distance
                     mi = cli[i]
@@ -252,7 +252,7 @@ end
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
 ##   merge c[i] and nearest neigbor c[i]
 ##   if i>3 i -= 3 else i <- 1
-function hclust2(d::AbstractMatrix{T}, method::Function) where T<:Real
+function hclust2(d::AbstractMatrix{T}, linkage::Function) where T<:Real
     nc = size(d,1)                      # number of clusters
     mr = Vector{Int}(undef, nc-1)       # min row
     mc = Vector{Int}(undef, nc-1)       # min col
@@ -273,7 +273,7 @@ function hclust2(d::AbstractMatrix{T}, method::Function) where T<:Real
             Nim1 = N[i-1]
             ## c[i] = nearest neigbour c[i-1]
             for j = 1:nc if Nim1 != j
-                distance = method(d, cl[Nim1], cl[j])
+                distance = linkage(d, cl[Nim1], cl[j])
                 if distance < mindist
                     mindist = distance
                     mi = j
@@ -317,8 +317,8 @@ function hclust2(d::AbstractMatrix{T}, method::Function) where T<:Real
 end
 
 ## this calls the routine that gives the correct answer, fastest
-## method names are inspired by R's hclust
-function hclust(d::AbstractMatrix, method::Symbol = :single,
+## linkage names are inspired by R's hclust
+function hclust(d::AbstractMatrix; linkage::Symbol = :single,
                 uplo::Union{Symbol, Nothing} = nothing)
     if uplo !== nothing
         sd = Symmetric(d, uplo) # use upper/lower part of d
@@ -326,14 +326,14 @@ function hclust(d::AbstractMatrix, method::Symbol = :single,
         assertdistancematrix(d)
         sd = d
     end
-    if method == :single
+    if linkage == :single
         h = hclust_minimum(sd)
-    elseif method == :complete
+    elseif linkage == :complete
         h = hclust2(sd, slicemaximum)
-    elseif method == :average
+    elseif linkage == :average
         h = hclust2(sd, slicemean)
     else
-        error("Unsupported method ", method)
+        error("Unsupported cluster linkage ", linkage)
     end
 
     # compute an ordering of the leaves
@@ -346,9 +346,10 @@ function hclust(d::AbstractMatrix, method::Symbol = :single,
     end
 
     ## label is just a placeholder for the moment
-    Hclust(h..., inds[end], collect(1:size(sd,1)), method)
+    Hclust(h..., inds[end], collect(1:size(sd,1)), linkage)
 end
 
+@deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)
 
 ## cut a tree at height `h' or to `k' clusters
 function cutree(hclust::Hclust; k::Int=1,
