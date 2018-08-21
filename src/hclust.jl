@@ -6,8 +6,8 @@
 ## This is also in types.jl, but that is not read...
 ## Mostly following R's hclust class
 struct Hclust{T<:Real}
-    merge::Matrix{Int}
-    height::Vector{T}
+    merges::Matrix{Int}
+    heights::Vector{T}
     order::Vector{Int}
     linkage::Symbol
 end
@@ -351,14 +351,14 @@ end
 
 ## cut a tree at height `h' or to `k' clusters
 function cutree(hclust::Hclust; k::Int=1,
-                h::Real=maximum(hclust.height))
+                h::Real=maximum(hclust.heights))
     clusters = Vector{Int}[]
     nnodes = length(hclust.labels)
     nodes = [[i::Int] for i=1:nnodes]
     N = nnodes - k
     i = 1
-    while i ≤ N && hclust.height[i] ≤ h
-        both = vec(hclust.merge[i,:])
+    while i ≤ N && hclust.heights[i] ≤ h
+        both = vec(hclust.merges[i,:])
         new = Int[]
             for x in both
                 if x < 0

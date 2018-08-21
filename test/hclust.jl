@@ -23,8 +23,8 @@ include("hclust-generated-examples.jl")
 # test to make sure many random examples match R's implementation
 @testset "example #$i" for (i, example) in enumerate(examples)
     h = hclust(example["D"], linkage=example["method"])
-    @test h.merge == example["merge"]
-    @test h.height ≈ example["height"] atol=1e-5
+    @test h.merges == example["merge"]
+    @test h.heights ≈ example["height"] atol=1e-5
     @test h.order == example["order"]
 
     @testset "cutree()" begin
