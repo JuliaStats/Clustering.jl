@@ -30,10 +30,10 @@ end
 include("hclust-generated-examples.jl")
 
 # test to make sure many random examples match R's implementation
-@testset "example #$i (linkage=:$(example["method"]), n=$(size(example["D"], 1)))" for
+@testset "example #$i (linkage=:$(example["linkage"]), n=$(size(example["D"], 1)))" for
         (i, example) in enumerate(examples)
 
-    hclu = @inferred(hclust(example["D"], linkage=example["method"]))
+    hclu = @inferred(hclust(example["D"], linkage=example["linkage"]))
     @test hclu isa Clustering.Hclust
     @test Clustering.nnodes(hclu) == size(example["D"], 1)
     @test Clustering.nmerges(hclu) == Clustering.nnodes(hclu)-1

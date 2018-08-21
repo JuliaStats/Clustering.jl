@@ -20,8 +20,8 @@ catMatrix <- function(M) {
   cat("]")
 }
 
-catExample <- function(h, D, method, cutk, cuth) {
-  cat("Dict{String,Any}(\n\"method\" => :", method, ",\n", sep="")
+catExample <- function(h, D, linkage, cutk, cuth) {
+  cat("Dict{String,Any}(\n\"linkage\" => :", linkage, ",\n", sep="")
   cat("\"D\" => ")
   catMatrix(D)
   cat(",\n")
@@ -43,33 +43,31 @@ catExample <- function(h, D, method, cutk, cuth) {
   cat("\n)")
 }
 
-catMethodExamples <- function(method="single") {
-  for (i in 2:20) {
-    for (j in 1:3) { # three examples of each size
-      D = matrix(rnorm(i*i), i) * matrix(sample(c(1,0), i*i, replace=TRUE), i) + matrix(rnorm(i*i), i)*0.01
-      D1 = D + t(D)
-      h1 = hclust(as.dist(D1), method)
-      if (runif(1) < 0.5) {
-        cutk1 = sample.int(i, 1)
-        cuth1 = NULL
-      } else {
-        cutk1 = NULL
-        cuth1 = sample(h1$height, 1)
-      }
-      catExample(h1, D1, method, cutk1, cuth1)
-      cat(",\n")
-      D2 = abs(D1)
-      h2 = hclust(as.dist(D2), method)
-      if (runif(1) < 0.5) {
-        cutk2 = sample.int(i, 1)
-        cuth2 = NULL
-      } else {
-        cutk2 = NULL
-        cuth2 = sample(h2$height, 1)
-      }
-      catExample(h2, D2, method, cutk2, cuth2)
-      cat(",\n")
+catMethodExamples <- function(method="single", jl_linkage=method) {
+  for (i in 2:60) { # i: number of elements
+    D = matrix(rnorm(i*i), i) * matrix(sample(c(1,0), i*i, replace=TRUE), i) + matrix(rnorm(i*i), i)*0.01
+    D1 = D + t(D)
+    h1 = hclust(as.dist(D1), method)
+    if (runif(1) < 0.5) {
+      cutk1 = sample.int(i, 1)
+      cuth1 = NULL
+    } else {
+      cutk1 = NULL
+      cuth1 = sample(h1$height, 1)
     }
+    catExample(h1, D1, jl_linkage, cutk1, cuth1)
+    cat(",\n")
+    D2 = abs(D1)
+    h2 = hclust(as.dist(D2), method)
+    if (runif(1) < 0.5) {
+      cutk2 = sample.int(i, 1)
+      cuth2 = NULL
+    } else {
+      cutk2 = NULL
+      cuth2 = sample(h2$height, 1)
+    }
+    catExample(h2, D2, jl_linkage, cutk2, cuth2)
+    cat(",\n")
   }
 }
 
@@ -80,5 +78,7 @@ cat("examples = [")
 catMethodExamples("complete")
 catMethodExamples("average")
 catMethodExamples("single")
+catMethodExamples("ward.D", "ward_presquared")
+catMethodExamples("ward.D2", "ward")
 cat("]\n")
 sink()
