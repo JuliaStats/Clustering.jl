@@ -29,13 +29,13 @@ Example:
 		D += D'  # symmetric distance matrix (optional)
 		result = hclust(D, linkage=:single)
 
-.. function:: cutree(result; [k], [h])
+.. function:: cutree(result; [k=nothing], [h=nothing])
 
-	Cuts the dendrogram to produce clusters at a specified level of granularity.
+	Cuts the dendrogram to produce clusters at the specified level of granularity.
 
 	:param result: Object of type ``Hclust`` holding results of a call to ``hclust()``.
 	:param k: Integer specifying the number of desired clusters.
-	:param h: Integer specifying the height at which to cut the tree.
+	:param h: Real specifying the height at which to cut the tree.
 
 If both `k` and `h` are specified, it's guaranteed that the number of clusters is ``≥ k`` and their height ``≤ h``.
 

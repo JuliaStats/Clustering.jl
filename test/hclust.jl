@@ -15,6 +15,14 @@ using Test
     end
     hclu = @inferred(hclust(Dsym, linkage=:single))
     @test hclu isa Clustering.Hclust
+    @testset "cutree()" begin
+        @test_throws ArgumentError cutree(hclu)
+        @test_throws ArgumentError cutree(hclu, k=-1)
+        @test_throws ArgumentError cutree(hclu, k=0)
+        @test cutree(hclust(Dsym), k=10) isa Vector{Int}
+        @test cutree(hclust(fill(0.0, 0, 0)), k=0) == Int[]
+        @test cutree(hclust(fill(0.0, 0, 0)), k=1) == Int[]
+    end
 end
 
 # load the examples array

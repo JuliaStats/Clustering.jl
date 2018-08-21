@@ -404,13 +404,32 @@ end
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)
 
 ## cut a tree at height `h' or to `k' clusters
-function cutree(hclu::Hclust; k::Int=1, h::Real=height(hclu))
-    clusters = Vector{Int}[]
+function cutree(hclu::Hclust;
+                k::Union{Integer, Nothing} = nothing,
+                h::Union{Real, Nothing} = nothing)
+    # check k and h
+    (k !== nothing || h !== nothing) ||
+        throw(ArgumentError("Either `k` or `h` must be specified"))
     n = nnodes(hclu)
+    m = nmerges(hclu)
+    # use k and h to calculate how many merges to do before cutting
+    if k !== nothing
+        k >= min(1, n) || throw(ArgumentError("`k` should be greater or equal $(min(1,n))"))
+        cutm = n - k
+    else
+        cutm = m
+    end
+    if h !== nothing
+        # adjust cutm w.r.t h
+        hix = findlast(hh -> hh ≤ h, hclu.heights)
+        if hix !== nothing && hix < cutm
+            cutm = hix
+        end
+    end
+    clusters = Vector{Int}[]
     unmerged = fill(true, n) # if a node is not merged to a cluster
-    cutm = n - k    # how many tree merges to do
     i = 1
-    while i ≤ cutm && hclu.heights[i] ≤ h
+    while i ≤ cutm
         both = view(hclu.merges, i, :)
         newclu = Int[]
         for x in both
