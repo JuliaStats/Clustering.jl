@@ -25,25 +25,40 @@ using Test
     end
 end
 
+@testset "R hclust() generated examples" begin
 # load the examples array
 include("hclust-generated-examples.jl")
 
 # test to make sure many random examples match R's implementation
-@testset "example #$i" for (i, example) in enumerate(examples)
-    h = hclust(example["D"], linkage=example["method"])
-    @test Clustering.nnodes(h) == size(example["D"], 1)
-    @test Clustering.nmerges(h) == Clustering.nnodes(h)-1
-    @test h.merges == example["merge"]
-    @test h.heights ≈ example["height"] atol=1e-5
-    @test h.order == example["order"]
+@testset "example #$i (linkage=:$(example["method"]), n=$(size(example["D"], 1)))" for
+        (i, example) in enumerate(examples)
 
-    @testset "cutree()" begin
-        # FIXME compare with R cuttree() result
-        cutn2 = cutree(h, k=2)
-        @test cutn2 isa Vector{Int}
-        @test length(cutn2) == length(h.order)
-        @test all(cl -> 1 <= cl <= 2, cutn2)
+    hclu = @inferred(hclust(example["D"], linkage=example["method"]))
+    @test hclu isa Clustering.Hclust
+    @test Clustering.nnodes(hclu) == size(example["D"], 1)
+    @test Clustering.nmerges(hclu) == Clustering.nnodes(hclu)-1
+    @test Clustering.height(hclu) ≈ maximum(example["height"]) atol=1e-5
+    @test hclu.merges == example["merge"]
+    @test hclu.heights ≈ example["height"] atol=1e-5
+    @test hclu.order == example["order"]
+
+    local cut_k = example["cut_k"]
+    local cut_h = example["cut_h"]
+    if cut_h !== nothing
+        # due to small arithmetic differences between R and Julia heights might be slightly different
+        # find the matching height
+        cut_h_r = cut_h
+        cut_h_ix = findmin(abs.(hclu.heights .- cut_h_r))[2]
+        cut_h = hclu.heights[cut_h_ix]
+        @assert isapprox(cut_h, cut_h_r, atol=1e-6) "h=$cut_h ≈ h_R=$cut_h_r"
     end
+    @testset "cutree(hclu, k=$(repr(cut_k)), h=$(repr(cut_h)))" begin
+        cutt = @inferred(cutree(hclu, k=cut_k, h=cut_h))
+        @test cutt isa Vector{Int}
+        @test length(cutt) == Clustering.nnodes(hclu)
+        @test cutt == example["cutree"]
+    end
+end
 end
 
 @testset "hclust_n3()" begin
