@@ -39,21 +39,116 @@ _isrordered(i::Integer, j::Integer) =
     i > 0 && j > 0 && i < j ||  # if i-th tree was created before j-th one, it goes first
     i < 0 && j > 0              # leaves go before trees
 
+# the sequence of tree merges
+struct HclustMerges{T<:Real}
+    nnodes::Int         # number of datapoints (leaf nodes)
+    heights::Vector{T}  # tree height
+    mleft::Vector{Int}  # ID of the left subtree merged
+    mright::Vector{Int} # ID of the right subtree merged
+
+    function HclustMerges{T}(nnodes::Integer) where {T<:Real}
+        ntrees = max(nnodes-1, 0)
+        new{T}(nnodes, sizehint!(T[], ntrees),
+               sizehint!(Int[], ntrees), sizehint!(Int[], ntrees))
+    end
+end
+
+nmerges(hmer::HclustMerges) = length(hmer.heights)
+nnodes(hmer::HclustMerges) = hmer.nnodes
+
+# merges i-th and j-th subtrees into a new tree of height h and returns its index
+function push_merge!(hmer::HclustMerges{T}, i::Integer, j::Integer, h::T) where T<:Real
+    if !_isrordered(i, j)
+        i, j = j, i
+    end
+    push!(hmer.mleft, i)
+    push!(hmer.mright, j)
+    push!(hmer.heights, h)
+    return nmerges(hmer)
+end
+
+#= utilities for working with the vector of clusters =#
+
+cluster_size(cl::AbstractVector{Vector{Int}}, i::Integer) =
+    return i > 0 ? length(cl[i]) : #= leaf node =# 1
+
+# indices of nodes assigned to i-th cluster
+# if i-th cluster is a leaf node (i < 0), return leafcluster setting its contents to [-i]
+function cluster_elems(clusters::AbstractVector{Vector{Int}}, i::Integer,
+                       leafcluster::AbstractVector{Int})
+    if i > 0
+        return clusters[i]
+    else # i < 0 means it's a leaf node
+        @assert length(leafcluster) == 1
+        @inbounds leafcluster[1] = -i
+        return leafcluster
+    end
+end
+
+# merges i-th and j-th clusters and adds the result to the end of the `cl` list;
+# i-th and j-th clusters are deactivated (emptied or replaced by `noels` vector)
+# if either i or j are negative, the corresponding cluster is a leaf node (-i or -j, resp.)
+function merge_clusters!(cl::AbstractVector{Vector{Int}},
+                         i::Integer, j::Integer,
+                         noels::Vector{Int} = Int[])
+    if j < 0 # negative == cluster is a leaf node (-j)
+        newclu = i < 0 ? [-i, -j] : push!(cl[i], -j)
+    else
+        clj = cl[j]
+        if i < 0
+            newclu = pushfirst!(clj, -i)
+            cl[j] = noels
+        else
+            newclu = append!(cl[i], clj)
+            empty!(clj) # not used anymore
+        end
+    end
+    if i > 0
+        cl[i] = noels # not used anymore
+    end
+    return push!(cl, newclu)
+end
+
+# compute resulting leaves (original datapoints) permutation
+# given a sequence of tree nodes merges
+function hclust_perm(hmer::HclustMerges)
+    n = nmerges(hmer)
+    perm = fill(1, nnodes(hmer)) # resulting permutation
+    clusters = Vector{Int}[]     # clusters elements
+    onel = [0]                   # placeholder for the elements of a leaf node
+    noels = Int[]                # placeholder for empty decativated trees
+    for i in 1:n
+        ml = hmer.mleft[i]
+        mr = hmer.mright[i]
+        # elements in the right subtree are moved length(ml) positions from the start
+        nl = cluster_size(clusters, ml)
+        @inbounds for i in cluster_elems(clusters, mr, onel)
+            perm[i] += nl
+        end
+        merge_clusters!(clusters, ml, mr, noels)
+    end
+    return perm
+end
+
+# convert HclustMerges to Hclust
+function Hclust(hmer::HclustMerges, method::Symbol)
+    Hclust(hcat(hmer.mleft, hmer.mright), hmer.heights,
+           invperm(hclust_perm(hmer)), method)
+end
+
 ## This seems to work like R's implementation, but it is extremely inefficient
 ## This probably scales O(n^3) or worse. We can use it to check correctness
 function hclust_n3(d::AbstractMatrix, linkage::Function)
     assertdistancematrix(d)
     T = eltype(method(d, 1:0, 1:0))
-    mr = Int[]                  # min row
-    mc = Int[]                  # min col
-    h = T[]                     # height
-    n = size(d,1)               # number of datapoints (leaf nodes)
+    hmer = HclustMerges{T}(size(d, 1))
+    n = nnodes(hmer)
     node2cl = collect(-(1:n))   # datapoint to tree attribution, initially all leaves
-    next = 1                    # next cluster label
     cols = fill(false, n)
     rows = fill(false, n)
     mask = falses(n)
-    while next < n
+    while nmerges(hmer) + 1 < n
+        # find the closest pair of trees
         NNmindist = typemax(T)
         NNi = NNj = 0           # indices of nearest neighbors clusters
         cl = unique(node2cl)    # active tree ids
@@ -72,16 +167,10 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
                 end
             end
         end
-        if !_isrordered(NNi, NNj)
-            NNi, NNj = NNj, NNi
-        end
-        push!(mr, NNi)
-        push!(mc, NNj)
-        push!(h, NNmindist)
-        node2cl[mask] .= next
-        next += 1
+        newtree = push_merge!(hmer, NNi, NNj, NNmindist)
+        node2cl[mask] = newtree
     end
-    hcat(mr, mc), h
+    return hmer
 end
 
 # nearest neighbor to i-th node given symmetric distance matrix d;
@@ -121,19 +210,17 @@ end
 ##   update D(i,j) and NN(i) accordingly
 function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
     d = Matrix(ds)      # active trees distances, only upper (i < j) is used
-    n = size(d,1)       # number of points (leaf nodes)
+    hmer = HclustMerges{T}(size(d, 1))
+    n = nnodes(hmer)
     ## For each 0 < i ≤ n compute Nearest Neighbor NN[i]
     NN = [nearest_neighbor(d, i, n)[1] for i in 1:n]
     ## the main loop
-    mleft = Vector{Int}()       # merged left tree
-    mright = Vector{Int}()      # merged right tree
-    h = Vector{T}()             # tree height
-    trees = collect(-(1:n))     # indices of active trees, initialized to all leaves
-    while length(trees) > 1     # O(n)
+    trees = collect(-(1:n))  # indices of active trees, initialized to all leaves
+    while length(trees) > 1  # O(n)
         # find a pair of nearest trees, i and j
         i = 1
         NNmindist = i < NN[i] ? d[i, NN[i]] : d[NN[i], i]
-        for k in 2:length(NN)   # O(n)
+        for k in 2:length(trees) # O(n)
             @inbounds dist = k < NN[k] ? d[k,NN[k]] : d[NN[k],k]
             if dist < NNmindist
                 NNmindist = dist
@@ -144,16 +231,7 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
         if i > j
             i, j = j, i     # make sure i < j
         end
-        ## update result, compatible to R's order.  It must be possible to do this simpler than this...
-        @inbounds mi = trees[i]
-        @inbounds mj = trees[j]
-        if !_isrordered(mi, mj)
-            mi, mj = mj, mi
-        end
-        push!(mleft, mi)
-        push!(mright, mj)
-        push!(h, NNmindist)
-        trees[i] = length(h) # assign new id to the merged tree
+        trees[i] = push_merge!(hmer, trees[i], trees[j], NNmindist)
         ## update d, split in ranges k<i, i<k<j, j<k≤nc
         for k in 1:(i-1)         # k < i
             @inbounds if d[k,i] > d[k,j]
@@ -211,7 +289,7 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
         NN[i] = NNi
 #        for n in NN[1:nc] print(n, " ") end; println()
     end
-    return hcat(mr, mc), h
+    return hmer
 end
 
 ## functions to compute maximum, minimum, mean for just a slice of an array
@@ -251,21 +329,26 @@ end
 
 ## reorders the tree merges by the height of resulting trees
 ## (to be compatible with R's hclust())
-function rorder!(mr, mc, h)
-    o = sortperm(h)
+function rorder!(hmer::HclustMerges)
+    o = sortperm(hmer.heights)
     io = invperm(o)
-    for i in 1:length(mr)
+    ml = hmer.mleft
+    mr = hmer.mright
+    for i in eachindex(ml)
+        if ml[i] > 0
+            ml[i] = io[ml[i]]
+        end
         if mr[i] > 0
             mr[i] = io[mr[i]]
         end
-        if mc[i] > 0
-            mc[i] = io[mc[i]]
-        end
-        if !_isrordered(mr[i], mc[i])
-            mr[i], mc[i] = mc[i], mr[i]
+        if !_isrordered(ml[i], mr[i])
+            ml[i], mr[i] = mr[i], ml[i]
         end
     end
-    return o
+    permute!(ml, o)
+    permute!(mr, o)
+    Base.permute!!(hmer.heights, o)
+    return hmer
 end
 
 ## Another nearest neighbor algorithm, for reducible metrics
@@ -282,16 +365,13 @@ end
 ##   if i>3 i -= 3 else i <- 1
 function hclust2(d::AbstractMatrix, linkage::Function)
     T = eltype(linkage(d, 1:0, 1:0))
-    n = size(d,1)                       # number of datapoints
-    mleft = Vector{Int}()               # id of left merged subtree
-    mright = Vector{Int}()              # id of right merged subtree
-    h = Vector{T}()                     # tree height
-    cl = [[x] for x in 1:n]             # elements of active trees
-    trees = collect(-(1:n))             # ids of active trees
-    NN = [1]                            # nearest neighbors chain of tree indices, init by random tree index
-    while length(trees) > 1
-        # search for a pair of closest clusters,
-        # they would be mutual nearest neighbors on top of the NN stack
+    hmer = HclustMerges{T}(size(d, 1))
+    n = nnodes(st)          # number of datapoints
+    cl = [[x] for x in 1:n] # contents of trees, initially leaves
+    trees = collect(-(1:n)) # ids of active trees
+    NN = [1]                # nearest neighbors chain of positions in trees/cl, init by random choice
+    while length(cl) > 1
+        found = false
         NNmindist = typemax(T)
         while true
             NNtop = NN[end]
@@ -318,11 +398,8 @@ function hclust2(d::AbstractMatrix, linkage::Function)
         if NNlo > NNhi
              NNlo, NNhi = NNhi, NNlo
         end
-        ## record the merge
-        push!(mright, trees[NNlo])
-        push!(mleft, trees[NNhi])
-        push!(h, NNmindist)
-        trees[NNlo] = length(h) # assign new id for the resulting tree
+        ## first, store the result
+        trees[NNlo] = push_merge!(hmer, trees[NNlo], trees[NNhi], NNmindist)
         ## merge the elements of NNlo and NNhi
         append!(cl[NNlo], cl[NNhi])
         empty!(cl[NNhi])
@@ -341,41 +418,7 @@ function hclust2(d::AbstractMatrix, linkage::Function)
         pop!(cl)
         isempty(NN) && push!(NN, 1) # restart NN chain
     end
-    ## fix order for presenting result
-    o = rorder!(mleft, mright, h)
-    hcat(mleft[o], mright[o]), h[o]
-end
-
-# compute resulting leaves (original datapoints) permutation
-# given a sequence of tree nodes merges
-function hclust_perm(merges::AbstractMatrix)
-    n = size(merges, 1) + 1 # number of datapoints
-    perm = fill(1, n)       # resulting permutation
-    inds = fill(0, n)       # index of subtree that contain given datapoint
-    mask = fill(false, n)   # temporary mask of elements in the given subtree
-    @inbounds for i in 1:size(merges, 1)
-        m1 = merges[i,1]
-        m2 = merges[i,2]
-        # count the number of elements in the left subtree and update their membership
-        if m1 < 0
-            inds[-m1] = i
-            nm1 = 1
-        else
-            map!(ind -> ind == m1, mask, inds)
-            inds[mask] = i
-            nm1 = sum(mask)
-        end
-        # elements in the right subtree are moved nm1 positions from the start
-        if m2 < 0
-            inds[-m2] = i
-            perm[-m2] += nm1
-        else
-            map!(ind -> ind == m2, mask, inds)
-            inds[mask] = i
-            perm[mask] += nm1
-        end
-    end
-    return perm
+    return rorder!(hmer)
 end
 
 ## this calls the routine that gives the correct answer, fastest
@@ -389,16 +432,16 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
         sd = d
     end
     if linkage == :single
-        h = hclust_minimum(sd)
+        hmer = hclust_minimum(sd)
     elseif linkage == :complete
-        h = hclust2(sd, slicemaximum)
+        hmer = hclust2(sd, slicemaximum)
     elseif linkage == :average
-        h = hclust2(sd, slicemean)
+        hmer = hclust2(sd, slicemean)
     else
         throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
 
-    Hclust(h..., invperm(hclust_perm(h[1])), linkage)
+    Hclust(hmer, linkage)
 end
 
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)
