@@ -14,6 +14,8 @@ Hierarchical Clustering
 	- ``:single``: use the minimum distance between any of the members
 	- ``:average``: use the mean distance between any of the cluster's members
 	- ``:complete``: use the maximum distance between any of the members.
+	- ``:ward``: the distance is the increase of the average squares distance of a point to its cluster centroid after fusing two clusters.
+	- ``:ward_presquared``: same as ``:ward``, but assumes that the distance matrix `D` contains squared point-to-point distances.
 
 The function returns an object of type `Hclust` with the fields
 	 - ``merges`` the clusters merged in order.  Leafs are indicated by negative numbers

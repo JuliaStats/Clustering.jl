@@ -623,9 +623,19 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
     if linkage == :single
         hmer = hclust_minimum(sd)
     elseif linkage == :complete
-        hmer = hclust_nn(sd, slicemaximum)
+        hmer = hclust_nn_lw(sd, MaximumDistance(sd))
     elseif linkage == :average
-        hmer = hclust_nn(sd, slicemean)
+        hmer = hclust_nn_lw(sd, AverageDistance(sd))
+    elseif linkage == :ward_presquared
+        hmer = hclust_nn_lw(sd, WardDistance(sd))
+    elseif linkage == :ward
+        if sd === d
+            sd = abs2.(sd)
+        else
+            sd .= abs2.(sd)
+        end
+        hmer = hclust_nn_lw(sd, WardDistance(sd))
+        hmer.heights .= sqrt.(hmer.heights)
     else
         throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
