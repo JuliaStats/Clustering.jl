@@ -206,6 +206,127 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
     return htre.merges
 end
 
+"""
+Base type for _reducible_ Lance–Williams cluster metrics.
+
+The metric `d` is called _reducible_ if for any clusters `A`, `B` and `C` and
+some `ρ > 0` s.t.
+```
+d(A, B) < ρ, d(A, C) > ρ, d(B, C) > ρ
+```
+it follows that
+```
+d(A∪B, C) > ρ
+```
+
+If the cluster metrics belongs to Lance-Williams family, there is an efficient
+formula that defines `d(A∪B, C)` using `d(A, C)`, `d(B, C)` and `d(A, B)`.
+"""
+abstract type ReducibleMetric{T <: Real} end
+
+"""
+Distance between the clusters is the minimal distance between any pair of their
+points.
+"""
+struct MinimalDistance{T} <: ReducibleMetric{T}
+    MinimalDistance(d::AbstractMatrix{T}) where T<:Real = new{T}()
+end
+
+# update `metric` distance between `k`-th cluster and `i`-th cluster
+# (`d[k, i]`, `k < i`) after `j`-th cluster was merged into `i`-th cluster
+@inline update!(metric::MinimalDistance{T}, d::AbstractMatrix{T},
+    k::Integer, i::Integer, d_ij::T, d_kj::T,
+    ni::Integer, nj::Integer, nk::Integer
+) where T =
+    (d[k, i] > d_kj) && (d[k, i] = d_kj)
+
+"""
+Ward distance between the two clusters `A` and `B` is the amount by
+which merging the two clusters into a single larger cluster `A∪B` would increase
+the average squared distance of a point to its cluster centroid.
+"""
+struct WardDistance{T} <: ReducibleMetric{T}
+    WardDistance(d::AbstractMatrix{T}) where T<:Real = new{typeof(one(T)/2)}()
+end
+
+# update `metric` distance between `k`-th cluster and `i`-th cluster
+# (`d[k, i]`, `k < i`) after `j`-th cluster was merged into `i`-th cluster
+@inline function update!(metric::WardDistance{T}, d::AbstractMatrix{T},
+    k::Integer, i::Integer, d_ij::T, d_kj::T,
+    ni::Integer, nj::Integer, nk::Integer
+) where T
+    nall = ni + nj + nk
+    d[k, i] = ((ni + nk) * d[k, i] + (nj + nk) * d_kj - nk * d_ij) / nall
+end
+
+"""
+Average distance between a pair of points from each clusters.
+"""
+struct AverageDistance{T} <: ReducibleMetric{T}
+    AverageDistance(d::AbstractMatrix{T}) where T<:Real = new{typeof(one(T)/2)}()
+end
+
+# update `metric` distance between `k`-th cluster and `i`-th cluster
+# (`d[k, i]`, `k < i`) after `j`-th cluster was merged into `i`-th cluster
+@inline function update!(metric::AverageDistance{T}, d::AbstractMatrix{T},
+    k::Integer, i::Integer, d_ij::T, d_kj::T,
+    ni::Integer, nj::Integer, nk::Integer
+) where T
+    nij = ni + nj
+    d[k, i] = (ni * d[k, i] + nj * d_kj) / nij
+end
+
+"""
+Maximum distance between a pair of point from each clusters.
+"""
+struct MaximumDistance{T} <: ReducibleMetric{T}
+    MaximumDistance(d::AbstractMatrix{T}) where T<:Real = new{T}()
+end
+
+# update `metric` distance between `k`-th cluster and `i`-th cluster
+# (`d[k, i]`, `k < i`) after `j`-th cluster was merged into `i`-th cluster
+@inline update!(metric::MaximumDistance{T}, d::AbstractMatrix{T},
+    k::Integer, i::Integer, d_ij::T, d_kj::T,
+    ni::Integer, nj::Integer, nk::Integer
+) where T =
+    (d[k, i] < d_kj) && (d[k, i] = d_kj)
+
+# Update upper-triangular matrix `d` of cluster-cluster `metric`-based distances
+# after merging cluster `j` into cluster `i` and
+# moving the last cluster (`N`) into the `j`-th slot
+function update_distance_after_merge!(
+    d::AbstractMatrix{T},
+    metric::ReducibleMetric{T},
+    clu_size::Function,
+    i::Integer, j::Integer, N::Integer
+) where {T <: Real}
+    @assert 1 <= i < j <= N <= size(d, 1) "1 ≤ i=$i < j=$j <= N=$N ≤ $(size(d, 1))"
+    @inbounds d_ij = d[i, j]
+    @inbounds ni = clu_size(i)
+    @inbounds nj = clu_size(j)
+    ## update d, split in ranges k<i, i<k<j, j<k≤newj
+    for k in 1:i          # k ≤ i
+        @inbounds update!(metric, d, k, i, d_ij, d[k,j], ni, nj, clu_size(k))
+    end
+    for k in (i+1):(j-1)  # i < k < j
+        @inbounds update!(metric, d, i, k, d_ij, d[k,j], ni, nj, clu_size(k))
+    end
+    for k in (j+1):N      # j < k ≤ N
+        @inbounds update!(metric, d, i, k, d_ij, d[j,k], ni, nj, clu_size(k))
+    end
+    ## move N-th row/col into j
+    if j < N
+        @inbounds d[j, j] = d[N, N]
+        for k in 1:(j-1)         # k < j < N
+            @inbounds d[k,j] = d[k,N]
+        end
+        for k in (j+1):(N-1)     # j < k < N
+            @inbounds d[j,k] = d[k,N]
+        end
+    end
+    return d
+end
+
 # nearest neighbor to i-th node given symmetric distance matrix d;
 # returns 0 if no nearest neighbor (1×1 matrix)
 function nearest_neighbor(d::AbstractMatrix, i::Integer, N::Integer=size(d, 1))
@@ -439,6 +560,49 @@ function hclust_nn(d::AbstractMatrix, linkage::Function)
                 if NN[k] == last_tree
                     NN[k] = NNhi
                 end
+            end
+        end
+        isempty(NN) && push!(NN, 1) # restart NN chain
+    end
+    return rorder!(htre.merges)
+end
+
+## Nearest neighbor chain algorithm for reducible Lance-Williams metrics.
+## In comparison to hclust_nn() maintains the upper-triangular matrix
+## of cluster-cluster distances, so it requires O(N²) memory, but it's faster,
+## because distance calculation is more efficient.
+function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:Real}
+    dd = copyto!(Matrix{T}(undef, size(d)...), d)
+    htre = HclustTrees{T}(size(d, 1))
+    NN = [1]      # nearest neighbors chain of tree indices, init by random tree index
+    while ntrees(htre) > 1
+        # search for a pair of closest clusters,
+        # they would be mutual nearest neighbors on top of the NN stack
+        NNmindist = typemax(T)
+        while true
+            ## find NNnext: nearest neighbor of NN[end] (and the next stack top)
+            NNnext, NNmindist = nearest_neighbor(dd, NN[end], ntrees(htre))
+            @assert NNnext > 0
+            if length(NN) > 1 && NNnext == NN[end-1] # NNnext==NN[end-1] and NN[end] are mutual n.neighbors
+                break
+            else
+                push!(NN, NNnext)
+            end
+        end
+        ## merge NN[end] and its nearest neighbor, i.e., NN[end-1]
+        NNlo = pop!(NN)
+        NNhi = pop!(NN)
+        if NNlo > NNhi
+            NNlo, NNhi = NNhi, NNlo
+        end
+        last_tree = ntrees(htre)
+        ## update the distance matrix (while the trees are not merged yet)
+        update_distance_after_merge!(dd, metric, i -> tree_size(htre, i), NNlo, NNhi, last_tree)
+        merge_trees!(htre, NNlo, NNhi, NNmindist)
+        ## replace any nearest neighbor referring to the last cluster with NNhi
+        for k in eachindex(NN)
+            if NN[k] == last_tree
+                NN[k] = NNhi
             end
         end
         isempty(NN) && push!(NN, 1) # restart NN chain
