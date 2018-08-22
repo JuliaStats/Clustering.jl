@@ -46,4 +46,51 @@ end
     @test hclu_n3[2] ≈ example_n3["height"] atol=1e-5
 end
 
+local hclust_linkages = [:single, :average, :complete]
+
+@testset "hclust(0×0 matrix, linkage=$linkage)" for linkage in hclust_linkages
+    hclu = hclust(fill(0.0, 0, 0), linkage=linkage)
+    @test Clustering.nnodes(hclu) == 0
+    @test Clustering.nmerges(hclu) == 0
+    @test Clustering.height(hclu) == -Inf
+    cut1 = @inferred(cutree(hclu, h=1))
+    @test cut1 == Int[]
+end
+
+@testset "hclust([$dist] 1×1 matrix, linkage=$linkage)" for
+    linkage in hclust_linkages, dist in [-Inf, 0, 1, 2, Inf]
+    hclu = hclust(fill(dist, 1, 1), linkage=linkage)
+    @test Clustering.nnodes(hclu) == 1
+    @test Clustering.nmerges(hclu) == 0
+    @test Clustering.height(hclu) == -Inf
+    cut1 = @inferred(cutree(hclu, h=1))
+    @test cut1 == [1]
+end
+
+@testset "hclust(linkage=$linkage) when data contains an isolated point (#109)" for linkage in hclust_linkages
+    # point #2 is isolated: distances to all the other points are Inf
+    mdist = [
+        0.0 Inf 0.1  Inf  Inf  Inf  Inf  Inf  Inf  Inf;
+        Inf 0.0 Inf  Inf  Inf  Inf  Inf  Inf  Inf  Inf;
+        0.1 Inf 0.0  0.11 Inf  Inf  Inf  Inf  Inf  Inf;
+        Inf Inf 0.11 0.0  0.86 0.86 Inf  Inf  Inf  Inf;
+        Inf Inf Inf  0.86 0.0  0.67 0.72 1.93 Inf  Inf;
+        Inf Inf Inf  0.86 0.67 0.0  0.72 Inf  Inf  Inf;
+        Inf Inf Inf  Inf  0.72 0.72 0.0  Inf  0.72 Inf;
+        Inf Inf Inf  Inf  1.93 Inf  Inf  0.0  3.91 Inf;
+        Inf Inf Inf  Inf  Inf  Inf  0.72 3.91 0.0  0.52;
+        Inf Inf Inf  Inf  Inf  Inf  Inf  Inf  0.52 0.0]
+
+    hclu = hclust(mdist, linkage=linkage)
+    @test Clustering.nnodes(hclu) == 10
+    @test Clustering.nmerges(hclu) == 9
+    @test Clustering.height(hclu) == Inf
+    cut1 = @inferred(cutree(hclu, h=1))
+    @test cut1 isa Vector{Int}
+    @test length(cut1) == Clustering.nnodes(hclu)
+    if linkage == :single
+        @test cut1 == [1, 2, 1, 1, 1, 1, 1, 3, 1, 1]
+    end
+end
+
 end

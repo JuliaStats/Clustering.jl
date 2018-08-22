@@ -62,7 +62,7 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
                 cli = cl[i]
                 rows = node2cl .== cli
                 dist = linkage(d, rows, cols) # very expensive
-                if dist < NNmindist
+                if (NNi == 0) || (dist < NNmindist)
                     NNmindist = dist
                     NNi = cli
                     NNj = clj
@@ -195,13 +195,13 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
         NNmindist = typemax(T)
         NNi = 0
         for k in 1:(i-1)
-            if d[k,i] < NNmindist
+            if (NNi == 0) || (d[k,i] < NNmindist)
                 NNmindist = d[k,i]
                 NNi = k
             end
         end
         for k in (i+1):length(trees)
-            if d[i,k] < NNmindist
+            if (NNi == 0) || (d[i,k] < NNmindist)
                 NNmindist = d[i,k]
                 NNi = k
             end
