@@ -396,7 +396,7 @@ end
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
 ##   merge c[i] and nearest neighbor c[i]
 ##   if i>3 i -= 3 else i <- 1
-function hclust2(d::AbstractMatrix, linkage::Function)
+function hclust_nn(d::AbstractMatrix, linkage::Function)
     T = eltype(linkage(d, 1:0, 1:0))
     htre = HclustTrees{T}(size(d, 1))
     onerow = [0]  # placeholder for a leaf node of cl_i
@@ -459,9 +459,9 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
     if linkage == :single
         hmer = hclust_minimum(sd)
     elseif linkage == :complete
-        hmer = hclust2(sd, slicemaximum)
+        hmer = hclust_nn(sd, slicemaximum)
     elseif linkage == :average
-        hmer = hclust2(sd, slicemean)
+        hmer = hclust_nn(sd, slicemean)
     else
         throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
