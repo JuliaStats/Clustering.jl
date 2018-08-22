@@ -20,8 +20,25 @@ catMatrix <- function(M) {
   cat("]")
 }
 
-catExample <- function(h, D, linkage, cutk, cuth) {
-  cat("Dict{String,Any}(\n\"linkage\" => :", linkage, ",\n", sep="")
+catExample <- function(D, method, jl_linkage) {
+  n <- ncol(D)
+  triD <- D[rep(1:n, times=n) < rep(1:n, each=n)]
+  if (any(table(triD)>1)) {
+    message("Skipping method=", method, " n=", n, ": ambiguous tree merges")
+    return()
+  }
+  h <- hclust(as.dist(D), method)
+
+  if (runif(1) < 0.5) {
+    cutk = sample.int(n, 1)
+    cuth = NULL
+  } else {
+    cutk = NULL
+    cuth = if (n > 2) sample(h$height, 1) else h$height[[1]]
+  }
+  cutt <- cutree(h, cutk, cuth)
+
+  cat("Dict{String,Any}(\n\"linkage\" => :", jl_linkage, ", \"n\" => ", ncol(D), ",\n", sep="")
   cat("\"D\" => ")
   catMatrix(D)
   cat(",\n")
@@ -38,36 +55,19 @@ catExample <- function(h, D, linkage, cutk, cuth) {
     ", \"cut_h\" => ", ifelse(is.null(cuth), "nothing", cuth),
     ",\n", sep="")
   cat("\"cutree\" => ")
-  cutt <- cutree(h, cutk, cuth)
   catVector(cutt)
-  cat("\n)")
+  cat("\n),\n")
 }
 
 catMethodExamples <- function(method="single", jl_linkage=method) {
-  for (i in 2:60) { # i: number of elements
-    D = matrix(rnorm(i*i), i) * matrix(sample(c(1,0), i*i, replace=TRUE), i) + matrix(rnorm(i*i), i)*0.01
-    D1 = D + t(D)
-    h1 = hclust(as.dist(D1), method)
-    if (runif(1) < 0.5) {
-      cutk1 = sample.int(i, 1)
-      cuth1 = NULL
-    } else {
-      cutk1 = NULL
-      cuth1 = sample(h1$height, 1)
-    }
-    catExample(h1, D1, jl_linkage, cutk1, cuth1)
-    cat(",\n")
+  for (n in 2:60) { # n: number of elements
+    D = matrix(rnorm(n*n), n) *
+        matrix(sample(c(1,0), n*n, replace=TRUE), n) +
+        matrix(rnorm(n*n), n)*0.01
+    D1 = round(D + t(D), digits=8)
+    catExample(D1, method, jl_linkage)
     D2 = abs(D1)
-    h2 = hclust(as.dist(D2), method)
-    if (runif(1) < 0.5) {
-      cutk2 = sample.int(i, 1)
-      cuth2 = NULL
-    } else {
-      cutk2 = NULL
-      cuth2 = sample(h2$height, 1)
-    }
-    catExample(h2, D2, jl_linkage, cutk2, cuth2)
-    cat(",\n")
+    catExample(D2, method, jl_linkage)
   }
 }
 
