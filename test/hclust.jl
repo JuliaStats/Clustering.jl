@@ -33,7 +33,8 @@ include("hclust-generated-examples.jl")
 @testset "example #$i (linkage=:$(example["linkage"]), n=$(size(example["D"], 1)))" for
         (i, example) in enumerate(examples)
 
-    hclu = @inferred(hclust(example["D"], linkage=example["linkage"]))
+    linkage = example["linkage"]
+    hclu = @inferred(hclust(example["D"], linkage=linkage))
     @test hclu isa Clustering.Hclust
     @test Clustering.nnodes(hclu) == size(example["D"], 1)
     @test Clustering.nmerges(hclu) == Clustering.nnodes(hclu)-1
@@ -41,6 +42,17 @@ include("hclust-generated-examples.jl")
     @test hclu.merges == example["merge"]
     @test hclu.heights ≈ example["height"] atol=1e-5
     @test hclu.order == example["order"]
+
+    # compare hclust_nn_lw() (the default) and hclust_nn() (slower) methods
+    if linkage ∈ [:complete, :average]
+        @testset "hclust_nn()" begin
+            hclu2 = Hclust(Clustering.hclust_nn(example["D"], linkage == :complete ? Clustering.slicemaximum : Clustering.slicemean),
+                           linkage)
+            @test hclu2.merges == hclu.merges
+            @test hclu2.heights ≈ hclu.heights atol=1e-5
+            @test hclu2.order == hclu.order
+        end
+    end
 
     local cut_k = example["cut_k"]
     local cut_h = example["cut_h"]
