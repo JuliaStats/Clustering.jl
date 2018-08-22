@@ -136,41 +136,74 @@ function Hclust(hmer::HclustMerges, method::Symbol)
            invperm(hclust_perm(hmer)), method)
 end
 
+# active trees of hclust algorithm
+struct HclustTrees{T<:Real}
+    merges::HclustMerges{T}     # history of tree merges
+    id::Vector{Int}             # IDs of active trees
+    cl::Vector{Vector{Int}}     # elements in the non-trivial trees
+    noels::Vector{Int}          # empty placeholder for elements of deactivated trees
+
+    HclustTrees{T}(n::Integer) where T<:Real =
+        new{T}(HclustMerges{T}(n),
+               collect(-(1:n)), # init with all leaves
+               sizehint!(Vector{Int}[], n),
+               Vector{Int}())
+end
+
+nmerges(htre::HclustTrees) = nmerges(htre.merges)
+ntrees(htre::HclustTrees) = length(htre.id)
+nnodes(htre::HclustTrees) = nnodes(htre.merges)
+
+tree_size(htre::HclustTrees, i::Integer) = cluster_size(htre.cl, htre.id[i])
+
+# ids of elements assigned to the tree with i-th index
+# if i-th the is a leaf node, return leafcluster setting its contents to the id of that node
+tree_elems(htre::HclustTrees, i::Integer,
+           leafcluster::AbstractVector{Int}) =
+    cluster_elems(htre.cl, htre.id[i], leafcluster)
+
+# merges the trees referenced by indices i and j in htre.id into a new tree of height h;
+# the i-th and j-th trees are deactived, their containers are emptied or replaced by `noels` placeholder
+function merge_trees!(htre::HclustTrees, i::Integer, j::Integer, h::Real)
+    # get tree ids
+    ci = htre.id[i]
+    cj = htre.id[j]
+    cnew = push_merge!(htre.merges, ci, cj, h)
+    # in the tree list, replace ci by cnew and cj by cnew the last tree
+    htre.id[i] = cnew
+    htre.id[j] = htre.id[end]
+    pop!(htre.id)
+    merge_clusters!(htre.cl, ci, cj, htre.noels)
+    return htre
+end
+
 ## This seems to work like R's implementation, but it is extremely inefficient
 ## This probably scales O(n^3) or worse. We can use it to check correctness
 function hclust_n3(d::AbstractMatrix, linkage::Function)
     assertdistancematrix(d)
-    T = eltype(method(d, 1:0, 1:0))
-    hmer = HclustMerges{T}(size(d, 1))
-    n = nnodes(hmer)
-    node2cl = collect(-(1:n))   # datapoint to tree attribution, initially all leaves
-    cols = fill(false, n)
-    rows = fill(false, n)
-    mask = falses(n)
-    while nmerges(hmer) + 1 < n
-        # find the closest pair of trees
+    T = eltype(linkage(d, 1:0, 1:0))
+    htre = HclustTrees{T}(size(d, 1))
+    onecol = [0]
+    onerow = [0]
+    while ntrees(htre) > 1
+        # find the closest pair of trees mi and mj, mj < mi
         NNmindist = typemax(T)
         NNi = NNj = 0           # indices of nearest neighbors clusters
-        cl = unique(node2cl)    # active tree ids
-        for j in eachindex(cl)  # loop over for lower triangular indices, i>j
-            clj = cl[j]
-            cols .= node2cl .== clj
-            for i in (j+1):length(cl)
-                cli = cl[i]
-                rows .= node2cl .== cli
+        for j in 1:ntrees(htre)
+            cols = tree_elems(htre, j, onecol)
+            for i in (j+1):ntrees(htre)
+                rows = tree_elems(htre, i, onerow)
                 dist = linkage(d, rows, cols) # very expensive
                 if (NNi == 0) || (dist < NNmindist)
                     NNmindist = dist
-                    NNi = cli
-                    NNj = clj
-                    mask .= cols .| rows
+                    NNi = i
+                    NNj = j
                 end
             end
         end
-        newtree = push_merge!(hmer, NNi, NNj, NNmindist)
-        node2cl[mask] = newtree
+        merge_trees!(htre, NNj, NNi, NNmindist)
     end
-    return hmer
+    return htre.merges
 end
 
 # nearest neighbor to i-th node given symmetric distance matrix d;
@@ -365,22 +398,22 @@ end
 ##   if i>3 i -= 3 else i <- 1
 function hclust2(d::AbstractMatrix, linkage::Function)
     T = eltype(linkage(d, 1:0, 1:0))
-    hmer = HclustMerges{T}(size(d, 1))
-    n = nnodes(st)          # number of datapoints
-    cl = [[x] for x in 1:n] # contents of trees, initially leaves
-    trees = collect(-(1:n)) # ids of active trees
-    NN = [1]                # nearest neighbors chain of positions in trees/cl, init by random choice
-    while length(cl) > 1
-        found = false
+    htre = HclustTrees{T}(size(d, 1))
+    onerow = [0]  # placeholder for a leaf node of cl_i
+    onecol = [0]  # placeholder for a leaf node of cl_j
+    NN = [1]      # nearest neighbors chain of tree indices, init by random tree index
+    while ntrees(htre) > 1
+        # search for a pair of closest clusters,
+        # they would be mutual nearest neighbors on top of the NN stack
         NNmindist = typemax(T)
         while true
             NNtop = NN[end]
-            els_top = cl[NNtop]
+            els_top = tree_elems(htre, NNtop, onecol)
             ## find NNnext: the nearest neighbor of NNtop and the next stack top
             NNnext = NNtop > 1 ? 1 : 2
-            NNmindist = linkage(d, els_top, cl[NNnext])
-            for k in (NNnext+1):length(cl) if k != NNtop
-                dist = linkage(d, cl[k], els_top)
+            NNmindist = linkage(d, els_top, tree_elems(htre, NNnext, onerow))
+            for k in (NNnext+1):ntrees(htre) if k != NNtop
+                dist = linkage(d, tree_elems(htre, k, onerow), els_top)
                 if dist < NNmindist
                     NNmindist = dist
                     NNnext = k
@@ -398,27 +431,19 @@ function hclust2(d::AbstractMatrix, linkage::Function)
         if NNlo > NNhi
              NNlo, NNhi = NNhi, NNlo
         end
-        ## first, store the result
-        trees[NNlo] = push_merge!(hmer, trees[NNlo], trees[NNhi], NNmindist)
-        ## merge the elements of NNlo and NNhi
-        append!(cl[NNlo], cl[NNhi])
-        empty!(cl[NNhi])
+        last_tree = ntrees(htre)
+        merge_trees!(htre, NNlo, NNhi, NNmindist)
         ## replace any nearest neighbor referring to the last_tree with NNhi
-        last_tree = length(trees)
         if NNhi < last_tree
-            cl[NNhi] = cl[last_tree]
-            trees[NNhi] = trees[last_tree]
             for k in eachindex(NN)
                 if NN[k] == last_tree
                     NN[k] = NNhi
                 end
             end
         end
-        pop!(trees)
-        pop!(cl)
         isempty(NN) && push!(NN, 1) # restart NN chain
     end
-    return rorder!(hmer)
+    return rorder!(htre.merges)
 end
 
 ## this calls the routine that gives the correct answer, fastest
@@ -471,20 +496,14 @@ function cutree(hclu::Hclust;
     end
     clusters = Vector{Int}[]
     unmerged = fill(true, n) # if a node is not merged to a cluster
+    noels = Int[]            # placeholder for empty deactivated trees
     i = 1
     while i ≤ cutm
-        both = view(hclu.merges, i, :)
-        newclu = Int[]
-        for x in both
-            if x < 0 # -x is a leaf node
-                push!(newclu, -x)
-                unmerged[-x] = false
-            else # x is a cluster, merge to newclu
-                append!(newclu, clusters[x])
-                empty!(clusters[x])
-            end
-        end
-        push!(clusters, newclu)
+        c1 = hclu.merges[i, 1]
+        c2 = hclu.merges[i, 2]
+        (c1 < 0) && (unmerged[-c1] = false)
+        (c2 < 0) && (unmerged[-c2] = false)
+        merge_clusters!(clusters, c1, c2, noels)
         i += 1
     end
     ## build an array of cluster indices (R's order)
