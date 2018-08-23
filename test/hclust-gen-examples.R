@@ -73,7 +73,9 @@ catMethodExamples <- function(method="single", jl_linkage=method) {
 
 # save a Julia file full of test examples
 set.seed(1)
-sink("hclust-generated-examples.jl")
+hclu_examples_file <- gzfile("data/hclust_generated_examples.jl.gz", "w")
+message("Writing hclust() examples...")
+sink(hclu_examples_file)
 cat("examples = [")
 catMethodExamples("complete")
 catMethodExamples("average")
@@ -82,3 +84,5 @@ catMethodExamples("ward.D", "ward_presquared")
 catMethodExamples("ward.D2", "ward")
 cat("]\n")
 sink()
+close(hclu_examples_file)
+message("Done")

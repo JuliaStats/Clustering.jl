@@ -1,5 +1,6 @@
 using Clustering
 using Test
+using CodecZlib
 
 @testset "hclust() (hierarchical clustering)" begin
 
@@ -26,8 +27,11 @@ using Test
 end
 
 @testset "R hclust() generated examples" begin
-# load the examples array
-include("hclust-generated-examples.jl")
+# load the examples
+hclu_examples_filename = joinpath(@__DIR__, "data", "hclust_generated_examples.jl.gz")
+Base.include_string(@__MODULE__,
+                    open(io -> read(io, String), GzipDecompressorStream, hclu_examples_filename),
+                    hclu_examples_filename)
 
 # test to make sure many random examples match R's implementation
 @testset "example #$i (linkage=:$(example["linkage"]), n=$(size(example["D"], 1)))" for
