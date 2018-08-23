@@ -3,7 +3,6 @@
 
 ## Algorithms are based upon C. F. Olson, Parallel Computing 21 (1995) 1313--1325.
 
-## This is also in types.jl, but that is not read...
 """
 Hierarchical clustering of the data returned by `hclust()`.
 The data hierarchy is defined by the `merges` matrix:
