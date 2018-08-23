@@ -364,6 +364,7 @@ end
 ##   update D(i,j) and NN(i) accordingly
 function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
     d = Matrix(ds)      # active trees distances, only upper (i < j) is used
+    mindist = MinimalDistance(d)
     hmer = HclustMerges{T}(size(d, 1))
     n = nnodes(hmer)
     ## For each 0 < i ≤ n compute Nearest Neighbor NN[i]
@@ -385,36 +386,12 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
         if i > j
             i, j = j, i     # make sure i < j
         end
-        trees[i] = push_merge!(hmer, trees[i], trees[j], NNmindist)
-        ## update d, split in ranges k<i, i<k<j, j<k≤nc
-        for k in 1:(i-1)         # k < i
-            @inbounds if d[k,i] > d[k,j]
-                d[k,i] = d[k,j]
-            end
-        end
-        for k in (i+1):(j-1)     # i < k < j
-            @inbounds if d[i,k] > d[k,j]
-                d[i,k] = d[k,j]
-            end
-        end
-        for k in (j+1):nc        # j < k ≤ nc
-            @inbounds if d[i,k] > d[j,k]
-                d[i,k] = d[j,k]
-            end
-        end
-        # reassign last tree to position j
         last_tree = length(trees)
-        if j < last_tree
-            trees[j] = trees[last_tree]
-            NN[j] = NN[last_tree]
-            ## move the last row/col into j
-            for k in 1:(j-1)     # k < j ≤ nc
-                @inbounds d[k,j] = d[k,nc]
-            end
-            for k in (j+1):(nc-1)# j < k < nc
-                @inbounds d[j,k] = d[k,nc]
-            end
-        end
+        update_distance_after_merge!(d, mindist, i -> 0, i, j, last_tree)
+        trees[i] = push_merge!(hmer, trees[i], trees[j], NNmindist)
+        # reassign the last tree to position j
+        trees[j] = trees[last_tree]
+        NN[j] = NN[last_tree]
         pop!(NN)
         pop!(trees)
         ## update NN[k]
