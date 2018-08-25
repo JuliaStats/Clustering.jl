@@ -10,17 +10,17 @@ Hierarchical Clustering
 	Perform hierarchical clustering on distance matrix `D` with specified cluster `linkage` function.
 
 	:param D: The pairwise distance matrix. ``D[i,j]`` is the distance between points ``i`` and ``j``.
-	:param linkage: A `Symbol` specifying how the distance between clusters (aka _cluster linkage_) is measured. It determines what clusters are merged on each iteration. Valid choices are:
+	:param linkage: A `Symbol` specifying how the distance between clusters (aka *cluster linkage*) is measured. It determines what clusters are merged on each iteration. Valid choices are:
 	- ``:single``: use the minimum distance between any of the members
 	- ``:average``: use the mean distance between any of the cluster's members
 	- ``:complete``: use the maximum distance between any of the members.
-	- ``:ward``: the distance is the increase of the average squares distance of a point to its cluster centroid after fusing two clusters.
-	- ``:ward_presquared``: same as ``:ward``, but assumes that the distance matrix `D` contains squared point-to-point distances.
+	- ``:ward``: the distance is the increase of the average squared distance of a point to its cluster centroid after merging the two clusters.
+	- ``:ward_presquared``: same as ``:ward``, but assumes that the distances in ``D`` are already squared.
 
 The function returns an object of type `Hclust` with the fields
-	 - ``merges`` the clusters merged in order.  Leafs are indicated by negative numbers
-	 - ``heights`` the distance at which the merges take place
-	 - ``order`` a preferred grouping for drawing a dendogram.
+	 - ``merges`` the sequence of subtree merges.  Leafs are indicated by negative numbers, the ids of non-trivial subtrees refer to the rows in the ``merges`` matrix and the elements of the ``heights`` vector.
+	 - ``heights`` subtrees heights, i.e. the distances between left and right top branches of each subtree.
+	 - ``order`` indices of points ordered such that there are no intersecting branches on the *dendrogram* plot.  This ordering brings points of the same cluster close together.
 	 - ``linkage`` the cluster `linkage` used.
 
 Example:

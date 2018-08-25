@@ -29,6 +29,7 @@ Pkg.add("Clustering")
   - Single Linkage
   - Average Linkage
   - Complete Linkage
+  - Ward's Linkage
 
 ### Clustering Validation
 
