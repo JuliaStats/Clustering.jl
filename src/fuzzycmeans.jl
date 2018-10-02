@@ -6,7 +6,7 @@ struct FuzzyCMeansResult{T<:AbstractFloat} <: ClusteringResult
     centers::Matrix{T}          # cluster centers (d x C)
     weights::Matrix{Float64}    # assigned weights (n x C)
     iterations::Int             # number of elasped iterations
-    converged::Bool             # wheather the procedure converged
+    converged::Bool             # whether the procedure converged
 end
 
 ## Utility functions
@@ -46,7 +46,7 @@ const _fcmeans_default_tol = 1.0e-3
 const _fcmeans_default_display = :none
 
 function fuzzy_cmeans(
-    data::Matrix{T},
+    data::AbstractMatrix{T},
     C::Int,
     fuzziness::Real;
     maxiter::Int = _fcmeans_default_maxiter,
@@ -66,7 +66,7 @@ end
 ## Core implementation
 
 function _fuzzy_cmeans(
-    data::Matrix{T},                                # data matrix
+    data::AbstractMatrix{T},                        # data matrix
     C::Int,                                         # total number of classes
     fuzziness::Real,                                # fuzziness
     maxiter::Int,                                   # maximum number of iterations
@@ -112,4 +112,15 @@ function _fuzzy_cmeans(
     end
 
     FuzzyCMeansResult(centers, weights, iter, δ <= tol)
+end
+
+function Base.show(io::IO, result::FuzzyCMeansResult)
+    d, C = size(result.centers)
+    n, iter = size(result.weights, 1), result.iterations
+    print(io, "FuzzyCMeansResult: $C clusters for $n points in $d dimensions ")
+    if result.converged
+        print(io, "(converged in $iter iterations)")
+    else
+        print(io, "(failed to converge in $iter iterations)")
+    end
 end
