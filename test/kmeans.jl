@@ -28,9 +28,23 @@ n = 1000
 k = 10
 
 x = rand(m, n)
+xt = copy(transpose(x))
 
 @testset "non-weighted" begin
     r = kmeans(x, k; maxiter=50)
+    @test isa(r, KmeansResult{Float64})
+    @test size(r.centers) == (m, k)
+    @test length(r.assignments) == n
+    @test all(a -> 1 <= a <= k, r.assignments)
+    @test length(r.costs) == n
+    @test length(r.counts) == k
+    @test sum(r.counts) == n
+    @test r.cweights == map(Float64, r.counts)
+    @test sum(r.costs) ≈ r.totalcost
+end
+
+@testset "non-weighted^T" begin
+    r = kmeans(xt', k; maxiter=50)
     @test isa(r, KmeansResult{Float64})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
@@ -74,9 +88,45 @@ end
     @test dot(r.costs, w) ≈ r.totalcost
 end
 
+@testset "weighted^T" begin
+    w = rand(n)
+    r = kmeans(xt', k; maxiter=50, weights=w)
+    @test isa(r, KmeansResult{Float64})
+    @test size(r.centers) == (m, k)
+    @test length(r.assignments) == n
+    @test all(a -> 1 <= a <= k, r.assignments)
+    @test length(r.costs) == n
+    @test length(r.counts) == k
+    @test sum(r.counts) == n
+
+    cw = zeros(k)
+    for i = 1:n
+        cw[r.assignments[i]] += w[i]
+    end
+    @test r.cweights ≈ cw
+    @test dot(r.costs, w) ≈ r.totalcost
+end
+
 @testset "custom distance" begin
     r = kmeans(x, k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
     r2 = kmeans(x, k; maxiter=50, init=:kmcen)
+    @test isa(r, KmeansResult{Float64})
+    @test size(r.centers) == (m, k)
+    @test length(r.assignments) == n
+    @test all(a -> 1 <= a <= k, r.assignments)
+    @test length(r.costs) == n
+    @test length(r.counts) == k
+    @test sum(r.counts) == n
+    @test r.cweights == map(Float64, r.counts)
+    @test sum(r.costs) ≈ r.totalcost
+    for fn in fieldnames(typeof(r))
+        @test getfield(r, fn) == getfield(r2, fn)
+    end
+end
+
+@testset "custom distance^T" begin
+    r = kmeans(xt', k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
+    r2 = kmeans(xt', k; maxiter=50, init=:kmcen)
     @test isa(r, KmeansResult{Float64})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n

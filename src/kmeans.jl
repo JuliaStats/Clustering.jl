@@ -18,9 +18,8 @@ const _kmeans_default_maxiter = 100
 const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
 
-function kmeans!(X::Matrix{T}, centers::Matrix{T};
-                 weights=nothing,
-                 maxiter::Integer=_kmeans_default_maxiter,
+function kmeans!(X::AbstractMatrix{T}, centers::AbstractMatrix{T};
+                 weights=nothing, maxiter::Integer=_kmeans_default_maxiter,
                  tol::Real=_kmeans_default_tol,
                  display::Symbol=_kmeans_default_display,
                  distance::SemiMetric=SqEuclidean()) where T<:AbstractFloat
@@ -40,7 +39,7 @@ function kmeans!(X::Matrix{T}, centers::Matrix{T};
              round(Int, maxiter), tol, display_level(display), distance)
 end
 
-function kmeans(X::Matrix{T}, k::Int;
+function kmeans(X::AbstractMatrix{T}, k::Int;
                 weights=nothing,
                 init=_kmeans_default_init,
                 maxiter::Integer=_kmeans_default_maxiter,
@@ -64,17 +63,18 @@ end
 
 # core k-means skeleton
 function _kmeans!(
-    x::Matrix{T},                   # in: sample matrix (d x n)
-    w::Union{Nothing, Vector{T}},      # in: sample weights (n)
-    centers::Matrix{T},             # in/out: matrix of centers (d x k)
-    assignments::Vector{Int},       # out: vector of assignments (n)
-    costs::Vector{T},               # out: costs of the resultant assignments (n)
-    counts::Vector{Int},            # out: the number of samples assigned to each cluster (k)
-    cweights::Vector{Float64},      # out: the weights of each cluster
-    maxiter::Int,                   # in: maximum number of iterations
-    tol::Real,                      # in: tolerance of change at convergence
-    displevel::Int,                 # in: the level of display
-    distance::SemiMetric) where T<:AbstractFloat             # in: function to calculate the distance with
+    x::AbstractMatrix{T},         # in: sample matrix (d x n)
+    w::Union{Nothing, Vector{T}}, # in: sample weights (n)
+    centers::AbstractMatrix{T},   # in/out: matrix of centers (d x k)
+    assignments::Vector{Int},     # out: vector of assignments (n)
+    costs::Vector{T},             # out: costs of the resultant assignments (n)
+    counts::Vector{Int},          # out: the number of samples assigned to each cluster (k)
+    cweights::Vector{Float64},    # out: the weights of each cluster
+    maxiter::Int,                 # in: maximum number of iterations
+    tol::Real,                    # in: tolerance of change at convergence
+    displevel::Int,               # in: the level of display
+    distance::SemiMetric          # in: function to calculate the distance with
+    ) where T<:AbstractFloat
 
     # initialize
 
@@ -157,6 +157,8 @@ function _kmeans!(
         end
     end
 
+    centers isa Matrix || (centers = copy(centers))
+
     return KmeansResult(centers, assignments, costs, counts, cweights,
                         Float64(objv), t, converged)
 end
@@ -238,11 +240,11 @@ end
 #  (specific to the case where samples are not weighted)
 #
 function update_centers!(
-    x::Matrix{T},                   # in: sample matrix (d x n)
-    w::Nothing,                        # in: sample weights
+    x::AbstractMatrix{T},           # in: sample matrix (d x n)
+    w::Nothing,                     # in: sample weights
     assignments::Vector{Int},       # in: assignments (n)
     to_update::Vector{Bool},        # in: whether a center needs update (k)
-    centers::Matrix{T},             # out: updated centers (d x k)
+    centers::AbstractMatrix{T},     # out: updated centers (d x k)
     cweights::Vector) where T<:AbstractFloat               # out: updated cluster weights (k)
 
     d::Int = size(x, 1)
@@ -292,11 +294,11 @@ end
 #  (specific to the case where samples are weighted)
 #
 function update_centers!(
-    x::Matrix{T},                   # in: sample matrix (d x n)
+    x::AbstractMatrix{T},           # in: sample matrix (d x n)
     weights::Vector{T},             # in: sample weights (n)
     assignments::Vector{Int},       # in: assignments (n)
     to_update::Vector{Bool},        # in: whether a center needs update (k)
-    centers::Matrix{T},             # out: updated centers (d x k)
+    centers::AbstractMatrix{T},     # out: updated centers (d x k)
     cweights::Vector                # out: updated cluster weights (k)
 ) where T<:AbstractFloat
 
@@ -342,9 +344,9 @@ end
 #  Re-picks centers that get no samples assigned to them.
 #
 function repick_unused_centers(
-    x::Matrix{T},           # in: the sample set (d x n)
-    costs::Vector{T},       # in: the current assignment costs (n)
-    centers::Matrix{T},     # to be updated: the centers (d x k)
+    x::AbstractMatrix{T},       # in: the sample set (d x n)
+    costs::Vector{T},           # in: the current assignment costs (n)
+    centers::AbstractMatrix{T}, # to be updated: the centers (d x k)
     unused::Vector{Int}) where T<:AbstractFloat    # in: the set of indices of centers to be updated
 
     # pick new centers using a scheme like kmeans++

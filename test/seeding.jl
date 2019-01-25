@@ -12,7 +12,7 @@ Random.seed!(34568)
 
 alldistinct(x::Vector{Int}) = (length(Set(x)) == length(x))
 
-function min_interdist(X::Matrix)
+function min_interdist(X::AbstractMatrix)
     dists = pairwise(SqEuclidean(), X)
     n = size(X, 2)
     r = Inf
@@ -31,6 +31,9 @@ k = 5
 X = rand(d, n)
 C = pairwise(SqEuclidean(), X)
 
+Xt = copy(transpose(X))
+Ct = copy(transpose(C))
+
 md0 = min_interdist(X)
 
 @testset "RandSeed" begin
@@ -45,6 +48,20 @@ md0 = min_interdist(X)
     R = copyseeds(X, iseeds)
     @test isa(R, Matrix{Float64})
     @test R == X[:, iseeds]
+end
+
+@testset "RandSeed^T" begin
+    iseeds = initseeds(RandSeedAlg(), Xt', k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+
+    iseeds = initseeds_by_costs(RandSeedAlg(), Ct', k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+
+    R = copyseeds(Xt', iseeds)
+    @test isa(R, Matrix{Float64})
+    @test R == (Xt')[:, iseeds]
 end
 
 @testset "Kmpp" begin
@@ -67,6 +84,26 @@ end
     @test alldistinct(iseeds)
 end
 
+@testset "Kmpp^T" begin
+    iseeds = initseeds(KmppAlg(), Xt', k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+
+    iseeds = initseeds_by_costs(KmppAlg(), Ct', k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+
+    @test min_interdist((Xt')[:, iseeds]) > 20 * md0
+
+    iseeds = kmpp(Xt', k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+
+    iseeds = kmpp_by_costs(Ct', k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+end
+
 @testset "Kmcentrality" begin
     iseeds = initseeds(KmCentralityAlg(), X, k)
     @test length(iseeds) == k
@@ -77,6 +114,18 @@ end
     @test alldistinct(iseeds)
 
     @test min_interdist(X[:, iseeds]) > 2 * md0
+end
+
+@testset "Kmcentrality^T" begin
+    iseeds = initseeds(KmCentralityAlg(), Xt', k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+
+    iseeds = initseeds_by_costs(KmCentralityAlg(), Ct', k)
+    @test length(iseeds) == k
+    @test alldistinct(iseeds)
+
+    @test min_interdist((Xt')[:, iseeds]) > 2 * md0
 end
 
 end
