@@ -37,94 +37,84 @@ Ct = copy(transpose(C))
 md0 = min_interdist(X)
 
 @testset "RandSeed" begin
+    Random.seed!(34568)
     iseeds = initseeds(RandSeedAlg(), X, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
+    Random.seed!(34568)
+    iseeds_t = initseeds(RandSeedAlg(), Xt', k)
+    @test iseeds == iseeds_t
 
+    Random.seed!(34568)
     iseeds = initseeds_by_costs(RandSeedAlg(), C, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
+    Random.seed!(34568)
+    iseeds_t = initseeds_by_costs(RandSeedAlg(), Ct', k)
+    @test iseeds == iseeds_t
 
     R = copyseeds(X, iseeds)
     @test isa(R, Matrix{Float64})
     @test R == X[:, iseeds]
-end
-
-@testset "RandSeed^T" begin
-    iseeds = initseeds(RandSeedAlg(), Xt', k)
-    @test length(iseeds) == k
-    @test alldistinct(iseeds)
-
-    iseeds = initseeds_by_costs(RandSeedAlg(), Ct', k)
-    @test length(iseeds) == k
-    @test alldistinct(iseeds)
-
-    R = copyseeds(Xt', iseeds)
-    @test isa(R, Matrix{Float64})
-    @test R == (Xt')[:, iseeds]
+    R_t = copyseeds(Xt', iseeds)
+    @test R == R_t
 end
 
 @testset "Kmpp" begin
+    Random.seed!(34568)
     iseeds = initseeds(KmppAlg(), X, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
+    Random.seed!(34568)
+    iseeds_t = initseeds(KmppAlg(), Xt', k)
+    @test iseeds == iseeds_t
 
+    Random.seed!(34568)
     iseeds = initseeds_by_costs(KmppAlg(), C, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
+    Random.seed!(34568)
+    iseeds_t = initseeds_by_costs(KmppAlg(), Ct', k)
+    @test iseeds == iseeds_t
 
     @test min_interdist(X[:, iseeds]) > 20 * md0
+    @test min_interdist((Xt')[:, iseeds]) > 20 * md0
 
+    Random.seed!(34568)
     iseeds = kmpp(X, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
+    Random.seed!(34568)
+    iseeds_t = kmpp(Xt', k)
+    @test iseeds_t == iseeds
 
+    Random.seed!(34568)
     iseeds = kmpp_by_costs(C, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
-end
-
-@testset "Kmpp^T" begin
-    iseeds = initseeds(KmppAlg(), Xt', k)
-    @test length(iseeds) == k
-    @test alldistinct(iseeds)
-
-    iseeds = initseeds_by_costs(KmppAlg(), Ct', k)
-    @test length(iseeds) == k
-    @test alldistinct(iseeds)
-
-    @test min_interdist((Xt')[:, iseeds]) > 20 * md0
-
-    iseeds = kmpp(Xt', k)
-    @test length(iseeds) == k
-    @test alldistinct(iseeds)
-
-    iseeds = kmpp_by_costs(Ct', k)
-    @test length(iseeds) == k
-    @test alldistinct(iseeds)
+    Random.seed!(34568)
+    iseeds_t = kmpp_by_costs(Ct', k)
+    @test iseeds_t == iseeds
 end
 
 @testset "Kmcentrality" begin
+    Random.seed!(34568)
     iseeds = initseeds(KmCentralityAlg(), X, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
+    Random.seed!(34568)
+    iseeds_t = initseeds(KmCentralityAlg(), Xt', k)
+    @test iseeds == iseeds_t
 
+    Random.seed!(34568)
     iseeds = initseeds_by_costs(KmCentralityAlg(), C, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
+    Random.seed!(34568)
+    iseeds_t = initseeds_by_costs(KmCentralityAlg(), Ct', k)
+    @test iseeds == iseeds_t
 
     @test min_interdist(X[:, iseeds]) > 2 * md0
-end
-
-@testset "Kmcentrality^T" begin
-    iseeds = initseeds(KmCentralityAlg(), Xt', k)
-    @test length(iseeds) == k
-    @test alldistinct(iseeds)
-
-    iseeds = initseeds_by_costs(KmCentralityAlg(), Ct', k)
-    @test length(iseeds) == k
-    @test alldistinct(iseeds)
-
     @test min_interdist((Xt')[:, iseeds]) > 2 * md0
 end
 
