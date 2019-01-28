@@ -243,7 +243,8 @@ function update_centers!(
     centers::AbstractMatrix{<:Real}, # out: updated centers (d x k)
     cweights::Vector{Float64})       # out: updated cluster weights (k)
 
-    (d, n), k = size(X), size(centers, 2)
+    d, n = size(X)
+    k = size(centers, 2)
 
     # initialize center weights
     cweights[to_update] .= 0.0
