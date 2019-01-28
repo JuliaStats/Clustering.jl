@@ -250,13 +250,15 @@ function update_centers!(
     @inbounds for j = 1:n
         cj = assignments[j]
         1 <= cj <= k || error("assignment out of boundary.")
-
         if to_update[cj]
-            xj = view(X, :, j)
             if cweights[cj] > 0
-                centers[:, cj] .+= xj
+                for i = 1:d
+                    centers[i, cj] += X[i, j]
+                end
             else
-                centers[:, cj] .= xj
+                for i = 1:d
+                    centers[i, cj] = X[i, j]
+                end
             end
             cweights[cj] += 1
         end
@@ -265,7 +267,9 @@ function update_centers!(
     # sum ==> mean
     @inbounds for j = 1:k
         if to_update[j]
-            centers[:, j] .*= 1 / cweights[j]
+            for i = 1:d
+                centers[i, j] /= cweights[j]
+            end
         end
     end
 end
@@ -295,13 +299,15 @@ function update_centers!(
         if wj > 0
             cj = assignments[j]
             1 <= cj <= k || error("assignment out of boundary.")
-
             if to_update[cj]
-                xj = view(X, :, j)
                 if cweights[cj] > 0
-                    centers[:, cj] .+= xj * wj
+                    for i = 1:d
+                        centers[i, cj] += X[i, j] * wj
+                    end
                 else
-                    centers[:, cj] .= xj * wj
+                    for i = 1:d
+                        centers[i, cj] = X[i, j] * wj
+                    end
                 end
                 cweights[cj] += wj
             end
@@ -311,7 +317,9 @@ function update_centers!(
     # sum ==> mean
     @inbounds for j = 1:k
         if to_update[j]
-            centers[:, j] .*= 1 / cweights[j]
+            for i = 1:d
+                centers[i, j] /= cweights[j]
+            end
         end
     end
 end
