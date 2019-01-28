@@ -260,7 +260,7 @@ function update_centers!(
                     centers[i, cj] += X[i, j]
                 end
             else
-                for i = 1:d
+                centers[:, cj] .= view(X, :, j)
                     centers[i, cj] = X[i, j]
                 end
             end
