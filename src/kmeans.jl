@@ -2,7 +2,7 @@
 
 #### Interface
 
-mutable struct KmeansResult{T<:AbstractFloat} <: ClusteringResult
+mutable struct KmeansResult{T<:Real} <: ClusteringResult
     centers::Matrix{T}         # cluster centers (d x k)
     assignments::Vector{Int}   # assignments (n)
     costs::Vector{Float64}     # costs of the resultant assignments (n)
