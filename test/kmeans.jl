@@ -1,5 +1,3 @@
-# simple program to test the new k-means (not ready yet)
-
 using Test
 using Clustering
 using Distances

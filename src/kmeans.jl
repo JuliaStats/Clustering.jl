@@ -34,7 +34,7 @@ function kmeans!(X::AbstractMatrix{<:Real}, centers::AbstractMatrix{<:Real};
     counts = Vector{Int}(undef, k)
     cweights = Vector{Float64}(undef, k)
 
-    _kmeans!(X, conv_weights(Float64, n, weights), centers, assignments,
+    _kmeans!(X, conv_weights(eltype(X), n, weights), centers, assignments,
              costs, counts, cweights, maxiter, tol,
              display_level(display), distance)
 end
@@ -62,9 +62,9 @@ end
 
 # core k-means skeleton
 function _kmeans!(
-    X::AbstractMatrix{<:Real},        # in: sample matrix (d x n)
+    X::AbstractMatrix{<:Real},                 # in: sample matrix (d x n)
     w::Union{Nothing, AbstractVector{<:Real}}, # in: sample weights (n)
-    centers::AbstractMatrix{<:Real},  # in/out: matrix of centers (d x k)
+    centers::AbstractMatrix{<:Real},           # in/out: matrix of centers (d x k)
     assignments::Vector{Int},     # out: vector of assignments (n)
     costs::Vector{Float64},       # out: costs of the resultant assignments (n)
     counts::Vector{Int},          # out: # samples assigned to each cluster (k)
@@ -82,10 +82,8 @@ function _kmeans!(
     num_affected::Int = k # number of centers, to which the distances need to be recomputed
 
     dmat = pairwise(distance, centers, X)
-    update_assignments!(dmat, true, assignments, costs, counts,
-                        to_update, unused)
-
-    objv = (w === nothing) ? sum(costs) : dot(w, costs)
+    update_assignments!(dmat, true, assignments, costs, counts, to_update, unused)
+    objv = w === nothing ? sum(costs) : dot(w, costs)
 
     # main loop
     t = 0
@@ -122,14 +120,13 @@ function _kmeans!(
 
         # update assignments
 
-        update_assignments!(dmat, false, assignments, costs, counts,
-                            to_update, unused)
+        update_assignments!(dmat, false, assignments, costs, counts, to_update, unused)
 
         num_affected = sum(to_update) + length(unused)
 
         # compute change of objective and determine convergence
         prev_objv = objv
-        objv = (w === nothing) ? sum(costs) : dot(w, costs)
+        objv = w === nothing ? sum(costs) : dot(w, costs)
         objv_change = objv - prev_objv
 
         if objv_change > tol
@@ -165,13 +162,13 @@ end
 #  an updated (squared) distance matrix
 #
 function update_assignments!(
-    dmat::Matrix{<:Real},     # in:  distance matrix (k x n)
-    is_init::Bool,            # in:  whether it is the initial run
-    assignments::Vector{Int}, # out: assignment vector (n)
-    costs::Vector{Float64},   # out: costs of the resultant assignment (n)
-    counts::Vector{Int},      # out: # samples assigned to each cluster (k)
-    to_update::Vector{Bool},  # out: whether a center needs update (k)
-    unused::Vector{Int})      # out: list of centers with no samples
+    dmat::AbstractMatrix{<:Real}, # in:  distance matrix (k x n)
+    is_init::Bool,                # in:  whether it is the initial run
+    assignments::Vector{Int},     # out: assignment vector (n)
+    costs::Vector{Float64},       # out: costs of the resultant assignment (n)
+    counts::Vector{Int},          # out: # samples assigned to each cluster (k)
+    to_update::Vector{Bool},      # out: whether a center needs update (k)
+    unused::Vector{Int})          # out: list of centers with no samples
 
     k, n = size(dmat)
 
@@ -255,14 +252,11 @@ function update_centers!(
         1 <= cj <= k || error("assignment out of boundary.")
 
         if to_update[cj]
+            xj = view(X, :, j)
             if cweights[cj] > 0
-                centers[:, cj] .+= view(X, :, j)
-                    centers[i, cj] += X[i, j]
-                end
+                centers[:, cj] .+= xj
             else
-                centers[:, cj] .= view(X, :, j)
-                    centers[i, cj] = X[i, j]
-                end
+                centers[:, cj] .= xj
             end
             cweights[cj] += 1
         end
@@ -271,11 +265,7 @@ function update_centers!(
     # sum ==> mean
     @inbounds for j = 1:k
         if to_update[j]
-            centers[:, j] .*= 1.0 / cweights[j]
-            vj = view(centers, :, j)
-            for i = 1:d
-                vj[i] *= cj
-            end
+            centers[:, j] .*= 1 / cweights[j]
         end
     end
 end
@@ -300,20 +290,18 @@ function update_centers!(
     cweights[to_update] .= 0.0
 
     # accumulate columns
-    # accumulate_cols_u!(centers, cweights, x, assignments, weights, to_update)
-    for j = 1:n
-        @inbounds wj = weights[j]
+    @inbounds for j = 1:n
+        wj = weights[j]
         if wj > 0
-            @inbounds cj = assignments[j]
+            cj = assignments[j]
             1 <= cj <= k || error("assignment out of boundary.")
 
             if to_update[cj]
-                rj = view(centers, :, cj)
                 xj = view(X, :, j)
                 if cweights[cj] > 0
-                    @inbounds rj .+= xj * wj
+                    centers[:, cj] .+= xj * wj
                 else
-                    rj .= xj * wj
+                    centers[:, cj] .= xj * wj
                 end
                 cweights[cj] += wj
             end
@@ -321,9 +309,9 @@ function update_centers!(
     end
 
     # sum ==> mean
-    for j = 1:k
+    @inbounds for j = 1:k
         if to_update[j]
-            @inbounds centers[:, j] .*= 1.0 / cweights[j]
+            centers[:, j] .*= 1 / cweights[j]
         end
     end
 end
@@ -336,7 +324,7 @@ function repick_unused_centers(
     X::AbstractMatrix{<:Real},       # in: the sample set (d x n)
     costs::Vector{Float64},          # in: the current assignment costs (n)
     centers::AbstractMatrix{<:Real}, # to be updated: the centers (d x k)
-    unused::Vector{Int})          # in: set of indices of centers to be updated
+    unused::Vector{Int})             # in: set of indices of centers to be updated
 
     # pick new centers using a scheme like kmeans++
     ds = similar(costs)
@@ -346,7 +334,7 @@ function repick_unused_centers(
     for i in unused
         j = wsample(1:n, tcosts)
         tcosts[j] = 0
-        v = X[:, j]
+        v = view(X, :, j)
         centers[:, i] = v
 
         colwise!(ds, SqEuclidean(), v, X)

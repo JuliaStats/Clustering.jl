@@ -40,8 +40,8 @@ initseeds_by_costs(algname::Symbol, costs::AbstractMatrix{<:Real}, k::Integer) =
 initseeds(iseeds::Vector{Int}, X::AbstractMatrix{<:Real}, k::Integer) = iseeds
 initseeds_by_costs(iseeds::Vector{Int}, costs::AbstractMatrix{<:Real}, k::Integer) = iseeds
 
-function copyseeds!(S::DenseMatrix, X::AbstractMatrix{<:Real},
-                    iseeds::AbstractVector)
+function copyseeds!(S::AbstractMatrix{T}, X::AbstractMatrix{T},
+                    iseeds::AbstractVector) where T<:Real
     d = size(X, 1)
     n = size(X, 2)
     k = length(iseeds)
@@ -55,7 +55,7 @@ function copyseeds!(S::DenseMatrix, X::AbstractMatrix{<:Real},
 end
 
 copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector) =
-    copyseeds!(Matrix{eltype(X)}(undef, size(X,1), length(iseeds)), X, iseeds)
+    copyseeds!(similar(X, size(X, 1), length(iseeds)), X, iseeds)
 
 function check_seeding_args(n::Integer, k::Integer)
     k >= 1 || error("The number of seeds must be positive.")
@@ -86,7 +86,6 @@ mutable struct KmppAlg <: SeedingAlgorithm end
 
 function initseeds!(iseeds::IntegerVector, alg::KmppAlg,
                     X::AbstractMatrix{<:Real}, metric::PreMetric)
-
     n = size(X, 2)
     k = length(iseeds)
     check_seeding_args(n, k)
@@ -121,7 +120,6 @@ initseeds!(iseeds::IntegerVector, alg::KmppAlg, X::AbstractMatrix{<:Real}) =
 
 function initseeds_by_costs!(iseeds::IntegerVector, alg::KmppAlg,
                              costs::AbstractMatrix{<:Real})
-
     n = size(costs, 1)
     k = length(iseeds)
     check_seeding_args(n, k)
@@ -131,7 +129,7 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmppAlg,
     iseeds[1] = p
 
     if k > 1
-        mincosts = copy(view(costs, :, p))
+        mincosts = costs[:, p]
         mincosts[p] = 0
 
         # pick remaining (with a chance proportional to mincosts)
