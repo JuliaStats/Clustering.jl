@@ -271,7 +271,7 @@ function update_centers!(
     # sum ==> mean
     @inbounds for j = 1:k
         if to_update[j]
-            cj = 1.0 / cweights[j]
+            centers[:, j] .*= 1.0 / cweights[j]
             vj = view(centers, :, j)
             for i = 1:d
                 vj[i] *= cj
