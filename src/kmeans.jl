@@ -256,7 +256,7 @@ function update_centers!(
 
         if to_update[cj]
             if cweights[cj] > 0
-                for i = 1:d
+                centers[:, cj] .+= view(X, :, j)
                     centers[i, cj] += X[i, j]
                 end
             else
