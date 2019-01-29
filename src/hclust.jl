@@ -666,6 +666,9 @@ function cutree(hclu::Hclust;
         hix = findlast(hh -> hh ≤ h, hclu.heights)
         if hix !== nothing && hix < cutm
             cutm = hix
+        elseif nmerges(hclu) >= 1 && first(hclu.heights) > h
+            # corner case, the requested h smaller that the smallest nontrivial subtree
+            cutm = 0
         end
     end
     clusters = Vector{Int}[]
