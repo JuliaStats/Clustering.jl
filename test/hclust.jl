@@ -133,4 +133,12 @@ end
     end
 end
 
+@testset "cutree(hclust, h=h) when the height of all subtrees greater than h (#141)" begin
+    A = [0.0 0.7; 0.7 0.0]
+    hA = hclust(A, linkage=:average)
+    @test cutree(hA, h=0.5) == [1, 2]
+    @test cutree(hA, h=0.7) == [1, 1]
+    @test cutree(hA, h=0.9) == [1, 1]
+end
+
 end
