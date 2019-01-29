@@ -1,8 +1,7 @@
-# simple program to test the new k-means (not ready yet)
-
 using Test
 using Clustering
 using Distances
+using Random
 using LinearAlgebra
 
 import Distances.pairwise!
@@ -28,8 +27,13 @@ n = 1000
 k = 10
 
 x = rand(m, n)
+xt = copy(transpose(x))
+
+equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
+    all(getfield(km1, η) == getfield(km2, η) for η ∈ fieldnames(KmeansResult))
 
 @testset "non-weighted" begin
+    Random.seed!(34568)
     r = kmeans(x, k; maxiter=50)
     @test isa(r, KmeansResult{Float64})
     @test size(r.centers) == (m, k)
@@ -40,10 +44,17 @@ x = rand(m, n)
     @test sum(r.counts) == n
     @test r.cweights == map(Float64, r.counts)
     @test sum(r.costs) ≈ r.totalcost
+
+    Random.seed!(34568)
+    r_t = kmeans(xt', k; maxiter=50)
+    @test equal_kmresults(r, r_t)
 end
 
 @testset "non-weighted (float32)" begin
-    r = kmeans(map(Float32, x), k; maxiter=50)
+    Random.seed!(34568)
+    x32 = map(Float32, x)
+    x32t = copy(x32')
+    r = kmeans(x32, k; maxiter=50)
     @test isa(r, KmeansResult{Float32})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
@@ -53,10 +64,15 @@ end
     @test sum(r.counts) == n
     @test r.cweights == map(Float64, r.counts)
     @test sum(r.costs) ≈ r.totalcost
+
+    Random.seed!(34568)
+    r_t = kmeans(x32t', k; maxiter=50)
+    @test equal_kmresults(r, r_t)
 end
 
 @testset "weighted" begin
     w = rand(n)
+    Random.seed!(34568)
     r = kmeans(x, k; maxiter=50, weights=w)
     @test isa(r, KmeansResult{Float64})
     @test size(r.centers) == (m, k)
@@ -72,9 +88,14 @@ end
     end
     @test r.cweights ≈ cw
     @test dot(r.costs, w) ≈ r.totalcost
+
+    Random.seed!(34568)
+    r_t = kmeans(xt', k; maxiter=50, weights=w)
+    @test equal_kmresults(r, r_t)
 end
 
 @testset "custom distance" begin
+    Random.seed!(34568)
     r = kmeans(x, k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
     r2 = kmeans(x, k; maxiter=50, init=:kmcen)
     @test isa(r, KmeansResult{Float64})
@@ -86,9 +107,11 @@ end
     @test sum(r.counts) == n
     @test r.cweights == map(Float64, r.counts)
     @test sum(r.costs) ≈ r.totalcost
-    for fn in fieldnames(typeof(r))
-        @test getfield(r, fn) == getfield(r2, fn)
-    end
+    @test equal_kmresults(r, r2)
+
+    Random.seed!(34568)
+    r_t = kmeans(xt', k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
+    @test equal_kmresults(r, r_t)
 end
 
 end
