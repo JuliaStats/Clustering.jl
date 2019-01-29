@@ -19,7 +19,7 @@ const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
 
 function kmeans!(X::AbstractMatrix{T}, centers::AbstractMatrix{T};
-                 weights::Union{Nothing, Vector{<:Real}}=nothing,
+                 weights::Union{Nothing, AbstractVector{<:Real}}=nothing,
                  maxiter::Integer=_kmeans_default_maxiter,
                  tol::Real=_kmeans_default_tol,
                  display::Symbol=_kmeans_default_display,
