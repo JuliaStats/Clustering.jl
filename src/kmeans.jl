@@ -36,7 +36,7 @@ function kmeans!(X::AbstractMatrix{T}, centers::AbstractMatrix{T};
     cweights = Vector{Float64}(undef, k)
 
     _kmeans!(X, conv_weights(T, n, weights), centers,
-             assignments, costs, counts, cweights, maxiter, tol,
+             assignments, costs, counts, cweights, round(Int, maxiter), tol,
              display_level(display), distance)
 end
 
