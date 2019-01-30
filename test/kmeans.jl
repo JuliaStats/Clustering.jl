@@ -114,4 +114,15 @@ end
     @test equal_kmresults(r, r_t)
 end
 
+x_int = rand(Int16, m, n)
+
+@testset "Integer data" begin
+    Random.seed!(654)
+    r = kmeans(x_int, k; maxiter=50)
+    Random.seed!(654)
+    r2 = kmeans(convert(Matrix{Float64}, x_int), k; maxiter=50)
+
+    @test equal_kmresults(r, r2)
+end
+
 end
