@@ -153,8 +153,8 @@ function _kmeans!(X::AbstractMatrix{T},
         else
             # if only a small subset is affected, only compute for that subset
             affected_inds = findall(to_update)
-            dmat_p = pairwise(distance, view(centers, :, affected_inds), X)
-            dmat[affected_inds, :] .= dmat_p
+            pairwise!(view(dmat, affected_inds, :), distance,
+                      view(centers, :, affected_inds), X)
         end
 
         # update assignments
