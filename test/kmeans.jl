@@ -7,7 +7,7 @@ using LinearAlgebra
 import Distances.pairwise!
 
 # custom distance metric
-mutable struct MySqEuclidean <: SemiMetric end
+struct MySqEuclidean <: SemiMetric end
 
 # redefinition of Distances.pairwise! for MySqEuclidean type
 function pairwise!(r::AbstractMatrix, dist::MySqEuclidean,
@@ -35,7 +35,7 @@ equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
 @testset "non-weighted" begin
     Random.seed!(34568)
     r = kmeans(x, k; maxiter=50)
-    @test isa(r, KmeansResult{Float64})
+    @test isa(r, KmeansResult{Float64, Float64, Int})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
@@ -55,7 +55,7 @@ end
     x32 = map(Float32, x)
     x32t = copy(x32')
     r = kmeans(x32, k; maxiter=50)
-    @test isa(r, KmeansResult{Float32})
+    @test isa(r, KmeansResult{Float32, Float32, Int})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
@@ -74,7 +74,7 @@ end
     w = rand(n)
     Random.seed!(34568)
     r = kmeans(x, k; maxiter=50, weights=w)
-    @test isa(r, KmeansResult{Float64})
+    @test isa(r, KmeansResult{Float64, Float64, Float64})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
@@ -98,7 +98,7 @@ end
     Random.seed!(34568)
     r = kmeans(x, k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
     r2 = kmeans(x, k; maxiter=50, init=:kmcen)
-    @test isa(r, KmeansResult{Float64})
+    @test isa(r, KmeansResult{Float64, Float64, Int})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
@@ -119,10 +119,8 @@ x_int = rand(Int16, m, n)
 @testset "Integer data" begin
     Random.seed!(654)
     r = kmeans(x_int, k; maxiter=50)
-    Random.seed!(654)
-    r2 = kmeans(convert(Matrix{Float64}, x_int), k; maxiter=50)
 
-    @test equal_kmresults(r, r2)
+    @test isa(r, KmeansResult{Float64, Float64, Int})
 end
 
 end
