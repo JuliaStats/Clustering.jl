@@ -52,7 +52,7 @@ function copyseeds!(S::Matrix{TS}, X::AbstractMatrix{TX},
     return S
 end
 
-copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector, T::DataType) =
+copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector, T::DataType=eltype(X)) =
     copyseeds!(Matrix{T}(undef, size(X, 1), length(iseeds)), X, iseeds)
 
 function check_seeding_args(n::Integer, k::Integer)
