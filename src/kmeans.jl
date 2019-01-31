@@ -5,7 +5,7 @@
 ####
 
 struct KmeansResult{TC<:AbstractFloat,TD<:Real,TCW<:Real} <: ClusteringResult
-    centers::Matrix{TC}       # cluster centers (d x k)
+    centers::Matrix{TC}       # cluster centers (p x k)
     assignments::Vector{Int}  # assignments (n)
     costs::Vector{TD}         # cost of the assignments (n)
     counts::Vector{Int}       # number of samples assigned to each cluster (k)
@@ -24,12 +24,13 @@ const _kmeans_default_display = :none
 #### Exported kmeans and kmeans! functions
 ####
 
-function kmeans!(X::AbstractMatrix{TX}, centers::AbstractMatrix{TC};
-                 weights::Union{Nothing, AbstractVector{TW}}=nothing,
-                 maxiter::Integer=_kmeans_default_maxiter,
-                 tol::Real=_kmeans_default_tol,
-                 display::Symbol=_kmeans_default_display,
-                 distance::SemiMetric=SqEuclidean()
+function kmeans!(X::AbstractMatrix{TX},                    # in: sample matrix (p x n)
+                 centers::AbstractMatrix{TC};              # in: current centers (p x k)
+                 weights::Union{Nothing, AbstractVector{TW}}=nothing, # in: sample weights (n)
+                 maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
+                 tol::Real=_kmeans_default_tol,            # in: tolerance of change at convergence
+                 display::Symbol=_kmeans_default_display,  # in: level of display
+                 distance::SemiMetric=SqEuclidean()        # in: function to compute distances
                  ) where {TX<:Real,TC<:Real,TW<:Real}
     p, n = size(X)
     p2, k = size(centers)
@@ -55,13 +56,15 @@ function kmeans!(X::AbstractMatrix{TX}, centers::AbstractMatrix{TC};
              display_level(display), distance)
 end
 
-function kmeans(X::AbstractMatrix{TX}, k::Int;
-                weights::Union{Nothing, AbstractVector{TW}}=nothing,
-                init=_kmeans_default_init,
-                maxiter::Integer=_kmeans_default_maxiter,
-                tol::Real=_kmeans_default_tol,
-                display::Symbol=_kmeans_default_display,
-                distance::SemiMetric=SqEuclidean()
+
+function kmeans(X::AbstractMatrix{TX}, # in: sample matrix (p x n) columns = observations
+                k::Int;                # in: number of centers
+                weights::Union{Nothing, AbstractVector{TW}}=nothing, # in: sample weights (n)
+                init=_kmeans_default_init,                # in: initialization algorithm
+                maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
+                tol::Real=_kmeans_default_tol,            # in: tolerance  of change at convergence
+                display::Symbol=_kmeans_default_display,  # in: level of display
+                distance::SemiMetric=SqEuclidean()        # in: function to calculate distance with
                 ) where {TX<:Real,TW<:Real}
     p, n = size(X)
     (2 <= k < n) || error("k must have 2 <= k < n.")
@@ -82,15 +85,15 @@ end
 #### Core implementation
 ####
 
-function _kmeans!(X::AbstractMatrix{TX},
-                  weights::Union{Nothing, Vector{TW}},
-                  centers::Matrix{TC},
-                  assignments::Vector{Int},
-                  counts::Vector{Int},
-                  maxiter::Int,
-                  tol::Real,
-                  displevel::Int,
-                  distance::SemiMetric
+function _kmeans!(X::AbstractMatrix{TX},    # in: sample matrix (p x n)
+                  weights::Union{Nothing, Vector{TW}}, # in: sample weights (n)
+                  centers::Matrix{TC},      # in/out: matrix of centers (p x k)
+                  assignments::Vector{Int}, # out: vector of assignments (n)
+                  counts::Vector{Int},      # out: # samples assigned to each cluster (k)
+                  maxiter::Int,             # in: maximum number of iterations
+                  tol::Real,                # in: tolerance of change at convergence
+                  displevel::Int,           # in: the level of display
+                  distance::SemiMetric      # in: function to calculate the distance with
                   ) where {TX<:Real,TW<:Real,TC<:AbstractFloat}
     p, n = size(X)
     k = size(centers, 2)
@@ -175,10 +178,13 @@ end
 #### update assignments
 ####
 
-function update_assignments!(dmat::Matrix{T}, is_init::Bool,
-                             assignments::Vector{Int}, costs::Vector{T},
-                             counts::Vector{Int}, to_update::Vector{Bool},
-                             unused::Vector{Int}
+function update_assignments!(dmat::Matrix{T},          # in:  distance matrix (k x n)
+                             is_init::Bool,            # in:  whether it is the initial run
+                             assignments::Vector{Int}, # out: assignment vector (n)
+                             costs::Vector{T},         # out: costs of the resultant assignment (n)
+                             counts::Vector{Int},      # out: # samples assigned to each cluster (k)
+                             to_update::Vector{Bool},  # out: whether a center needs update (k)
+                             unused::Vector{Int}       # out: list of centers with no samples
                              ) where T<:Real
     k, n = size(dmat)
 
@@ -232,9 +238,12 @@ end
 #### update centers (unweighted case: weights=nothing)
 ####
 
-function update_centers!(X::AbstractMatrix{TX}, weights::Nothing,
-                         assignments::Vector{Int}, to_update::Vector{Bool},
-                         centers::Matrix{TC}, cweights::Vector{Int}
+function update_centers!(X::AbstractMatrix{TX},     # in: sample matrix (p x n)
+                         weights::Nothing,          # in: sample weights
+                         assignments::Vector{Int},  # in: assignments (n)
+                         to_update::Vector{Bool},   # in: whether a center needs update (k)
+                         centers::Matrix{TC},       # out: updated centers (p x k)
+                         cweights::Vector{Int}      # out: updated cluster weights (k)
                          ) where {TX<:Real,TC<:AbstractFloat}
     d, n = size(X)
     k = size(centers, 2)
@@ -275,9 +284,12 @@ end
 #### update centers (weighted case)
 ####
 
-function update_centers!(X::AbstractMatrix{TX}, weights::Vector{TW},
-                         assignments::Vector{Int}, to_update::Vector{Bool},
-                         centers::Matrix{TC}, cweights::Vector{TW}
+function update_centers!(X::AbstractMatrix{TX},     # in: sample matrix (p x n)
+                         weights::Vector{TW},       # in: sample weights (n)
+                         assignments::Vector{Int},  # in: assignments (n)
+                         to_update::Vector{Bool},   # in: whether a center needs update (k)
+                         centers::Matrix{TC},       # out: updated centers (p x k)
+                         cweights::Vector{TW}       # out: updated cluster weights (k)
                          ) where {TX<:Real,TC<:AbstractFloat,TW<:Real}
     d, n = size(X)
     k = size(centers, 2)
@@ -321,9 +333,11 @@ end
 #### Re-pick centers that get no samples assigned to them.
 ####
 
-function repick_unused_centers(X::AbstractMatrix{TX}, costs::Vector{TD},
-                               centers::Matrix{TC}, unused::Vector{Int},
-                               distance::SemiMetric
+function repick_unused_centers(X::AbstractMatrix{TX},  # in: the sample set (p x n)
+                               costs::Vector{TD},      # in: the current assignment costs (n)
+                               centers::Matrix{TC},    # to be updated: the centers (p x k)
+                               unused::Vector{Int},    # in: set of indices of centers to be updated
+                               distance::SemiMetric    # in: function to calculate the distance with
                                ) where {TX<:Real,TC<:AbstractFloat,TD<:Real}
     # pick new centers using a scheme like kmeans++
     ds = similar(costs)
