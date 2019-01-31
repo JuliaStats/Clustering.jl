@@ -20,14 +20,13 @@ const _kmeans_default_maxiter = 100
 const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
 
-
 ####
 #### Exported kmeans and kmeans! functions
 ####
 
 function kmeans!(X::AbstractMatrix{TX}, centers::AbstractMatrix{TC};
                  weights::Union{Nothing, AbstractVector{TW}}=nothing,
-                 maxiter::Int=_kmeans_default_maxiter,
+                 maxiter::Integer=_kmeans_default_maxiter,
                  tol::Real=_kmeans_default_tol,
                  display::Symbol=_kmeans_default_display,
                  distance::SemiMetric=SqEuclidean()
@@ -51,19 +50,15 @@ function kmeans!(X::AbstractMatrix{TX}, centers::AbstractMatrix{TC};
     # corner case where that's still not an AbstractFloat
     TC2 = ifelse(TC2 <: AbstractFloat, TC2, Float64)
 
-    # NOTE REFACT:
-    # - X is still of type TX<:Real (no conversion)
-    # - centers is of type T <: AbstractFloat (conversion only in corner case)
-    # - weights is still of type TW <: Real (no conversion)
     _kmeans!(X, weights, convert(Matrix{TC2}, centers),
-             assignments, counts, maxiter, tol,
+             assignments, counts, round(Int, maxiter), tol,
              display_level(display), distance)
 end
 
 function kmeans(X::AbstractMatrix{TX}, k::Int;
                 weights::Union{Nothing, AbstractVector{TW}}=nothing,
                 init=_kmeans_default_init,
-                maxiter::Int=_kmeans_default_maxiter,
+                maxiter::Integer=_kmeans_default_maxiter,
                 tol::Real=_kmeans_default_tol,
                 display::Symbol=_kmeans_default_display,
                 distance::SemiMetric=SqEuclidean()
@@ -71,17 +66,14 @@ function kmeans(X::AbstractMatrix{TX}, k::Int;
     p, n = size(X)
     (2 <= k < n) || error("k must have 2 <= k < n.")
 
-    # NOTE REFACT: if eltype(X) is not AbstractFloat, centers are
-    # initialised as a Float64 conversion of k chosen elements of X
-    # (but X itself is not converted)
-
-    TC = ifelse(TX <: AbstractFloat, TX, Float64)
+    TC = float(TX)
+    centers = Matrix{TC}(undef, p, k)
 
     iseeds = initseeds(init, X, k)
-    centers = copyseeds(X, iseeds, TC)
+    copyseeds!(centers, X, iseeds)
 
     kmeans!(X, centers;
-            weights=weights, maxiter=maxiter, tol=tol,
+            weights=weights, maxiter=round(Int, maxiter), tol=tol,
             display=display, distance=distance)
 end
 
@@ -90,8 +82,6 @@ end
 #### Core implementation
 ####
 
-# NOTE REFACT: this is called after `kmeans!` where X and weights have not
-# been touched but centers has been coerced to be of type AbstractFloat
 function _kmeans!(X::AbstractMatrix{TX},
                   weights::Union{Nothing, Vector{TW}},
                   centers::Matrix{TC},
@@ -108,12 +98,9 @@ function _kmeans!(X::AbstractMatrix{TX},
     unused = Vector{Int}()
     num_affected = k # number of centers to which dists need to be recomputed
 
-    # compute pairwise distances
+    # compute pairwise distances, preassign costs and cluster weights
     dmat = pairwise(distance, centers, X)
-
-    # NOTE REFACT: costs is only associated to dmat hence its type defined here
     costs = Vector{eltype(dmat)}(undef, n)
-    # NOTE REFACT: cluster weights is either incremented by 1 or by weight
     TCW = weights === nothing ? Int : TW
     cweights = Vector{TCW}(undef, k)
 
@@ -168,10 +155,9 @@ function _kmeans!(X::AbstractMatrix{TX},
 
         # display information (if required)
         if displevel >= 2
-            @printf("%7d %18.6e %18.6e | %8d\n", t, objv, objv_change,
-                    num_affected)
+            @printf("%7d %18.6e %18.6e | %8d\n", t, objv, objv_change, num_affected)
         end
-    end # end while
+    end
 
     if displevel >= 1
         if converged
@@ -246,8 +232,6 @@ end
 #### update centers (unweighted case: weights=nothing)
 ####
 
-# NOTE REFACT: we know here that if weights is nothing then cweights must
-# be of type Int.
 function update_centers!(X::AbstractMatrix{TX}, weights::Nothing,
                          assignments::Vector{Int}, to_update::Vector{Bool},
                          centers::Matrix{TC}, cweights::Vector{Int}
@@ -265,9 +249,6 @@ function update_centers!(X::AbstractMatrix{TX}, weights::Nothing,
         if to_update[cj]
             if cweights[cj] > 0
                 for i ∈ 1:d
-                    # NOTE REFACT: centers is of type TC<:AbstractFloat
-                    # which is a supertype of (TX,TC,TW) and so there is
-                    # no loss of precision here. (same below)
                     centers[i, cj] += X[i, j]
                 end
             else
@@ -302,7 +283,7 @@ function update_centers!(X::AbstractMatrix{TX}, weights::Vector{TW},
     k = size(centers, 2)
 
     # initialize center weights
-    cweights[to_update] .= zero(TW)
+    cweights[to_update] .= 0
 
     # accumulate columns
     @inbounds for j ∈ 1:n
@@ -310,7 +291,7 @@ function update_centers!(X::AbstractMatrix{TX}, weights::Vector{TW},
         # that doesn't need to be updated
         wj = weights[j]
         cj = assignments[j]
-        if to_update[cj] && wj > 0
+        if wj > 0 && to_update[cj]
             if cweights[cj] > 0
                 for i ∈ 1:d
                     centers[i, cj] += X[i, j] * wj
@@ -353,7 +334,6 @@ function repick_unused_centers(X::AbstractMatrix{TX}, costs::Vector{TD},
         j = wsample(1:n, tcosts)
         tcosts[j] = 0
         v = view(X, :, j)
-        # NOTE REFACT: centers is of type TC which is a supertype of TX
         copyto!(centers[:, i], v)
         colwise!(ds, distance, v, X)
         tcosts = min(tcosts, ds)

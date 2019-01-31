@@ -52,8 +52,8 @@ function copyseeds!(S::Matrix{TS}, X::AbstractMatrix{TX},
     return S
 end
 
-copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector, T::DataType=eltype(X)) =
-    copyseeds!(Matrix{T}(undef, size(X, 1), length(iseeds)), X, iseeds)
+copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector) =
+    copyseeds!(Matrix{eltype(X)}(undef, size(X, 1), length(iseeds)), X, iseeds)
 
 function check_seeding_args(n::Integer, k::Integer)
     k >= 1 || error("The number of seeds must be positive.")
