@@ -49,7 +49,7 @@ function kmeans!(X::AbstractMatrix{TX},                    # in: sample matrix (
     TC2 = promote_type(TX, TC)
     weights === nothing || (TC2 = promote_type(TC2, TW))
     # corner case where that's still not an AbstractFloat
-    TC2 = ifelse(TC2 <: AbstractFloat, TC2, Float64)
+    TC2 = float(TC2)
 
     _kmeans!(X, weights, convert(Matrix{TC2}, centers),
              assignments, counts, round(Int, maxiter), tol,
