@@ -40,8 +40,8 @@ initseeds_by_costs(algname::Symbol, costs::AbstractMatrix{<:Real}, k::Integer) =
 initseeds(iseeds::Vector{Int}, X::AbstractMatrix{<:Real}, k::Integer) = iseeds
 initseeds_by_costs(iseeds::Vector{Int}, costs::AbstractMatrix{<:Real}, k::Integer) = iseeds
 
-function copyseeds!(S::Matrix{TS}, X::AbstractMatrix{TX},
-                    iseeds::AbstractVector) where {TS<:AbstractFloat, TX<:Real}
+function copyseeds!(S::Matrix{<:AbstractFloat}, X::AbstractMatrix{<:Real},
+                    iseeds::AbstractVector)
     d, n = size(X)
     k = length(iseeds)
     size(S) == (d, k) || throw(DimensionMismatch("Inconsistent array " *
@@ -52,6 +52,7 @@ function copyseeds!(S::Matrix{TS}, X::AbstractMatrix{TX},
     return S
 end
 
+# NOTE: this should eventually be removed as only `copyseeds!` is used in `kmeans`.
 copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector) =
     copyseeds!(Matrix{eltype(X)}(undef, size(X, 1), length(iseeds)), X, iseeds)
 
