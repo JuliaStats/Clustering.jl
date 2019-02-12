@@ -47,7 +47,7 @@ function kmeans!(centers::AbstractMatrix{<:AbstractFloat}, # in: current centers
 
     p == p2 || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
     (2 <= k < n) || error("k must have 2 <= k < n.")
-    if !(weights === nothing)
+    if weights !== nothing
         length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
     end
 
@@ -56,13 +56,13 @@ function kmeans!(centers::AbstractMatrix{<:AbstractFloat}, # in: current centers
 
     # check the types to see wheter the updates: centers[i, cj] += X[i, j] * wj
     # may occur loss of precision through silent casting
-    update_type = float(weights === nothing ? eltype(X) : promote_type(eltype(X), eltype(weights)))
+    update_type = float(weights === nothing ? eltype(X) : typeof(one(eltype(X)) * one(eltype(weights))))
     update_type <: eltype(centers) || @warn "The type of the centers update ($update_type) is " *
                                             "wider than that of the given centers " *
                                             "($(eltype(centers))). This may incur rounding errors."
 
     _kmeans!(X, weights, centers, assignments, counts,
-             round(Int, maxiter), tol, display_level(display), distance)
+             Int(maxiter), Float64(tol), display_level(display), distance)
 end
 
 
@@ -76,8 +76,8 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (p
                 k::Integer;                               # in: number of centers
                 weights::Union{Nothing, AbstractVector{<:Real}}=nothing, # in: sample weights (n)
                 init::Symbol=_kmeans_default_init,        # in: initialization algorithm
-                maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
-                tol::Real=_kmeans_default_tol,            # in: tolerance  of change at convergence
+                maxiter::Int=_kmeans_default_maxiter,     # in: maximum number of iterations
+                tol::Float64=_kmeans_default_tol,         # in: tolerance  of change at convergence
                 display::Symbol=_kmeans_default_display,  # in: level of display
                 distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
     p, n = size(X)
@@ -103,12 +103,12 @@ end
 function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix (p x n)
                   weights::Union{Nothing, Vector{<:Real}},  # in: sample weights (n)
                   centers::AbstractMatrix{<:AbstractFloat}, # in/out: matrix of centers (p x k)
-                  assignments::Vector{Int}, # out: vector of assignments (n)
-                  counts::Vector{Int},      # out: number of samples assigned to each cluster (k)
-                  maxiter::Int,             # in: maximum number of iterations
-                  tol::Real,                # in: tolerance of change at convergence
-                  displevel::Int,           # in: the level of display
-                  distance::SemiMetric)     # in: function to calculate the distance with
+                  assignments::Vector{Int},                 # out: vector of assignments (n)
+                  counts::Vector{Int},                      # out: number of samples assigned to each cluster (k)
+                  maxiter::Int,                             # in: maximum number of iterations
+                  tol::Real,                                # in: tolerance of change at convergence
+                  displevel::Int,                           # in: the level of display
+                  distance::SemiMetric)                     # in: function to calculate the distance with
     p, n = size(X)
     k = size(centers, 2)
     to_update = Vector{Bool}(undef, k) # whether a center needs to be updated
@@ -251,7 +251,7 @@ function update_assignments!(dmat::Matrix{T},          # in:  distance matrix (k
 end
 
 ####
-#### update centers (unweighted case: weights=nothing, eltype(cweights) === Int)
+#### update centers (unweighted case)
 ####
 
 function update_centers!(X::AbstractMatrix{<:Real},        # in: sample matrix (p x n)
@@ -296,7 +296,7 @@ function update_centers!(X::AbstractMatrix{<:Real},        # in: sample matrix (
 end
 
 ####
-#### update centers (weighted case: eltype(cweights) == eltype(weights) <: Real)
+#### update centers (weighted case)
 ####
 
 function update_centers!(X::AbstractMatrix{<:Real}, # in: sample matrix (p x n)
@@ -362,7 +362,7 @@ function repick_unused_centers(X::AbstractMatrix{<:Real},  # in: the sample set 
         j = wsample(1:n, tcosts)
         tcosts[j] = 0
         v = view(X, :, j)
-        centers[:, i] .= v
+        centers[:, i] = v
         colwise!(ds, distance, v, X)
         tcosts = min(tcosts, ds)
     end
