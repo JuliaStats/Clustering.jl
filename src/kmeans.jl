@@ -1,8 +1,6 @@
 # K-means algorithm
 
-####
-#### Result object
-####
+#### Interface
 
 # T is the eltype(centers)
 # D is the type of pairwise distance computation from samples to centers
@@ -23,10 +21,6 @@ const _kmeans_default_init = :kmpp
 const _kmeans_default_maxiter = 100
 const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
-
-####
-#### Exported kmeans and kmeans! functions
-####
 
 """
     kmeans!(centers, X)
@@ -95,11 +89,9 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (p
             display=display, distance=distance)
 end
 
-
-####
 #### Core implementation
-####
 
+# core k-means skeleton
 function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix (p x n)
                   weights::Union{Nothing, Vector{<:Real}},  # in: sample weights (n)
                   centers::AbstractMatrix{<:AbstractFloat}, # in/out: matrix of centers (p x k)
@@ -188,10 +180,10 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix 
                         cweights, objv, t, converged)
 end
 
-####
-#### update assignments
-####
-
+#
+#  Updates assignments, costs, and counts based on
+#  an updated (squared) distance matrix
+#
 function update_assignments!(dmat::Matrix{T},          # in:  distance matrix (k x n)
                              is_init::Bool,            # in:  whether it is the initial run
                              assignments::Vector{Int}, # out: assignment vector (n)
@@ -250,10 +242,11 @@ function update_assignments!(dmat::Matrix{T},          # in:  distance matrix (k
     end
 end
 
-####
-#### update centers (unweighted case)
-####
-
+#
+#  Update centers based on updated assignments
+#
+#  (specific to the case where samples are not weighted)
+#
 function update_centers!(X::AbstractMatrix{<:Real},        # in: sample matrix (p x n)
                          weights::Nothing,                 # in: sample weights
                          assignments::Vector{Int},         # in: assignments (n)
@@ -295,10 +288,11 @@ function update_centers!(X::AbstractMatrix{<:Real},        # in: sample matrix (
     end
 end
 
-####
-#### update centers (weighted case)
-####
-
+#
+#  Update centers based on updated assignments
+#
+#  (specific to the case where samples are weighted)
+#
 function update_centers!(X::AbstractMatrix{<:Real}, # in: sample matrix (p x n)
                          weights::Vector{W},        # in: sample weights (n)
                          assignments::Vector{Int},  # in: assignments (n)
@@ -344,10 +338,9 @@ function update_centers!(X::AbstractMatrix{<:Real}, # in: sample matrix (p x n)
 end
 
 
-####
-#### Re-pick centers that get no samples assigned to them.
-####
-
+#
+#  Re-picks centers that get no samples assigned to them.
+#
 function repick_unused_centers(X::AbstractMatrix{<:Real},  # in: the sample set (p x n)
                                costs::Vector{<:Real},      # in: the current assignment costs (n)
                                centers::AbstractMatrix{<:AbstractFloat}, # out: the centers (p x k)
