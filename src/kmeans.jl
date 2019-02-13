@@ -48,13 +48,6 @@ function kmeans!(centers::AbstractMatrix{<:AbstractFloat}, # in: current centers
     assignments = Vector{Int}(undef, n)
     counts = Vector{Int}(undef, k)
 
-    # check the types to see wheter the updates: centers[i, cj] += X[i, j] * wj
-    # may occur loss of precision through silent casting
-    update_type = float(weights === nothing ? eltype(X) : typeof(one(eltype(X)) * one(eltype(weights))))
-    update_type <: eltype(centers) || @warn "The type of the centers update ($update_type) is " *
-                                            "wider than that of the given centers " *
-                                            "($(eltype(centers))). This may incur rounding errors."
-
     _kmeans!(X, weights, centers, assignments, counts,
              Int(maxiter), Float64(tol), display_level(display), distance)
 end
