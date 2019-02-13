@@ -70,8 +70,8 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (p
                 k::Integer;                               # in: number of centers
                 weights::Union{Nothing, AbstractVector{<:Real}}=nothing, # in: sample weights (n)
                 init::Symbol=_kmeans_default_init,        # in: initialization algorithm
-                maxiter::Int=_kmeans_default_maxiter,     # in: maximum number of iterations
-                tol::Float64=_kmeans_default_tol,         # in: tolerance  of change at convergence
+                maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
+                tol::Real=_kmeans_default_tol,            # in: tolerance  of change at convergence
                 display::Symbol=_kmeans_default_display,  # in: level of display
                 distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
     p, n = size(X)
@@ -85,7 +85,7 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (p
     centers = copyseeds!(Matrix{T}(undef, p, k), X, iseeds)
 
     kmeans!(centers, X;
-            weights=weights, maxiter=round(Int, maxiter), tol=tol,
+            weights=weights, maxiter=Int(maxiter), tol=Float64(tol),
             display=display, distance=distance)
 end
 
@@ -98,7 +98,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix 
                   assignments::Vector{Int},                 # out: vector of assignments (n)
                   counts::Vector{Int},                      # out: number of samples assigned to each cluster (k)
                   maxiter::Int,                             # in: maximum number of iterations
-                  tol::Real,                                # in: tolerance of change at convergence
+                  tol::Float64,                             # in: tolerance of change at convergence
                   displevel::Int,                           # in: the level of display
                   distance::SemiMetric)                     # in: function to calculate the distance with
     p, n = size(X)
