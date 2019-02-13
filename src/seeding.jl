@@ -54,7 +54,7 @@ end
 
 # NOTE: this should eventually be removed as only `copyseeds!` is used in `kmeans`.
 copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector) =
-    copyseeds!(similar(X, size(X, 1), length(iseeds)), X, iseeds)
+    copyseeds!(Matrix{eltype(X)}(undef, size(X, 1), length(iseeds)), X, iseeds)
 
 function check_seeding_args(n::Integer, k::Integer)
     k >= 1 || error("The number of seeds must be positive.")
