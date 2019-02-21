@@ -69,7 +69,7 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (p
                 distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
     p, n = size(X)
     k = round(Int, k)
-    (2 <= k < n) || error("k must have 2 <= k < n.")
+    (2 <= k < n) || throw(ArgumentError("k must be 2 <= k < n, k=$k given."))
 
     # initialize the centers using a type wide enough so that the updates
     # centers[i, cj] += X[i, j] * wj will occur without loss of precision through rounding
