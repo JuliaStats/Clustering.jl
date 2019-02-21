@@ -36,10 +36,10 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix (
                  tol::Real=_kmeans_default_tol,            # in: tolerance of change at convergence
                  display::Symbol=_kmeans_default_display,  # in: level of display
                  distance::SemiMetric=SqEuclidean())       # in: function to compute distances
-    p, n = size(X)
-    p2, k = size(centers)
+    d, n = size(X)
+    dc, k = size(centers)
 
-    p == p2 || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
+    d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
     (2 <= k < n) || error("k must have 2 <= k < n.")
     if weights !== nothing
         length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
@@ -64,7 +64,7 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (d
                 tol::Real=_kmeans_default_tol,            # in: tolerance  of change at convergence
                 display::Symbol=_kmeans_default_display,  # in: level of display
                 distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
-    p, n = size(X)
+    d, n = size(X)
     k = round(Int, k)
     (2 <= k < n) || throw(ArgumentError("k must be 2 <= k < n, k=$k given."))
 
@@ -72,7 +72,7 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (d
     # centers[i, cj] += X[i, j] * wj will occur without loss of precision through rounding
     T = float(weights === nothing ? eltype(X) : promote_type(eltype(X), eltype(weights)))
     iseeds = initseeds(init, X, k)
-    centers = copyseeds!(Matrix{T}(undef, p, k), X, iseeds)
+    centers = copyseeds!(Matrix{T}(undef, d, k), X, iseeds)
 
     kmeans!(X, centers;
             weights=weights, maxiter=Int(maxiter), tol=Float64(tol),
@@ -89,7 +89,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix 
                   tol::Float64,                             # in: tolerance of change at convergence
                   displevel::Int,                           # in: the level of display
                   distance::SemiMetric)                     # in: function to calculate distance
-    p, n = size(X)
+    d, n = size(X)
     k = size(centers, 2)
     to_update = Vector{Bool}(undef, k) # whether a center needs to be updated
     unused = Vector{Int}()
