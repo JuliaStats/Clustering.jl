@@ -204,7 +204,7 @@ function update_assignments!(dmat::Matrix{T},          # in:  distance matrix (k
         # find the closest cluster to the i-th sample. Note that a
         # is necessarily between 1 and size(dmat, 1) === k as a result
         # and can thus be used as an index in an `inbounds` environment
-        a = argmin(view(dmat, :, j))
+        c, a = findmin(view(dmat, :, j))
         c = dmat[a, j]
 
         # set/update the assignment
