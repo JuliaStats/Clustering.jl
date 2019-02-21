@@ -23,7 +23,7 @@ const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
 
 """
-    kmeans!(centers, X)
+    kmeans!(X, centers)
 
 Update the current centers `centers` (of size `d x k` where `d` is the dimension and `k` the
 number of centroids) using the samples contained in `X` (of size `d x n` where `n` is the number
@@ -101,9 +101,10 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix 
 
     # compute pairwise distances, preassign costs and cluster weights
     dmat = pairwise(distance, centers, X)
-    costs = Vector{eltype(dmat)}(undef, n)
     WC = (weights === nothing) ? Int : eltype(weights)
     cweights = Vector{WC}(undef, k)
+    D = typeof(one(eltype(dmat)) * one(WC))
+    costs = Vector{D}(undef, n)
 
     update_assignments!(dmat, true, assignments, costs, counts,
                         to_update, unused)
@@ -176,14 +177,14 @@ end
 #  Updates assignments, costs, and counts based on
 #  an updated (squared) distance matrix
 #
-function update_assignments!(dmat::Matrix{T},          # in:  distance matrix (k x n)
+function update_assignments!(dmat::Matrix{<:Real},     # in:  distance matrix (k x n)
                              is_init::Bool,            # in:  whether it is the initial run
                              assignments::Vector{Int}, # out: assignment vector (n)
-                             costs::Vector{T},         # out: costs of the resultant assignment (n)
+                             costs::Vector{<:Real},    # out: costs of the resultant assignment (n)
                              counts::Vector{Int},      # out: # samples assigned to each cluster (k)
                              to_update::Vector{Bool},  # out: whether a center needs update (k)
                              unused::Vector{Int}       # out: list of centers with no samples
-                             ) where T<:Real
+                             )
     k, n = size(dmat)
 
     # re-initialize the counting vector

@@ -114,13 +114,31 @@ end
     @test equal_kmresults(r, r_t)
 end
 
-x_int = rand(Int16, m, n)
-
 @testset "Integer data" begin
+    x = rand(Int16, m, n)
     Random.seed!(654)
-    r = kmeans(x_int, k; maxiter=50)
+    r = kmeans(x, k; maxiter=50)
 
     @test isa(r, KmeansResult{Float64, Float64, Int})
 end
 
+@testset "kmeans! data types" begin
+    Random.seed!(1101)
+    for TX in (Int, Float32, Float64)
+        for TC in (Float32, Float64)
+            for TW in (Nothing, Int, Float32, Float64)
+                x = rand(TX, m, n)
+                c = rand(TC, m, k)
+                if TW == Nothing
+                    r = kmeans!(x, c; maxiter=1)
+                    @test isa(r, KmeansResult{TC,<:Real,Int})
+                else
+                    w = rand(TW, n)
+                    r = kmeans!(x, c; weights=w, maxiter=1)
+                    @test isa(r, KmeansResult{TC,<:Real,TW})
+                end
+            end
+        end
+    end
+end
 end
