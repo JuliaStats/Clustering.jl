@@ -150,7 +150,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix 
         objv_change = objv - prev_objv
 
         if objv_change > tol
-            @warn("The objective value changes towards an opposite direction")
+            @warn("The clustering cost increased at iteration #$t")
         elseif abs(objv_change) < tol
             converged = true
         end
