@@ -6,8 +6,8 @@
 # D is the type of pairwise distance computation from samples to centers
 # WC is the type of cluster weights, either Int (in the case where samples are
 # unweighted) or eltype(weights) (in the case where samples are weighted).
-struct KmeansResult{T<:AbstractFloat,D<:Real,WC<:Real} <: ClusteringResult
-    centers::AbstractMatrix{T} # cluster centers (d x k)
+struct KmeansResult{C<:AbstractMatrix{<:AbstractFloat},D<:Real,WC<:Real} <: ClusteringResult
+    centers::C                 # cluster centers (d x k)
     assignments::Vector{Int}   # assignments (n)
     costs::Vector{D}           # cost of the assignments (n)
     counts::Vector{Int}        # number of samples assigned to each cluster (k)

@@ -35,7 +35,7 @@ equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
 @testset "non-weighted" begin
     Random.seed!(34568)
     r = kmeans(x, k; maxiter=50)
-    @test isa(r, KmeansResult{Float64, Float64, Int})
+    @test isa(r, KmeansResult{Matrix{Float64}, Float64, Int})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
@@ -55,7 +55,7 @@ end
     x32 = map(Float32, x)
     x32t = copy(x32')
     r = kmeans(x32, k; maxiter=50)
-    @test isa(r, KmeansResult{Float32, Float32, Int})
+    @test isa(r, KmeansResult{Matrix{Float32}, Float32, Int})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
@@ -74,7 +74,7 @@ end
     w = rand(n)
     Random.seed!(34568)
     r = kmeans(x, k; maxiter=50, weights=w)
-    @test isa(r, KmeansResult{Float64, Float64, Float64})
+    @test isa(r, KmeansResult{Matrix{Float64}, Float64, Float64})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
@@ -98,7 +98,7 @@ end
     Random.seed!(34568)
     r = kmeans(x, k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
     r2 = kmeans(x, k; maxiter=50, init=:kmcen)
-    @test isa(r, KmeansResult{Float64, Float64, Int})
+    @test isa(r, KmeansResult{Matrix{Float64}, Float64, Int})
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
@@ -119,7 +119,7 @@ end
     Random.seed!(654)
     r = kmeans(x, k; maxiter=50)
 
-    @test isa(r, KmeansResult{Float64, Float64, Int})
+    @test isa(r, KmeansResult{Matrix{Float64}, Float64, Int})
 end
 
 @testset "kmeans! data types" begin
@@ -131,11 +131,11 @@ end
                 c = rand(TC, m, k)
                 if TW == Nothing
                     r = kmeans!(x, c; maxiter=1)
-                    @test isa(r, KmeansResult{TC,<:Real,Int})
+                    @test isa(r, KmeansResult{Matrix{TC},<:Real,Int})
                 else
                     w = rand(TW, n)
                     r = kmeans!(x, c; weights=w, maxiter=1)
-                    @test isa(r, KmeansResult{TC,<:Real,TW})
+                    @test isa(r, KmeansResult{Matrix{TC},<:Real,TW})
                 end
             end
         end
