@@ -2,7 +2,7 @@
 
 #### Interface
 
-# T is the eltype(centers)
+# C is the type of centers, an (abstract) matrix of size (d x k)
 # D is the type of pairwise distance computation from samples to centers
 # WC is the type of cluster weights, either Int (in the case where samples are
 # unweighted) or eltype(weights) (in the case where samples are weighted).
