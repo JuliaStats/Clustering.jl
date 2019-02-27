@@ -82,7 +82,7 @@ function _kmeans!(
     unused = Vector{Int}()
     num_affected::Int = k # number of centers, to which the distances need to be recomputed
 
-    dmat = pairwise(distance, centers, X)
+    dmat = pairwise(distance, centers, X; dims=2)
     dmat = convert(Array{T}, dmat) # Can be removed if one day Distance.result_type(SqEuclidean(), T, T) == T
     update_assignments!(dmat, true, assignments, costs, counts, to_update, unused)
     objv = w === nothing ? sum(costs) : dot(w, costs)
@@ -112,11 +112,11 @@ function _kmeans!(
         end
 
         if t == 1 || num_affected > 0.75 * k
-            pairwise!(dmat, distance, centers, X)
+            pairwise!(dmat, distance, centers, X; dims=2)
         else
             # if only a small subset is affected, only compute for that subset
             affected_inds = findall(to_update)
-            dmat_p = pairwise(distance, centers[:, affected_inds], X)
+            dmat_p = pairwise(distance, centers[:, affected_inds], X, dims=2)
             dmat[affected_inds, :] .= dmat_p
         end
 
