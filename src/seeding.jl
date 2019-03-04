@@ -44,7 +44,7 @@ function copyseeds!(S::Matrix{<:AbstractFloat}, X::AbstractMatrix{<:Real},
                     iseeds::AbstractVector)
     d, n = size(X)
     k = length(iseeds)
-    size(S) == (d, k) || throw(DimensionMismatch("Inconsistent array " *
+    size(S) == (d, k) || throw(DimensionMismatch("Inconsistent array dimensions."))
                                                  " dimensions."))
     for j = 1:k
         copyto!(view(S, :, j), view(X, :, iseeds[j]))
