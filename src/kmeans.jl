@@ -65,7 +65,6 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (d
                 display::Symbol=_kmeans_default_display,  # in: level of display
                 distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
     d, n = size(X)
-    k = round(Int, k)
     (2 <= k < n) || throw(ArgumentError("k must be 2 <= k < n, k=$k given."))
 
     # initialize the centers using a type wide enough so that the updates
