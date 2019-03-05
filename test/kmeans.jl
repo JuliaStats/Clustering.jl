@@ -11,7 +11,8 @@ struct MySqEuclidean <: SemiMetric end
 
 # redefinition of Distances.pairwise! for MySqEuclidean type
 function pairwise!(r::AbstractMatrix, dist::MySqEuclidean,
-                   a::AbstractMatrix, b::AbstractMatrix)
+                   a::AbstractMatrix, b::AbstractMatrix; dims::Integer=2)
+    dims == 2 || throw(ArgumentError("only dims=2 supported for MySqEuclidean distance"))
     mul!(r, transpose(a), b)
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
