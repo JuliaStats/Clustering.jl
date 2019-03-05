@@ -14,7 +14,7 @@ end
 function update_weights!(weights, data, centers, fuzziness, dist_metric)
     pow = 2.0/(fuzziness-1)
     nrows, ncols = size(weights)
-    dists = pairwise(dist_metric, data, centers)
+    dists = pairwise(dist_metric, data, centers, dims=2)
     for i in 1:nrows
         for j in 1:ncols
             den = 0.0

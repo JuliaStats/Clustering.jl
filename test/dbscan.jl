@@ -12,7 +12,7 @@ X3 = randn(2, 200) .+ [5., 0.]
 X = hcat(X1, X2, X3)
 n = size(X,2)
 
-D = pairwise(Euclidean(), X)
+D = pairwise(Euclidean(), X, dims=2)
 
 R = dbscan(D, 1.0, 10)
 @test isa(R, DbscanResult)
