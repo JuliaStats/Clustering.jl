@@ -12,7 +12,7 @@ n = 200
 k = 10
 
 X = rand(d, n)
-costs = pairwise(SqEuclidean(), X)
+costs = pairwise(SqEuclidean(), X, dims=2)
 @assert size(costs) == (n, n)
 
 R = kmedoids(costs, k)
@@ -33,7 +33,7 @@ R = kmedoids(costs, k)
 #
 
 X = reshape(map(Float64, [1, 6, 2, 3, 7, 21, 8, 20, 22]), 1, 9)
-costs = pairwise(SqEuclidean(), X)
+costs = pairwise(SqEuclidean(), X, dims=2)
 
 R = kmedoids!(costs, [1, 2, 6])
 @test isa(R, KmedoidsResult)

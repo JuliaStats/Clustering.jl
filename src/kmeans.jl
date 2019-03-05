@@ -99,7 +99,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix 
     counts = Vector{Int}(undef, k)
 
     # compute pairwise distances, preassign costs and cluster weights
-    dmat = pairwise(distance, centers, X)
+    dmat = pairwise(distance, centers, X, dims=2)
     WC = (weights === nothing) ? Int : eltype(weights)
     cweights = Vector{WC}(undef, k)
     D = typeof(one(eltype(dmat)) * one(WC))
@@ -130,12 +130,12 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix 
         end
 
         if t == 1 || num_affected > 0.75 * k
-            pairwise!(dmat, distance, centers, X)
+            pairwise!(dmat, distance, centers, X, dims=2)
         else
             # if only a small subset is affected, only compute for that subset
             affected_inds = findall(to_update)
             pairwise!(view(dmat, affected_inds, :), distance,
-                      view(centers, :, affected_inds), X)
+                      view(centers, :, affected_inds), X, dims=2)
         end
 
         # update assignments

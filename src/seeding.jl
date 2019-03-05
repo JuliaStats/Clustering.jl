@@ -185,7 +185,7 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,
 end
 
 initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::AbstractMatrix{<:Real}, metric::PreMetric) =
-    initseeds_by_costs!(iseeds, alg, pairwise(metric, X))
+    initseeds_by_costs!(iseeds, alg, pairwise(metric, X, dims=2))
 
 initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::AbstractMatrix{<:Real}) =
     initseeds!(iseeds, alg, X, SqEuclidean())
