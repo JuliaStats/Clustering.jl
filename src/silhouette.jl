@@ -1,5 +1,8 @@
 # Silhouette
 
+zero_tol(::Type{Float64})   = 1e-6
+zero_tol(::Type{Float32})   = 1f-6
+zero_tol(::Type{T}) where {T <: Integer} = zero(T)
 
 # this function returns r of size (k, n), such that
 # r[i, j] is the sum of distances of all points from cluster i to sample j
@@ -54,6 +57,7 @@ function silhouettes(assignments::AbstractVector{<:Integer},
 
     # compute average distance from each cluster to each point --> r
     r = sil_aggregate_dists(k, assignments, dists)
+    S = eltype(r)
     # from sum to average
     @inbounds for j = 1:n
         for i = 1:k
@@ -62,43 +66,49 @@ function silhouettes(assignments::AbstractVector{<:Integer},
                 c -= 1
             end
             if c == 0
-                r[i,j] = 0.0
+                r[i,j] = zero(S)
             else
                 r[i,j] /= c
             end
         end
     end
-
     # compute a and b
     # a: average distance w.r.t. the assigned cluster
     # b: the minimum average distance w.r.t. other cluster
-    S = eltype(r)
     a = Vector{S}(undef, n)
     b = Vector{S}(undef, n)
 
+    alleq = k == 1
     for j = 1:n
         l = assignments[j]
         a[j] = r[l, j]
 
+        # When there is only one cluster all average distance from assigned
+        # cluster have to be all equal. Otherwise, it's unlikely there will
+        # be absolutely one cluster.
+        alleq = alleq && abs(a[j] - a[1]) <= zero_tol(S)
         v = S(Inf)
-        p = -1
         for i = 1:k
             @inbounds rij = r[i,j]
-            if (i != l) && (rij < v)
-                v = rij
-                p = i
-            end
+            i != l && rij < v && (v = rij)
         end
-        b[j] = v
+        b[j] = v 
     end
+    # If there is only one cluster and distances are not all equal, they are
+    # at zero distance from the other clusters. The clustering is invalid
+    k == 1 && !alleq && fill!(b, zero(S))
 
     # compute silhouette score
     sil = a   # reuse the memory of a for sil
     for j = 1:n
         if counts[assignments[j]] == 1
-            sil[j] = 0
+            sil[j] = zero(S)
         else
-            @inbounds sil[j] = (b[j] - a[j]) / max(a[j], b[j])
+            # b[j] and a[j] can be Inf so best to ensure Inf/Inf division
+            # is avoided.
+            @inbounds sil[j] = a[j] < b[j] ? one(S) - a[j]/b[j] :
+                               a[j] > b[j] ? b[j]/a[j] - one(S) :
+                               zero(S) 
         end
     end
     return sil
