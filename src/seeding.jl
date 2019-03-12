@@ -40,22 +40,20 @@ initseeds_by_costs(algname::Symbol, costs::AbstractMatrix{<:Real}, k::Integer) =
 initseeds(iseeds::Vector{Int}, X::AbstractMatrix{<:Real}, k::Integer) = iseeds
 initseeds_by_costs(iseeds::Vector{Int}, costs::AbstractMatrix{<:Real}, k::Integer) = iseeds
 
-function copyseeds!(S::AbstractMatrix{T}, X::AbstractMatrix{T},
-                    iseeds::AbstractVector) where T<:Real
-    d = size(X, 1)
-    n = size(X, 2)
+function copyseeds!(S::Matrix{<:AbstractFloat}, X::AbstractMatrix{<:Real},
+                    iseeds::AbstractVector)
+    d, n = size(X)
     k = length(iseeds)
-    (size(X,1) == d && size(S) == (d, k)) ||
-        throw(DimensionMismatch("Inconsistent array dimensions."))
-
+    size(S) == (d, k) || throw(DimensionMismatch("Inconsistent array dimensions."))
     for j = 1:k
-        copyto!(view(S,:,j), view(X,:,iseeds[j]))
+        copyto!(view(S, :, j), view(X, :, iseeds[j]))
     end
     return S
 end
 
+# NOTE: this should eventually be removed as only `copyseeds!` is used in `kmeans`.
 copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector) =
-    copyseeds!(similar(X, size(X, 1), length(iseeds)), X, iseeds)
+    copyseeds!(Matrix{eltype(X)}(undef, size(X, 1), length(iseeds)), X, iseeds)
 
 function check_seeding_args(n::Integer, k::Integer)
     k >= 1 || error("The number of seeds must be positive.")
@@ -68,7 +66,7 @@ end
 #   choose an arbitrary subset as seeds
 #
 
-mutable struct RandSeedAlg <: SeedingAlgorithm end
+struct RandSeedAlg <: SeedingAlgorithm end
 
 initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real}) = sample!(1:size(X, 2), iseeds; replace=false)
 
@@ -82,7 +80,7 @@ initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<
 #   18th Annual ACM-SIAM symposium on Discrete algorithms, 2007.
 #
 
-mutable struct KmppAlg <: SeedingAlgorithm end
+struct KmppAlg <: SeedingAlgorithm end
 
 function initseeds!(iseeds::IntegerVector, alg::KmppAlg,
                     X::AbstractMatrix{<:Real}, metric::PreMetric)
@@ -157,7 +155,7 @@ kmpp_by_costs(costs::AbstractMatrix{<:Real}, k::Int) = initseeds(KmppAlg(), cost
 #   doi:10.1016/j.eswa.2008.01.039
 #
 
-mutable struct KmCentralityAlg <: SeedingAlgorithm end
+struct KmCentralityAlg <: SeedingAlgorithm end
 
 function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,
                              costs::AbstractMatrix{<:Real})

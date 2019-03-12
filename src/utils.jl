@@ -11,15 +11,6 @@ counts(R::ClusteringResult) = R.counts
 assignments(R::ClusteringResult) = R.assignments
 
 
-##### convert weight options
-
-conv_weights(::Type{T}, n::Int, w::Nothing) where {T} = nothing
-
-function conv_weights(::Type{T}, n::Int, w::Vector) where T
-    length(w) == n || throw(DimensionMismatch("Incorrect length of weights."))
-    convert(Vector{T}, w)::Vector{T}
-end
-
 ##### convert display symbol to disp level
 
 display_level(s::Symbol) =
