@@ -49,7 +49,6 @@ function silhouettes(assignments::AbstractVector{<:Integer},
 
     n = length(assignments)
     k = length(counts)
-    k >= 2 || throw(ArgumentError("Silhouettes are not defined for the degenerated clustering with a single cluster."))
     for j = 1:n
         (1 <= assignments[j] <= k) || throw(ArgumentError("Bad assignments[$j]=$(assignments[j]): should be in 1:$k range."))
     end
@@ -79,10 +78,15 @@ function silhouettes(assignments::AbstractVector{<:Integer},
     a = Vector{S}(undef, n)
     b = Vector{S}(undef, n)
 
+    alleq = k == 1
     for j = 1:n
         l = assignments[j]
         a[j] = r[l, j]
 
+        # When there is only one cluster all average distance from assigned
+        # cluster have to be all equal. Otherwise, it's unlikely there will
+        # be absolutely one cluster.
+        alleq = alleq && abs(a[j] - a[1]) <= zero_tol(S)
         v = S(Inf)
         for i = 1:k
             @inbounds rij = r[i,j]
@@ -90,6 +94,9 @@ function silhouettes(assignments::AbstractVector{<:Integer},
         end
         b[j] = v 
     end
+    # If there is only one cluster and distances are not all equal, they are
+    # at zero distance from the other clusters. The clustering is invalid
+    k == 1 && !alleq && fill!(b, zero(S))
 
     # compute silhouette score
     sil = a   # reuse the memory of a for sil
