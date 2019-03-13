@@ -49,7 +49,7 @@ end
 @testset "silhouette() throws an error when degenerated clustering is given" begin
     a = fill(1, 10)
     d = fill(1, (10, 10))
-    [d[i, i] for i=1:10]
+    for i in 1:10; d[i, i] = 0; end
     
     @test_throws ArgumentError silhouettes(a, d)
 end
