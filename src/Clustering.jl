@@ -42,6 +42,9 @@ module Clustering
     # fuzzy_cmeans
     fuzzy_cmeans, FuzzyCMeansResult,
 
+    # Clustering Genetic Algorithm
+    cga, CGAData, CGAResult,
+
     # silhouette
     silhouettes,
 
@@ -78,6 +81,8 @@ module Clustering
     include("vmeasure.jl")
 
     include("hclust.jl")
+
+    include("clusterga.jl")
 
     include("deprecate.jl")
 end
