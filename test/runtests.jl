@@ -16,7 +16,8 @@ tests = ["seeding",
          "randindex",
          "hclust",
          "mcl",
-         "vmeasure"]
+         "vmeasure",
+         "clusterga"]
 
 println("Runing tests:")
 for t in tests
