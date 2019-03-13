@@ -34,14 +34,4 @@ c = [3, 1]
 
 @test silhouettes(a, c, D) ≈ [0.5, 0.5, -1/3, 0.0]
 
-a = fill(1, 10)
-d = fill(1, (10, 10))
-[d[i, i] = 0 for i=1:10]    
-
-@test silhouettes(a, d) ≈ fill(1.0, 10)
-
-d[1, 2] = d[2, 1] = 50
-    
-@test silhouettes(a, d) ≈ fill(-1.0, 10)
-
 end
