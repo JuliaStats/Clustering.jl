@@ -1,5 +1,9 @@
 # Silhouette
 
+zero_tol(::Type{Float64})   = 1e-6
+zero_tol(::Type{Float32})   = 1f-6
+zero_tol(::Type{T}) where {T <: Integer} = zero(T)
+
 # this function returns r of size (k, n), such that
 # r[i, j] is the sum of distances of all points from cluster i to sample j
 #
