@@ -10,3 +10,4 @@ This package implements a variety of clustering algorithms:
 	hclust.rst
 	affprop.rst
 	dbscan.rst
+    clusterga.rst

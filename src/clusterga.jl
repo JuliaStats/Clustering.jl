@@ -10,14 +10,33 @@ using Clustering
 
 # Results Interface
 
+"""
+    CGAResult <: ClusteringResult
+
+Contains the results from the computation of [`cga`](@ref).
+
+#### Members
+  * `assignments::Vector{Int}` element-to-cluster assignments (`n`)
+  * `counts::Vector{Int}`      number of samples assigned to each cluster (`k`)
+  * `found_gen::Int`           first generation where the elite was found
+  * `total_gen::Int`           total generations the GA has been run
+"""
 struct CGAResult <: ClusteringResult
     assignments::Vector{Int}    # element-to-cluster assignments (n)
     counts::Vector{Int}         # number of samples assigned to each cluster (k)
-    found_gen::Int              # First generation where the elite was found
-    total_gen::Int              # Total generations the GA has been run
+    found_gen::Int              # first generation where the elite was found
+    total_gen::Int              # total generations the GA has been run
 end
 
-mutable struct CGAData{S, T}
+"""
+    CGAData{S, T<:Real} 
+
+Contains the data used in the computation of [`cga`](@ref).
+
+The user does not need to query this object, but can use this as an opaque object. The results of the computation can be obtained from [`CGAResult`](@ref) object.
+
+"""
+mutable struct CGAData{S, T<:Real}
     objs::AbstractVector{S}
     dist::AbstractMatrix{T}
     N::Int
@@ -74,6 +93,27 @@ function fitness(assignment::AbstractVector{Int}, data::CGAData)
     return 1.0 + mean(silhouettes_nothrow(vw, data.dist))
 end
 
+"""
+    cga(objects::AbstractVector{S},
+        distances::AbstractMatrix{T}=distance_matrix(objs),
+        N::Int=length(objects)*20,
+        generations::Int=50) where {S, T <: Real}
+
+Compute the optimal clustering in the data by Genetic Algorithm over the computed mean silhouettes.
+
+  * `objects` the vector of the objects for which clusters are to be computed.
+  * `distances` the distance matrix providing the pairwise distances bewtween the `objects`
+  * `N` the population size for GA computation
+  * `generations` number of generations the GA has to be run
+
+The `fitness` function used is `1+mean(silhouettes())` to ensure positive values.
+
+#### Return Values
+The method returns a tuple of ([`CGAData`](@ref), [`CGAResult`](@ref))
+
+#### References
+  1. Hruschka, Eduardo & Ebecken, Nelson. (2003). A genetic algorithm for cluster analysis. Intell. Data Anal.. 7. 15-25. 10.3233/IDA-2003-7103. 
+"""
 function cga(objs::AbstractVector{S},
              dist::AbstractMatrix{T}=distance_matrix(objs),
              N::Int=length(objs)*20,
