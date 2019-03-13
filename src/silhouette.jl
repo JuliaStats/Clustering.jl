@@ -45,7 +45,7 @@ function silhouettes(assignments::AbstractVector{<:Integer},
 
     n = length(assignments)
     k = length(counts)
-    k >= 2 || throw(ArgumentError("Silhouettes are not defined for the degenerated clustering with a single cluster."))
+    k >= 2 || throw(ArgumentError("silhouettes() not defined for the degenerated clustering with a single cluster."))
     for j = 1:n
         (1 <= assignments[j] <= k) || throw(ArgumentError("Bad assignments[$j]=$(assignments[j]): should be in 1:$k range."))
     end
@@ -54,7 +54,6 @@ function silhouettes(assignments::AbstractVector{<:Integer},
 
     # compute average distance from each cluster to each point --> r
     r = sil_aggregate_dists(k, assignments, dists)
-    S = eltype(r)
     # from sum to average
     @inbounds for j = 1:n
         for i = 1:k
@@ -63,41 +62,43 @@ function silhouettes(assignments::AbstractVector{<:Integer},
                 c -= 1
             end
             if c == 0
-                r[i,j] = zero(S)
+                r[i,j] = 0
             else
                 r[i,j] /= c
             end
         end
     end
+
     # compute a and b
     # a: average distance w.r.t. the assigned cluster
     # b: the minimum average distance w.r.t. other cluster
-    a = Vector{S}(undef, n)
-    b = Vector{S}(undef, n)
-
+    a = similar(r, n)
+    b = similar(r, n)
+    S = eltype(r)
     for j = 1:n
         l = assignments[j]
         a[j] = r[l, j]
 
-        v = S(Inf)
+        v = typemax(eltype(b))
         for i = 1:k
             @inbounds rij = r[i,j]
-            i != l && rij < v && (v = rij)
+            if (i != l) && (rij < v)
+                v = rij
+            end
         end
-        b[j] = v 
+        b[j] = v
     end
 
     # compute silhouette score
     sil = a   # reuse the memory of a for sil
     for j = 1:n
         if counts[assignments[j]] == 1
-            sil[j] = zero(S)
+            sil[j] = 0
         else
-            # b[j] and a[j] can be Inf so best to ensure Inf/Inf division
-            # is avoided.
-            @inbounds sil[j] = a[j] < b[j] ? one(S) - a[j]/b[j] :
-                               a[j] > b[j] ? b[j]/a[j] - one(S) :
-                               zero(S) 
+            #If both a[i] and b[i] are equal to 0 or Inf, silhouettes is defined as 0
+            @inbounds sil[j] = a[j] < b[j] ? 1 - a[j]/b[j] :
+                               a[j] > b[j] ? b[j]/a[j] - 1 :
+                               zero(eltype(r))
         end
     end
     return sil

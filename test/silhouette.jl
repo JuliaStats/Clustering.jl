@@ -40,9 +40,9 @@ d = fill(1, (10, 10))
 
 @test silhouettes(a, d) ≈ fill(0.0, 10)
 
-d[1, 2] = d[2, 1] = 50
+d[1, 2] = d[2, 1] = 5
     
-@test silhouettes(a, d) ≈ [[-0.9245283, -0.9245283]; fill(0.0, 8)]
+@test silhouettes(a, d) ≈ [[-0.5, -0.5]; fill(0.0, 8)]
 
 a = fill(1, 10)
 
