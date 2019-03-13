@@ -34,18 +34,21 @@ c = [3, 1]
 
 @test silhouettes(a, c, D) ≈ [0.5, 0.5, -1/3, 0.0]
 
-a = [fill(1, 5); fill(2, 5)]
-d = fill(1, (10, 10))
-[d[i, i] = 0 for i=1:10]    
+@testset "silhouette() errors when degenerated clustering is given" begin
+    a = [fill(1, 5); fill(2, 5)]
+    d = fill(0, (10, 10))
 
-@test silhouettes(a, d) ≈ fill(0.0, 10)
+    @test silhouettes(a, d) ≈ fill(0.0, 10)
 
-d[1, 2] = d[2, 1] = 5
+    d = fill(1, (10, 10))
+    d[1, 2] = d[2, 1] = 5
     
-@test silhouettes(a, d) ≈ [[-0.5, -0.5]; fill(0.0, 8)]
+    @test silhouettes(a, d) ≈ [[-0.5, -0.5]; fill(0.0, 8)]
 
-a = fill(1, 10)
+    a = fill(1, 10)
 
-@test_throws ArgumentError silhouettes(a, d)
+    @test_throws ArgumentError silhouettes(a, d)
+
+end
 
 end

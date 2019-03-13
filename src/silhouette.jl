@@ -74,7 +74,7 @@ function silhouettes(assignments::AbstractVector{<:Integer},
     # b: the minimum average distance w.r.t. other cluster
     a = similar(r, n)
     b = similar(r, n)
-    S = eltype(r)
+
     for j = 1:n
         l = assignments[j]
         a[j] = r[l, j]
