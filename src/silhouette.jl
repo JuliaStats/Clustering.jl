@@ -1,6 +1,5 @@
 # Silhouette
 
-
 # this function returns r of size (k, n), such that
 # r[i, j] is the sum of distances of all points from cluster i to sample j
 #
@@ -46,6 +45,7 @@ function silhouettes(assignments::AbstractVector{<:Integer},
 
     n = length(assignments)
     k = length(counts)
+    k >= 2 || throw(ArgumentError("silhouettes() not defined for the degenerated clustering with a single cluster."))
     for j = 1:n
         (1 <= assignments[j] <= k) || throw(ArgumentError("Bad assignments[$j]=$(assignments[j]): should be in 1:$k range."))
     end
@@ -62,7 +62,7 @@ function silhouettes(assignments::AbstractVector{<:Integer},
                 c -= 1
             end
             if c == 0
-                r[i,j] = 0.0
+                r[i,j] = 0
             else
                 r[i,j] /= c
             end
@@ -72,21 +72,18 @@ function silhouettes(assignments::AbstractVector{<:Integer},
     # compute a and b
     # a: average distance w.r.t. the assigned cluster
     # b: the minimum average distance w.r.t. other cluster
-    S = eltype(r)
-    a = Vector{S}(undef, n)
-    b = Vector{S}(undef, n)
+    a = similar(r, n)
+    b = similar(r, n)
 
     for j = 1:n
         l = assignments[j]
         a[j] = r[l, j]
 
-        v = S(Inf)
-        p = -1
+        v = typemax(eltype(b))
         for i = 1:k
             @inbounds rij = r[i,j]
             if (i != l) && (rij < v)
                 v = rij
-                p = i
             end
         end
         b[j] = v
@@ -98,7 +95,10 @@ function silhouettes(assignments::AbstractVector{<:Integer},
         if counts[assignments[j]] == 1
             sil[j] = 0
         else
-            @inbounds sil[j] = (b[j] - a[j]) / max(a[j], b[j])
+            #If both a[i] and b[i] are equal to 0 or Inf, silhouettes is defined as 0
+            @inbounds sil[j] = a[j] < b[j] ? 1 - a[j]/b[j] :
+                               a[j] > b[j] ? b[j]/a[j] - 1 :
+                               zero(eltype(r))
         end
     end
     return sil

@@ -34,4 +34,24 @@ c = [3, 1]
 
 @test silhouettes(a, c, D) ≈ [0.5, 0.5, -1/3, 0.0]
 
+@testset "silhouettes() handle zero cluster distances correctly" begin
+    a = [fill(1, 5); fill(2, 5)]
+    d = fill(0, (10, 10))
+
+    @test silhouettes(a, d) == fill(0.0, 10)
+
+    d = fill(1, (10, 10))
+    d[1, 2] = d[2, 1] = 5
+    
+    @test silhouettes(a, d) == [[-0.5, -0.5]; fill(0.0, 8)]
+end
+
+@testset "silhouette() throws an error when degenerated clustering is given" begin
+    a = fill(1, 10)
+    d = fill(1, (10, 10))
+    for i in 1:10; d[i, i] = 0; end
+    
+    @test_throws ArgumentError silhouettes(a, d)
+end
+
 end
