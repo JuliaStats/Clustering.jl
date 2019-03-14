@@ -36,33 +36,48 @@ Contains the data used in the computation of [`cga`](@ref).
 The user does not need to query this object, but can use this as an opaque object. The results of the computation can be obtained from [`CGAResult`](@ref) object.
 
 """
-mutable struct CGAData{S, T<:Real}
-    objs::AbstractVector{S}
-    dist::AbstractMatrix{T}
+mutable struct CGAData{S, T <: Real,
+                       V <: AbstractVector{S},
+                       M <: AbstractMatrix{T}}
+    objs::V
+    dist::M
     N::Int
     generations::Int
     curr_gen::Int
     population::Matrix{Int}
     scratch::Matrix{Int}
+    vpopulation::Vector{SubArray}
+    vscratch::Vector{SubArray}
+    
     p::Matrix{Int}
     np::Matrix{Int}
+    vp::Vector{SubArray}
+    vnp::Vector{SubArray}
+    
     elitev::Float64
     elited::Vector{Int}
     elite_gen::Int
     val::Vector{Float64}
-    function CGAData{S, T}(objs::AbstractVector{S},
-                           dist::AbstractMatrix{T},
-                           N::Int, generations::Int) where {S, T <: Real}
+    function CGAData{S, T, V, M}(objs::V,
+                                 dist::M,
+                                 N::Int,
+                                 generations::Int) where {S,
+                                                          V <: AbstractVector{S},
+                                                          T <: Real,
+                                                          M <: AbstractMatrix{T}}
         sz = size(dist)
         @assert sz[1] == sz[2] "The dist matrix should be symmetric"
         population = p  = Matrix{Int}(undef, (N, sz[1]+1))
         scratch =    np = Matrix{Int}(undef, (N, sz[1]+1))
+        vpopulation = vp  = [@view p[i, :]  for i = 1:N ]
+        vscratch    = vnp = [@view np[i, :] for i = 1:N ]
         curr_gen = elite_gen = 0
         elited = fill(1, sz[1]+1)
         elitev = 0
         val = Vector{Float64}(undef, N)
         return new(objs, dist, N, generations, curr_gen, population,
-                   scratch, p, np, elitev, elited, elite_gen, val)
+                   scratch, vpopulation, vscratch, p, np, vp, vnp,
+                   elitev, elited, elite_gen, val)
     end
 end
 
@@ -94,10 +109,11 @@ function fitness(assignment::AbstractVector{Int}, data::CGAData)
 end
 
 """
-    cga(objects::AbstractVector{S},
-        distances::AbstractMatrix{T}=distance_matrix(objs),
-        N::Int=length(objects)*20,
-        generations::Int=50) where {S, T <: Real}
+    cga(objects::V,
+        distances::M=distance_matrix(objs),
+        N::Int=length(objs)*20,
+        generations::Int=50) where {S, V <: AbstractVector{S},
+                                    T <: Real, M <: AbstractMatrix{T}}
 
 Compute the optimal clustering in the data by Genetic Algorithm over the computed mean silhouettes.
 
@@ -114,11 +130,12 @@ The method returns a tuple of ([`CGAData`](@ref), [`CGAResult`](@ref))
 #### References
   1. Hruschka, Eduardo & Ebecken, Nelson. (2003). A genetic algorithm for cluster analysis. Intell. Data Anal.. 7. 15-25. 10.3233/IDA-2003-7103. 
 """
-function cga(objs::AbstractVector{S},
-             dist::AbstractMatrix{T}=distance_matrix(objs),
+function cga(objs::V,
+             dist::M=distance_matrix(objs),
              N::Int=length(objs)*20,
-             generations::Int=50) where {S, T <: Real}
-    data = CGAData{S, T}(objs, dist, N, generations)
+             generations::Int=50) where {S, V <: AbstractVector{S},
+                                         T <: Real, M <: AbstractMatrix{T}}
+    data = CGAData{S, T, V, M}(objs, dist, N, generations)
     init_population!(data.population)
     selection!(data)
     nobj = size(data.population, 2) - 1
@@ -161,27 +178,27 @@ function selection!(data::CGAData)
     end
     if elitev - 1 > data.elitev
         data.elitev = elitev - 1
-        copyto!(data.elited, (@view data.population[elitei, :]))
+        copyto!(data.elited, data.vpopulation[elitei])
         data.elite_gen = data.curr_gen
     end
     for i=2:N
         val[i] += val[i-1]
     end
-    p, np = data.population === data.p ? (data.p, data.np) : (data.np, data.p)
+    p, np, vp, vnp = data.population === data.p ? (data.p, data.np, data.vp, data.vnp) :
+                                                  (data.np, data.p, data.vnp, data.vp)
     lastv = val[end]
-    copyto!((@view np[1, :]), data.elited)
+    copyto!(vnp[1], data.elited)
     rn = rand(N)*lastv
     for i = 2:N
         idx = searchsortedfirst(val, rn[i])
-        copyto!((@view np[i, :]), (@view p[idx, :]))
+        copyto!(vnp[i], vp[idx])
     end
-    data.population, data.scratch = np, p
+    data.population, data.scratch, data.vpopulation, data.vscratch = np, p, vnp, vp
     return
 end
 
-@inline function assign_nearest_cluster!(c::AbstractVector{Int}, g::Vector{Int},
-                                         objs::AbstractVector, nobj::Int)
-    lg = length(g)
+@inline function assign_nearest_cluster!(c, objs, nobj, g)
+    lg = length(g)    
     cgs = Vector{Vector{Float64}}(undef, lg)
     tobjs = similar(objs, nobj)
     for j = 1:lg
@@ -191,7 +208,7 @@ end
                 tobjs[ntobjs+=1] = objs[i]
             end
         end
-        cgs[j] = centroid(@view tobjs[1:ntobjs])
+        cgs[j] = centroid(tobjs[1:ntobjs])
     end
 
     for i=1:nobj
@@ -266,24 +283,25 @@ end
 end
 
 @inline function crossover!(ia::Int, ib::Int, data::CGAData)
-    population = data.population
-    scratch    = data.scratch
+    vpopulation = data.vpopulation
+    vscratch    = data.vscratch
     objs       = data.objs
-    nobj = size(population, 2) - 1
-    a = @view population[ia, :]
-    b = @view population[ib, :]
+    dist       = data.dist
+    nobj = size(data.population, 2) - 1
+    a = vpopulation[ia]
+    b = vpopulation[ib]
     a == b && return
 
-    c = @view scratch[ia, :]
-    d = @view scratch[ib, :]
+    c = vscratch[ia]
+    d = vscratch[ib]
     k = a[end]
     g = Int[]
     while !(0 < length(g) <= k)
         randsubseq!(g, collect(1:k), 0.5)
     end
     gc, gd = pre_crossover!(a, b, c, d, g)
-    assign_nearest_cluster!(c, gc, objs, nobj)
-    assign_nearest_cluster!(d, gd, objs, nobj)
+    assign_nearest_cluster!(c, objs, nobj, gc)
+    assign_nearest_cluster!(d, objs, nobj, gd)
     copyto!(a, 1, c, 1, nobj)
     copyto!(b, 1, d, 1, nobj)
     normalize_assignment!(a, c, nobj)
@@ -292,12 +310,11 @@ end
 end
 
 function mutation_split!(ia::Int, data::CGAData{S, T}) where {S, T <: Real}
-    population = data.population
-    scratch    = data.scratch
+    vpopulation = data.vpopulation
+    vscratch    = data.vscratch
     objs       = data.objs
-    nobj = size(population, 2) - 1
-    a  = @view population[ia, :]
-    sa = @view scratch[ia, :]
+    nobj = size(data.population, 2) - 1
+    a  = vpopulation[ia]
     nc = a[end]
     sc = rand(1:nc)
     ids = Vector{Int}(undef, nobj)
@@ -330,17 +347,18 @@ function mutation_split!(ia::Int, data::CGAData{S, T}) where {S, T <: Real}
     for ii = l2:ln
         a[ids[ii]] = (nc + 1)
     end
+    sa = vscratch[ia]
     normalize_assignment!(a, sa, nobj)
     return
 end
 
 function mutation_merge!(ia::Int, data::CGAData{S, T}) where {S, T<:Real}
-    population = data.population
-    scratch    = data.scratch
+    vpopulation = data.vpopulation
+    vscratch    = data.vscratch
     objs       = data.objs
-    nobj = size(population, 2) - 1
-    a  = @view population[ia, :]
-    sa = @view scratch[ia, :]
+    dist       = data.dist
+    nobj = size(data.population, 2) - 1
+    a  = vpopulation[ia]
     nc = a[end]
     if nc > 2
         sc = rand(1:nc)
@@ -368,8 +386,9 @@ function mutation_merge!(ia::Int, data::CGAData{S, T}) where {S, T<:Real}
         for i = 1:nobj
             a[i] == sc && (a[i] = j)
         end
+        sa = vscratch[ia]
+        normalize_assignment!(a, sa, nobj)
     end
-    normalize_assignment!(a, sa, nobj)
     return
 end
 
@@ -405,8 +424,15 @@ end
 
 far_object(objs::AbstractVector{S}) where {T <: Real, S <: AbstractVector{T}} =
     fill(Inf, size(objs[1]))
-centroid(objs::AbstractVector{S}) where {T <: Real, S <: AbstractVector{T}} =
-    Vector{Float64}(mean(objs))
+function centroid(objs::AbstractVector{S}) where {T <: Real, S <: AbstractVector{T}}
+    l = length(objs)
+    sm = copy(objs[1])
+    for i=2:lastindex(objs)
+        sm .+= objs[i]
+    end
+    return sm /= l
+end
+
 function distance_matrix(objs::AbstractVector{S}) where {T <: Real,
                                                          S <: AbstractVector{T}}
     l = length(objs)
