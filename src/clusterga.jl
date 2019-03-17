@@ -67,10 +67,10 @@ mutable struct CGAData{S, T <: Real,
                                                           M <: AbstractMatrix{T}}
         sz = size(dist)
         @assert sz[1] == sz[2] "The dist matrix should be symmetric"
-        population = p  = Matrix{Int}(undef, (N, sz[1]+1))
-        scratch =    np = Matrix{Int}(undef, (N, sz[1]+1))
-        vpopulation = vp  = [@view p[i, :]  for i = 1:N ]
-        vscratch    = vnp = [@view np[i, :] for i = 1:N ]
+        population = p  = Matrix{Int}(undef, (sz[1]+1, N))
+        scratch =    np = Matrix{Int}(undef, (sz[1]+1, N))
+        vpopulation = vp  = [@view  p[:, i] for i = 1:N ]
+        vscratch    = vnp = [@view np[:, i] for i = 1:N ]
         curr_gen = elite_gen = 0
         elited = fill(1, sz[1]+1)
         elitev = 0
@@ -97,13 +97,13 @@ function silhouettes_nothrow(assignments::AbstractVector{<:Integer},
 end
 
 function fitness(idx::Int, data::CGAData)
-    nobj = size(data.population, 2) - 1
-    vw = @view data.population[idx, 1:nobj]
+    nobj = size(data.population, 1) - 1
+    vw = @view data.population[1:nobj, idx]
     return fitness(vw, data)
 end
 
 function fitness(assignment::AbstractVector{Int}, data::CGAData)
-    nobj = size(data.population, 2) - 1
+    nobj = size(data.population, 1) - 1
     vw = @view assignment[1:nobj]
     return 1.0 + mean(silhouettes_nothrow(vw, data.dist))
 end
@@ -138,7 +138,7 @@ function cga(objs::V,
     data = CGAData{S, T, V, M}(objs, dist, N, generations)
     init_population!(data.population)
     selection!(data)
-    nobj = size(data.population, 2) - 1
+    nobj = size(data.population, 1) - 1
 
     N_4  = div(N, 4)
     N_2  = div(N, 2)
@@ -165,7 +165,7 @@ function cga(objs::V,
 end
 
 function selection!(data::CGAData)
-    nobj = size(data.population, 2) - 1
+    nobj = size(data.population, 1) - 1
     population = data.population
     N = data.N
     dist = data.dist
@@ -198,7 +198,7 @@ function selection!(data::CGAData)
 end
 
 @inline function assign_nearest_cluster!(c, objs, nobj, g)
-    lg = length(g)    
+    lg = length(g)
     cgs = Vector{Vector{Float64}}(undef, lg)
     tobjs = similar(objs, nobj)
     for j = 1:lg
@@ -211,11 +211,13 @@ end
         cgs[j] = centroid(tobjs[1:ntobjs])
     end
 
+    da = similar(objs[1], Float64)
     for i=1:nobj
         if c[i] == 0
             mind, mini = Inf, 0
             for j = 1:lg
-                da = objs[i] - cgs[j]
+                copyto!(da, cgs[j])
+                da .-= objs[i]
                 dda = dot(da, da)
                 dda < mind && ((mind, mini) = (dda, j))
             end
@@ -287,7 +289,7 @@ end
     vscratch    = data.vscratch
     objs       = data.objs
     dist       = data.dist
-    nobj = size(data.population, 2) - 1
+    nobj = size(data.population, 1) - 1
     a = vpopulation[ia]
     b = vpopulation[ib]
     a == b && return
@@ -313,7 +315,7 @@ function mutation_split!(ia::Int, data::CGAData{S, T}) where {S, T <: Real}
     vpopulation = data.vpopulation
     vscratch    = data.vscratch
     objs       = data.objs
-    nobj = size(data.population, 2) - 1
+    nobj = size(data.population, 1) - 1
     a  = vpopulation[ia]
     nc = a[end]
     sc = rand(1:nc)
@@ -325,7 +327,6 @@ function mutation_split!(ia::Int, data::CGAData{S, T}) where {S, T <: Real}
         end
     end
     resize!(ids, ln)
-
     cg = centroid(@view objs[ids])
     d = Dict{Int, Float64}()
     
@@ -357,7 +358,7 @@ function mutation_merge!(ia::Int, data::CGAData{S, T}) where {S, T<:Real}
     vscratch    = data.vscratch
     objs       = data.objs
     dist       = data.dist
-    nobj = size(data.population, 2) - 1
+    nobj = size(data.population, 1) - 1
     a  = vpopulation[ia]
     nc = a[end]
     if nc > 2
@@ -408,12 +409,12 @@ normalize_assignment!(v) =
 end
 
 function init_population!(p::Matrix)
-    N, nobj = size(p)
+    nobj, N = size(p)
     nobj -= 1
     curr = 2
     d = zeros(Int, nobj)
     for i = 1:N
-        vw = @view p[i, :]
+        vw = @view p[:, i]
         rand!(vw, 1:curr)
         normalize_assignment!(vw, d, nobj)
         curr += 1
@@ -424,13 +425,14 @@ end
 
 far_object(objs::AbstractVector{S}) where {T <: Real, S <: AbstractVector{T}} =
     fill(Inf, size(objs[1]))
+
 function centroid(objs::AbstractVector{S}) where {T <: Real, S <: AbstractVector{T}}
     l = length(objs)
-    sm = copy(objs[1])
-    for i=2:lastindex(objs)
-        sm .+= objs[i]
+    result = fill(0.0, length(objs[1]))
+    for i=1:lastindex(objs)
+        result .+= objs[i]
     end
-    return sm /= l
+    return result /= l
 end
 
 function distance_matrix(objs::AbstractVector{S}) where {T <: Real,
