@@ -107,7 +107,7 @@ function _fuzzy_cmeans(
         if δ <= tol
             println("Fuzzy C-means converged with $iter iterations (δ = $δ)")
         else
-            println("Fuzzy C-means terminated without convergence after $t iterations (δ = $δ)")
+            println("Fuzzy C-means terminated without convergence after $iter iterations (δ = $δ)")
         end
     end
 
