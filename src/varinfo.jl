@@ -48,10 +48,9 @@ function varinfo(k1::Int, a1::AbstractVector{Int},
     return H1 + H2 - I * 2.0
 end
 
-varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}) = 
+varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}) =
     varinfo(nclusters(R), assignments(R), k0, a0)
 
-varinfo(R1::ClusteringResult, R2::ClusteringResult) = 
-    varinfo(nclusters(R1), assignments(R1), 
+varinfo(R1::ClusteringResult, R2::ClusteringResult) =
+    varinfo(nclusters(R1), assignments(R1),
             nclusters(R2), assignments(R2))
-

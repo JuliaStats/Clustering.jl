@@ -21,7 +21,6 @@ struct DbscanCluster <: ClusteringResult
     boundary_indices::Vector{Int}  # boundary points indices
 end
 
-
 ## main algorithm
 
 function dbscan(D::DenseMatrix{T}, eps::Real, minpts::Int) where T<:Real
