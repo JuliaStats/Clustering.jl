@@ -21,10 +21,10 @@ const _afp_default_damp = 0.5
 const _afp_default_tol = 1.0e-6
 const _afp_default_display = :none
 
-function affinityprop(S::DenseMatrix{T}; 
+function affinityprop(S::DenseMatrix{T};
                       maxiter::Integer=_afp_default_maxiter,
                       tol::Real=_afp_default_tol,
-                      damp::Real=_afp_default_damp, 
+                      damp::Real=_afp_default_damp,
                       display::Symbol=_afp_default_display) where T<:AbstractFloat
 
     # check arguments
@@ -41,10 +41,10 @@ end
 
 #### Implementation
 
-function _affinityprop(S::DenseMatrix{T}, 
-                       maxiter::Int, 
+function _affinityprop(S::DenseMatrix{T},
+                       maxiter::Int,
                        tol::Real,
-                       damp::T, 
+                       damp::T,
                        displevel::Int) where T<:AbstractFloat
     n = size(S, 1)
     n2 = n * n
@@ -96,7 +96,7 @@ function _affinityprop(S::DenseMatrix{T},
             println("Affinity propagation terminated without convergence after $t iterations: $(length(exemplars)) exemplars.")
         end
     end
-    
+
     # produce output struct
     return AffinityPropResult(exemplars, assignments, counts, t, converged)
 end
@@ -172,7 +172,7 @@ function _afp_compute_a!(A::Matrix{T}, R::Matrix{T}) where T
                 u = rjj + s
                 if r > z
                     u -= r
-                end 
+                end
                 A[i,j] = ifelse(u < z, u, z)
             end
         end
@@ -240,4 +240,3 @@ function _afp_get_assignments(S::DenseMatrix, exemplars::Vector{Int})
     end
     return (a, cnts)
 end
-
