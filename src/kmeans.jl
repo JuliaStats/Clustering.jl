@@ -3,14 +3,14 @@
 #### Interface
 
 # C is the type of centers, an (abstract) matrix of size (d x k)
-# D is the type of pairwise distance computation from samples to centers
-# WC is the type of cluster weights, either Int (in the case where samples are
-# unweighted) or eltype(weights) (in the case where samples are weighted).
+# D is the type of pairwise distance computation from points to centers
+# WC is the type of cluster weights, either Int (in the case where points are
+# unweighted) or eltype(weights) (in the case where points are weighted).
 struct KmeansResult{C<:AbstractMatrix{<:AbstractFloat},D<:Real,WC<:Real} <: ClusteringResult
     centers::C                 # cluster centers (d x k)
     assignments::Vector{Int}   # assignments (n)
     costs::Vector{D}           # cost of the assignments (n)
-    counts::Vector{Int}        # number of samples assigned to each cluster (k)
+    counts::Vector{Int}        # number of points assigned to each cluster (k)
     cweights::Vector{WC}       # cluster weights (k)
     totalcost::D               # total cost (i.e. objective)
     iterations::Int            # number of elapsed iterations
@@ -29,9 +29,9 @@ Update the current centers `centers` (of size `d x k` where `d` is the dimension
 number of centroids) using the samples contained in `X` (of size `d x n` where `n` is the number
 of samples).
 """
-function kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix (d x n)
+function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d x n)
                  centers::AbstractMatrix{<:AbstractFloat}; # in: current centers (d x k)
-                 weights::Union{Nothing, AbstractVector{<:Real}}=nothing, # in: sample weights (n)
+                 weights::Union{Nothing, AbstractVector{<:Real}}=nothing, # in: data point weights (n)
                  maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
                  tol::Real=_kmeans_default_tol,            # in: tolerance of change at convergence
                  display::Symbol=_kmeans_default_display,  # in: level of display
@@ -56,9 +56,9 @@ end
 K-means clustering with `k` centroids of the data contained in `X` of size `d x n` where `d` is
 the dimension and `n` is the number of samples.
 """
-function kmeans(X::AbstractMatrix{<:Real},                # in: sample matrix (d x n) columns = obs
+function kmeans(X::AbstractMatrix{<:Real},                # in: data matrix (d x n) columns = obs
                 k::Integer;                               # in: number of centers
-                weights::Union{Nothing, AbstractVector{<:Real}}=nothing, # in: sample weights (n)
+                weights::Union{Nothing, AbstractVector{<:Real}}=nothing, # in: data point weights (n)
                 init::Symbol=_kmeans_default_init,        # in: initialization algorithm
                 maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
                 tol::Real=_kmeans_default_tol,            # in: tolerance  of change at convergence
@@ -81,8 +81,8 @@ end
 #### Core implementation
 
 # core k-means skeleton
-function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix (d x n)
-                  weights::Union{Nothing, Vector{<:Real}},  # in: sample weights (n)
+function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d x n)
+                  weights::Union{Nothing, Vector{<:Real}},  # in: data point weights (n)
                   centers::AbstractMatrix{<:AbstractFloat}, # in/out: matrix of centers (d x k)
                   maxiter::Int,                             # in: maximum number of iterations
                   tol::Float64,                             # in: tolerance of change at convergence
@@ -94,7 +94,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: sample matrix 
     unused = Vector{Int}()
     num_affected = k # number of centers to which dists need to be recomputed
 
-    # assign containers for the vector of assignments & number of samples assigned to each cluster
+    # assign containers for the vector of assignments & number of data points assigned to each cluster
     assignments = Vector{Int}(undef, n)
     counts = Vector{Int}(undef, k)
 
@@ -180,9 +180,9 @@ function update_assignments!(dmat::Matrix{<:Real},     # in:  distance matrix (k
                              is_init::Bool,            # in:  whether it is the initial run
                              assignments::Vector{Int}, # out: assignment vector (n)
                              costs::Vector{<:Real},    # out: costs of the resultant assignment (n)
-                             counts::Vector{Int},      # out: # samples assigned to each cluster (k)
+                             counts::Vector{Int},      # out: # of points assigned to each cluster (k)
                              to_update::Vector{Bool},  # out: whether a center needs update (k)
-                             unused::Vector{Int}       # out: list of centers with no samples
+                             unused::Vector{Int}       # out: list of centers with no points assigned
                              )
     k, n = size(dmat)
 
@@ -198,9 +198,9 @@ function update_assignments!(dmat::Matrix{<:Real},     # in:  distance matrix (k
         end
     end
 
-    # process each sample
+    # process each point
     @inbounds for j = 1:n
-        # find the closest cluster to the i-th sample. Note that a
+        # find the closest cluster to the i-th point. Note that a
         # is necessarily between 1 and size(dmat, 1) === k as a result
         # and can thus be used as an index in an `inbounds` environment
         c, a = findmin(view(dmat, :, j))
@@ -224,7 +224,7 @@ function update_assignments!(dmat::Matrix{<:Real},     # in:  distance matrix (k
         counts[a] += 1
     end
 
-    # look for centers that have no associated samples
+    # look for centers that have no assigned points
     for i = 1:k
         if counts[i] == 0
             push!(unused, i)
@@ -236,10 +236,10 @@ end
 #
 #  Update centers based on updated assignments
 #
-#  (specific to the case where samples are not weighted)
+#  (specific to the case where points are not weighted)
 #
-function update_centers!(X::AbstractMatrix{<:Real},        # in: sample matrix (d x n)
-                         weights::Nothing,                 # in: sample weights
+function update_centers!(X::AbstractMatrix{<:Real},        # in: data matrix (d x n)
+                         weights::Nothing,                 # in: point weights
                          assignments::Vector{Int},         # in: assignments (n)
                          to_update::Vector{Bool},          # in: whether a center needs update (k)
                          centers::AbstractMatrix{<:AbstractFloat}, # out: updated centers (d x k)
@@ -252,7 +252,7 @@ function update_centers!(X::AbstractMatrix{<:Real},        # in: sample matrix (
 
     # accumulate columns
     @inbounds for j in 1:n
-        # skip samples assigned to a center that doesn't need to be updated
+        # skip points assigned to a center that doesn't need to be updated
         cj = assignments[j]
         if to_update[cj]
             if cweights[cj] > 0
@@ -282,10 +282,10 @@ end
 #
 #  Update centers based on updated assignments
 #
-#  (specific to the case where samples are weighted)
+#  (specific to the case where points are weighted)
 #
-function update_centers!(X::AbstractMatrix{<:Real}, # in: sample matrix (d x n)
-                         weights::Vector{W},        # in: sample weights (n)
+function update_centers!(X::AbstractMatrix{<:Real}, # in: data matrix (d x n)
+                         weights::Vector{W},        # in: point weights (n)
                          assignments::Vector{Int},  # in: assignments (n)
                          to_update::Vector{Bool},   # in: whether a center needs update (k)
                          centers::AbstractMatrix{<:Real}, # out: updated centers (d x k)
@@ -299,7 +299,7 @@ function update_centers!(X::AbstractMatrix{<:Real}, # in: sample matrix (d x n)
 
     # accumulate columns
     @inbounds for j in 1:n
-        # skip samples with negative weights or assigned to a center
+        # skip points with negative weights or assigned to a center
         # that doesn't need to be updated
         wj = weights[j]
         cj = assignments[j]
@@ -330,9 +330,9 @@ end
 
 
 #
-#  Re-picks centers that get no samples assigned to them.
+#  Re-picks centers that have no points assigned to them.
 #
-function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the sample set (d x n)
+function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix (d x n)
                                costs::Vector{<:Real},     # in: the current assignment costs (n)
                                centers::AbstractMatrix{<:AbstractFloat}, # out: the centers (d x k)
                                unused::Vector{Int},       # in: indices of centers to be updated
