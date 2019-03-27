@@ -7,8 +7,8 @@ Result returned by `mcl()`.
 """
 struct MCLResult <: ClusteringResult
     mcl_adj::AbstractMatrix     # final MCL adjacency matrix (equilibrium state matrix if converged)
-    assignments::Vector{Int}    # element-to-cluster assignments (n)
-    counts::Vector{Int}         # number of samples assigned to each cluster (k)
+    assignments::Vector{Int}    # point-to-cluster assignments (n)
+    counts::Vector{Int}         # number of points assigned to each cluster (k)
     nunassigned::Int            # number of single elements not assigned to any cluster
     iterations::Int             # number of elapsed iterations
     rel_Δ::Float64              # final relative Δ

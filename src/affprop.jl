@@ -11,7 +11,7 @@
 mutable struct AffinityPropResult <: ClusteringResult
     exemplars::Vector{Int}      # indexes of exemplars (centers)
     assignments::Vector{Int}    # assignments for each point
-    counts::Vector{Int}         # number of samples in each cluster
+    counts::Vector{Int}         # number of data points in each cluster
     iterations::Int             # number of iterations executed
     converged::Bool             # converged or not
 end
@@ -30,7 +30,7 @@ function affinityprop(S::DenseMatrix{T};
     # check arguments
     n = size(S, 1)
     size(S, 2) == n || error("S must be a square matrix.")
-    n >= 2 || error("the number of samples must be at least 2.")
+    n >= 2 || error("the number of data points must be at least 2.")
     tol > 0 || error("tol must be a positive value.")
     0 <= damp < 1 || error("damp must be a non-negative real value below 1.")
 

@@ -7,7 +7,7 @@ mutable struct KmedoidsResult{T} <: ClusteringResult
     medoids::Vector{Int}        # indices of methods (k)
     assignments::Vector{Int}    # assignments (n)
     acosts::Vector{T}           # costs of the resultant assignments (n)
-    counts::Vector{Int}         # number of samples assigned to each cluster (k)
+    counts::Vector{Int}         # number of points assigned to each cluster (k)
     totalcost::Float64          # total assignment cost (i.e. objective) (k)
     iterations::Int             # number of elapsed iterations
     converged::Bool             # whether the procedure converged
@@ -64,7 +64,7 @@ function _kmedoids!(medoids::Vector{Int},      # initialized medoids
                     tol::Real,                 # tolerable change of objective
                     displevel::Int) where T<:Real            # level of display
 
-    # cost[i, j] is the cost of assigning sample j to the medoid i
+    # cost[i, j] is the cost of assigning point j to the medoid i
 
     n = size(costs, 1)
     k = length(medoids)

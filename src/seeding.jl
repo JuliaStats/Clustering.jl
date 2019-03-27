@@ -11,7 +11,7 @@
 #   Here:
 #       - iseeds:   a vector of resultant indexes of the chosen seeds
 #       - alg:      the seeding algorithm instance
-#       - X:        the data matrix, each column being a sample
+#       - X:        the data matrix, each column being a data point
 #       - costs:    pre-computed pairwise cost matrix.
 #
 #   This function returns iseeds
@@ -57,7 +57,7 @@ copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector) =
 
 function check_seeding_args(n::Integer, k::Integer)
     k >= 1 || error("The number of seeds must be positive.")
-    k <= n || error("Attempted to select more seeds than samples.")
+    k <= n || error("Attempted to select more seeds than data points.")
 end
 
 
@@ -162,7 +162,7 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,
 
     n = size(costs, 1)
     k = length(iseeds)
-    k <= n || error("Attempted to select more seeds than samples.")
+    k <= n || error("Attempted to select more seeds than points.")
 
     # compute score for each item
     coefs = vec(sum(costs, dims=2))

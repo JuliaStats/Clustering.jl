@@ -1,7 +1,7 @@
 # Silhouette
 
 # this function returns r of size (k, n), such that
-# r[i, j] is the sum of distances of all points from cluster i to sample j
+# r[i, j] is the sum of distances of all points from cluster i to point j
 #
 function sil_aggregate_dists(k::Int, a::AbstractVector{Int}, dists::AbstractMatrix{T}) where T<:Real
     n = length(a)
