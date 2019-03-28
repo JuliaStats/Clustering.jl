@@ -5,7 +5,7 @@
 
 Result returned by `mcl()`.
 """
-struct MCLResult 
+struct MCLResult <: ClusteringResult
     mcl_adj::AbstractMatrix     # final MCL adjacency matrix (equilibrium state matrix if converged)
     assignments::Vector{Int}    # element-to-cluster assignments (n)
     counts::Vector{Int}         # number of samples assigned to each cluster (k)
