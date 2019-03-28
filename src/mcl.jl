@@ -5,7 +5,7 @@
 
 Result returned by `mcl()`.
 """
-struct MCLResult <: ClusteringResult
+struct MCLResult 
     mcl_adj::AbstractMatrix     # final MCL adjacency matrix (equilibrium state matrix if converged)
     assignments::Vector{Int}    # element-to-cluster assignments (n)
     counts::Vector{Int}         # number of samples assigned to each cluster (k)
@@ -95,6 +95,13 @@ function _mcl_inflate!(dest::AbstractMatrix, src::AbstractMatrix, inflation::Num
     end
 end
 
+function _mcl_inflate!(dest::SparseMatrixCSC, src::SparseMatrixCSC, inflation::Number)
+    dest = similar(src, eltype(dest))
+    @inbounds for i in 1:length(src.nzval)
+        dest.nzval[i] = _mcl_el_inflate(src.nzval[i], inflation)
+    end
+end
+
 # adjacency matrix pruning
 function _mcl_prune!(mtx::AbstractMatrix, prune_tol::Number)
     for i in 1:size(mtx,2)
@@ -104,8 +111,31 @@ function _mcl_prune!(mtx::AbstractMatrix, prune_tol::Number)
             c[j] = ifelse(c[j] >= θ, c[j], 0.0)
         end
     end
-    issparse(mtx) && dropzeros!(mtx)
     return mtx
+end
+
+function _mcl_prune!(mtx::SparseMatrixCSC, prune_tol::Number)
+    vals = nonzeros(mtx)
+    m, n = size(mtx)
+    for i = 1:n
+        c = mtx[:,i]
+        θ = mean(c)*prune_tol
+        @inbounds @simd for j in nzrange(mtx, i)
+            vals[j] = ifelse(vals[j] >= θ, vals[j], 0.0)
+        end
+    end
+    dropzeros!(mtx)
+    return mtx
+end
+
+function _set_diag_to_one(adj::AbstractMatrix)
+    @inbounds for i in 1:size(adj, 1)
+        adj[i, i] = 1.0
+    end
+end
+
+function _set_diag_to_one(adj::SparseMatrixCSC)
+    adj + spdiagm(0=>ones(size(adj,2)))
 end
 
 """
@@ -141,11 +171,8 @@ function mcl(adj::AbstractMatrix{T};
              prune_tol::Number=1.0e-5, display::Symbol=:none) where T<:Real
     m, n = size(adj)
     m == n || throw(DimensionMismatch("Square adjacency matrix expected"))
-
     if add_loops
-        @inbounds for i in 1:size(adj, 1)
-            adj[i, i] = 1.0
-        end
+        _set_diag_to_one(adj)
     end
 
     # initialize the MCL adjacency matrix by normalized `adj` weights
@@ -191,9 +218,9 @@ function mcl(adj::AbstractMatrix{T};
 
     if display != :none
         if converged
-            info("MCL converged after $niter iteration(s)")
+            @info("MCL converged after $niter iteration(s)")
         else
-            warn("MCL didn't converge after $niter iteration(s)")
+            @warn("MCL didn't converge after $niter iteration(s)")
         end
     end
 
