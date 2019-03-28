@@ -5,6 +5,8 @@ Methods for data clustering and evaluation of clustering quality.
 [![Travis](https://travis-ci.org/JuliaStats/Clustering.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/Clustering.jl)
 [![Coveralls](https://coveralls.io/repos/github/JuliaStats/Clustering.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaStats/Clustering.jl?branch=master)
 
+**Documentation**: [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url]
+
 ## Installation
 
 ```julia
@@ -34,6 +36,8 @@ Pkg.add("Clustering")
 - Rand index
 - V-Measure
 
-## Resources
+[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
+[docs-latest-url]: http://JuliaStats.github.io/Clustering.jl/latest/
 
-**Documentation:** http://clusteringjl.readthedocs.org/en/latest/
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: http://JuliaStats.github.io/Clustering.jl/stable/
