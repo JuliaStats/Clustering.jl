@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Fuzzy C-means · Clustering.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="index.html"><img class="logo" src="assets/logo.png" alt="Clustering.jl logo"/></a><h1>Clustering.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Clustering.jl Docs</a></li><li><span class="toctext">Algorithms</span><ul><li><a class="toctext" href="algorithms.html">Basics</a></li><li><a class="toctext" href="init.html">Initialization</a></li><li><a class="toctext" href="kmeans.html">K-means</a></li><li><a class="toctext" href="kmedoids.html">K-medoids</a></li><li><a class="toctext" href="hclust.html">Hierarchical Clustering</a></li><li><a class="toctext" href="mcl.html">MCL (Markov Cluster Algorithm)</a></li><li><a class="toctext" href="affprop.html">Affinity Propagation</a></li><li><a class="toctext" href="dbscan.html">DBSCAN</a></li><li class="current"><a class="toctext" href="fuzzycmeans.html">Fuzzy C-means</a><ul class="internal"><li><a class="toctext" href="#Examples-1">Examples</a></li></ul></li></ul></li><li><span class="toctext">Evaluation &amp; Validation</span><ul><li><a class="toctext" href="validate.html">Basics</a></li><li><a class="toctext" href="silhouette.html">Silhouettes</a></li><li><a class="toctext" href="randindex.html">Rand index</a></li><li><a class="toctext" href="varinfo.html">Variation of Information</a></li><li><a class="toctext" href="vmeasure.html">V-measure</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>Algorithms</li><li><a href="fuzzycmeans.html">Fuzzy C-means</a></li></ul><a class="edit-page" href="https://github.com/JuliaStats/Clustering.jl/blob/master/doc/source/fuzzycmeans.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Fuzzy C-means</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="fuzzy_cmeans_def-1" href="#fuzzy_cmeans_def-1">Fuzzy C-means</a></h1><p><a href="https://en.wikipedia.org/wiki/Fuzzy_clustering#Fuzzy_C-means_clustering">Fuzzy C-means</a> is a clustering method that provides cluster membership weights instead of &quot;hard&quot; classification (e.g. K-means).</p><p>From a mathematical standpoint, fuzzy C-means solves the following optimization problem:</p><div>\[\arg\min_C \ \sum_{i=1}^n \sum_{j=1}^c w_{ij}^m \| \mathbf{x}_i - \mathbf{c}_{j} \|^2, \
+\text{where}\ w_{ij} = \left(\sum_{k=1}^{c} \left(\frac{\left\|\mathbf{x}_i - \mathbf{c}_j \right\|}{\left\|\mathbf{x}_i - \mathbf{c}_k \right\|}\right)^{\frac{2}{m-1}}\right)^{-1}\]</div><p>Here, <span>$\mathbf{c}_j$</span> is the center of the <span>$j$</span>-th cluster, <span>$w_{ij}$</span> is the membership weight of the <span>$i$</span>-th point in the <span>$j$</span>-th cluster, and <span>$m &gt; 1$</span> is a user-defined fuzziness parameter.</p><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Clustering.fuzzy_cmeans" href="#Clustering.fuzzy_cmeans"><code>Clustering.fuzzy_cmeans</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">fuzzy_cmeans(data::AbstractMatrix, C::Int, fuzziness::Real; [...])</code></pre><p>Performs Fuzzy C-means clustering over the given <code>data</code>.</p><p>Returns an instance of <a href="fuzzycmeans.html#Clustering.FuzzyCMeansResult"><code>FuzzyCMeansResult</code></a>.</p><p><strong>Arguments</strong></p><ul><li><code>data::AbstractMatrix</code>: <span>$d×n$</span> data matrix. Each column represents one <span>$d$</span>-dimensional data point.</li><li><code>C::Int</code>: the number of fuzzy clusters, <span>$2 ≤ C &lt; n$</span>.</li><li><code>fuzziness::Real</code>: clusters fuzziness (see <span>$m$</span> in the <a href="fuzzycmeans.html#fuzzy_cmeans_def-1">mathematical formulation</a>), <span>$\mathrm{fuzziness} &gt; 1$</span>.</li></ul><p>One may also control the algorithm via the following optional keyword arguments:</p><ul><li><code>dist_metric::Metric</code> (defaults to <code>Euclidean</code>): the <code>Metric</code> object  that defines the distance between the data points</li><li><code>maxiter</code>, <code>tol</code>, <code>display</code>: see <a href="algorithms.html#common_options-1">common options</a></li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/JuliaStats/Clustering.jl/blob/a8bbf1fe52d013c50439c50de4c394416c0c6905/src/fuzzycmeans.jl#L60-L78">source</a></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Clustering.FuzzyCMeansResult" href="#Clustering.FuzzyCMeansResult"><code>Clustering.FuzzyCMeansResult</code></a> — <span class="docstring-category">Type</span>.</div><div><div><p>The output of <a href="fuzzycmeans.html#Clustering.fuzzy_cmeans"><code>fuzzy_cmeans</code></a> function.</p><p><strong>Fields</strong></p><ul><li><code>centers::Matrix{T}</code>: the <span>$d×C$</span> matrix with columns being the centers of resulting fuzzy clusters</li><li><code>weights::Matrix{Float64}</code>: the <span>$n×C$</span> matrix of assignment weights (<span>$\mathrm{weights}_{ij}$</span> is the weight (probability) of assigning <span>$i$</span>-th point to the <span>$j$</span>-th cluster)</li><li><code>iterations::Int</code>: the number of executed algorithm iterations</li><li><code>converged::Bool</code>: whether the procedure converged</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/JuliaStats/Clustering.jl/blob/a8bbf1fe52d013c50439c50de4c394416c0c6905/src/fuzzycmeans.jl#L5-L16">source</a></section><h2><a class="nav-anchor" id="Examples-1" href="#Examples-1">Examples</a></h2><div><pre><code class="language-julia">using Clustering
+
+# make a random dataset with 1000 points
+# each point is a 5-dimensional vector
+X = rand(5, 1000)
+
+# performs Fuzzy C-means over X, trying to group them into 3 clusters
+# with a fuzziness factor of 2. Set maximum number of iterations to 200
+# set display to :iter, so it shows progressive info at each iteration
+R = fuzzy_cmeans(X, 3, 2, maxiter=200, display=:iter)
+
+# get the centers (i.e. weighted mean vectors)
+# M is a 5x3 matrix
+# M[:, k] is the center of the k-th cluster
+M = R.centers
+
+# get the point memberships over all the clusters
+# memberships is a 20x3 matrix
+memberships = R.weights</code></pre><pre><code class="language-none">  Iters      center-change
+----------------------------
+      1       1.119990e+00
+      2       4.552338e-03
+      3       2.334419e-03
+      4       1.842390e-03
+      5       1.459606e-03
+      6       1.160063e-03
+      7       9.247001e-04
+Fuzzy C-means converged with 7 iterations (δ = 0.0009247001425853295)
+1000×3 Array{Float64,2}:
+ 0.333412  0.332141  0.334447
+ 0.332477  0.333392  0.334131
+ 0.334256  0.333868  0.331876
+ 0.332387  0.33133   0.336283
+ 0.332958  0.334283  0.332759
+ 0.332914  0.33451   0.332576
+ 0.331875  0.335117  0.333008
+ 0.332954  0.335149  0.331897
+ 0.335622  0.333084  0.331294
+ 0.33727   0.331213  0.331517
+ ⋮
+ 0.332724  0.335588  0.331688
+ 0.327781  0.334025  0.338194
+ 0.333996  0.334808  0.331196
+ 0.332198  0.334901  0.332901
+ 0.332804  0.332919  0.334277
+ 0.33209   0.333711  0.3342
+ 0.333529  0.334308  0.332162
+ 0.332125  0.332405  0.33547
+ 0.332805  0.331897  0.335298</code></pre></div><footer><hr/><a class="previous" href="dbscan.html"><span class="direction">Previous</span><span class="title">DBSCAN</span></a><a class="next" href="validate.html"><span class="direction">Next</span><span class="title">Basics</span></a></footer></article></body></html>
