@@ -23,18 +23,12 @@ KmppAlg
 KmCentralityAlg
 RandSeedAlg
 ```
+In practice, we have found that *Kmeans++* is the most effective choice.
 
-For convenience, the package also defines the two wrapper methods that take
-the name of the seeding algorithm and the number of clusters and take care of
-allocating `iseeds` and applying the proper `SeedingAlgorithm` instance:
+For convenience, the package defines the two wrapper functions that accept
+the short name of the seeding algorithm and the number of clusters and take
+care of allocating `iseeds` and applying the proper `SeedingAlgorithm`:
 ```@docs
 initseeds
 initseeds_by_costs
-```
-
-In practice, we found that *Kmeans++* is the most effective seeding method. To
-simplify its usage we provide:
-```@docs
-kmpp
-kmpp_by_costs
 ```
