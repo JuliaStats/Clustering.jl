@@ -8,6 +8,15 @@
 
 #### Interface
 
+"""
+The result of affinity propagation clustering ([`affinityprop`](@ref)).
+
+# Fields
+ * `exemplars::Vector{Int}`: indices of *exemplars* (cluster centers)
+ * `assignments::Vector{Int}`: cluster assignments for each data point
+ * `iterations::Int`: number of iterations executed
+ * `converged::Bool`: converged or not
+"""
 mutable struct AffinityPropResult <: ClusteringResult
     exemplars::Vector{Int}      # indexes of exemplars (centers)
     assignments::Vector{Int}    # assignments for each point
@@ -21,6 +30,30 @@ const _afp_default_damp = 0.5
 const _afp_default_tol = 1.0e-6
 const _afp_default_display = :none
 
+"""
+    affinityprop(S::DenseMatrix; [maxiter=200], [tol=1e-6], [damp=0.5],
+                 [display=:none])
+
+Perform affinity propagation clustering based on a similarity matrix `S`.
+
+``S_{ij}`` (``i ≠ j``) is the similarity (or the negated distance) between
+the ``i``-th and ``j``-th points, ``S_{ii}`` defines the *availability*
+of the ``i``-th point as an *exemplar*.
+
+Returns an instance of [`AffinityPropResult`](@ref).
+
+# Method parameters
+ - `damp::Real`: the dampening coefficient, ``0 ≤ \\mathrm{damp} < 1``.
+   Larger values indicate slower (and probably more stable) update.
+   ``\\mathrm{damp} = 0`` disables dampening.
+ - `maxiter`, `tol`, `display`: see [common options](@ref common_options)
+
+# Notes
+The implementations is based on the following paper:
+
+> Brendan J. Frey and Delbert Dueck. *Clustering by Passing Messages
+> Between Data Points.* Science, vol 315, pages 972-976, 2007.
+"""
 function affinityprop(S::DenseMatrix{T};
                       maxiter::Integer=_afp_default_maxiter,
                       tol::Real=_afp_default_tol,

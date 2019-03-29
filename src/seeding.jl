@@ -17,11 +17,43 @@
 #   This function returns iseeds
 #
 
+"""
+Base type for all seeding algorithms.
+
+Each seeding algorithm should implement the two functions: [`initseeds!`](@ref)
+and [`initseeds_by_costs!`](@ref).
+"""
 abstract type SeedingAlgorithm end
 
+"""
+    initseeds(alg::Union{SeedingAlgorithm, Symbol},
+              X::AbstractMatrix, k::Integer)
+
+Select `k` seeds from a ``d×n`` data matrix `X` using the `alg`
+algorithm.
+
+`alg` could be either an instance of [`SeedingAlgorithm`](@ref) or a symbolic
+name of the algorithm.
+
+Returns an integer vector of length `k` that contains the indices of
+chosen seeds.
+"""
 initseeds(alg::SeedingAlgorithm, X::AbstractMatrix{<:Real}, k::Integer) =
     initseeds!(Vector{Int}(undef, k), alg, X)
 
+"""
+    initseeds_by_costs(alg::Union{SeedingAlgorithm, Symbol},
+                       costs::AbstractMatrix, k::Integer)
+
+Select `k` seeds from the ``n×n`` `costs` matrix using algorithm `alg`.
+
+Here, ``\\mathrm{costs}_{ij}`` is the cost of assigning points ``i`` and ``j``
+to the same cluster. One may, for example, use the squared Euclidean distance
+between the points as the cost.
+
+Returns an integer vector of length `k` that contains the indices of
+chosen seeds.
+"""
 initseeds_by_costs(alg::SeedingAlgorithm, costs::AbstractMatrix{<:Real}, k::Integer) =
     initseeds_by_costs!(Vector{Int}(undef, k), alg, costs)
 
@@ -60,26 +92,51 @@ function check_seeding_args(n::Integer, k::Integer)
     k <= n || error("Attempted to select more seeds than data points.")
 end
 
+"""
+Random seeding (`:rand`).
 
-# Random seeding
-#
-#   choose an arbitrary subset as seeds
-#
-
+Chooses an arbitrary subset of ``k`` data points as cluster seeds.
+"""
 struct RandSeedAlg <: SeedingAlgorithm end
 
-initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real}) = sample!(1:size(X, 2), iseeds; replace=false)
+"""
+    initseeds!(iseeds::AbstractVector{Int}, alg::SeedingAlgorithm,
+               X::AbstractMatrix)
 
-initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real}) = sample!(1:size(X,2), iseeds; replace=false)
+Initialize `iseeds` with the indices of cluster seeds for the `X` data matrix
+using the `alg` seeding algorithm.
 
+Returns `iseeds`.
+"""
+initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real}) =
+    sample!(1:size(X, 2), iseeds; replace=false)
 
-# Kmeans++ seeding
-#
-#   D. Arthur and S. Vassilvitskii (2007).
-#   k-means++: the advantages of careful seeding.
-#   18th Annual ACM-SIAM symposium on Discrete algorithms, 2007.
-#
+"""
+    initseeds_by_costs!(iseeds::AbstractVector{Int}, alg::SeedingAlgorithm,
+                        costs::AbstractMatrix)
 
+Initialize `iseeds` with the indices of cluster seeds for the `costs` matrix
+using the `alg` seeding algorithm.
+
+Here, ``\\mathrm{costs}_{ij}`` is the cost of assigning points ``i`` and ``j``
+to the same cluster. One may, for example, use the squared Euclidean distance
+between the points as the cost.
+
+Returns `iseeds`.
+"""
+initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real}) =
+    sample!(1:size(X,2), iseeds; replace=false)
+
+"""
+Kmeans++ seeding (`:kmpp`).
+
+Chooses the seeds sequentially. The probability of a point to be chosen is
+proportional to the minimum cost of assigning it to the existing seeds.
+
+> D. Arthur and S. Vassilvitskii (2007).
+> *k-means++: the advantages of careful seeding.*
+> 18th Annual ACM-SIAM symposium on Discrete algorithms, 2007.
+"""
 struct KmppAlg <: SeedingAlgorithm end
 
 function initseeds!(iseeds::IntegerVector, alg::KmppAlg,
@@ -144,17 +201,30 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmppAlg,
     return iseeds
 end
 
+"""
+    kmpp(X, k)
+
+Use *Kmeans++* to choose `k` seeds from the ``d×n`` data matrix `X`.
+"""
 kmpp(X::AbstractMatrix{<:Real}, k::Int) = initseeds(KmppAlg(), X, k)
+
+"""
+    kmpp_by_costs(C, k)
+
+Use *Kmeans++* to choose `k` seeds based on the ``n×n`` cost matrix `C`.
+"""
 kmpp_by_costs(costs::AbstractMatrix{<:Real}, k::Int) = initseeds(KmppAlg(), costs, k)
 
 
-# K-medoids initialization based on centrality
-#
-#   Hae-Sang Park and Chi-Hyuck Jun.
-#   A simple and fast algorithm for K-medoids clustering.
-#   doi:10.1016/j.eswa.2008.01.039
-#
+"""
+K-medoids initialization based on centrality (`:kmcen`).
 
+Choose the ``k`` points with the highest *centrality* as seeds.
+
+> Hae-Sang Park and Chi-Hyuck Jun.
+> *A simple and fast algorithm for K-medoids clustering.*
+> doi:10.1016/j.eswa.2008.01.039
+"""
 struct KmCentralityAlg <: SeedingAlgorithm end
 
 function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,

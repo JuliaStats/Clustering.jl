@@ -3,9 +3,14 @@
 #### Interface
 
 # C is the type of centers, an (abstract) matrix of size (d x k)
-# D is the type of pairwise distance computation from points to centers
+# D is the type of pairwise distance computation from points to cluster centers
 # WC is the type of cluster weights, either Int (in the case where points are
 # unweighted) or eltype(weights) (in the case where points are weighted).
+"""
+The output of K-means algorithm.
+
+See also: [`kmeans`](@ref), [`kmeans!`](@ref).
+"""
 struct KmeansResult{C<:AbstractMatrix{<:AbstractFloat},D<:Real,WC<:Real} <: ClusteringResult
     centers::C                 # cluster centers (d x k)
     assignments::Vector{Int}   # assignments (n)
@@ -23,11 +28,15 @@ const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
 
 """
-    kmeans!(X, centers)
+    kmeans!(X, centers; [kwargs...])
 
-Update the current centers `centers` (of size `d x k` where `d` is the dimension and `k` the
-number of centroids) using the samples contained in `X` (of size `d x n` where `n` is the number
-of samples).
+Update the current cluster `centers` (``d×k`` matrix, where ``d`` is the
+dimension and ``k`` the number of centroids) using the ``d×n`` data
+matrix `X` (each column of `X` is a ``d``-dimensional data point).
+
+Returns `KmeansResult` object.
+
+See [`kmeans`](@ref) for the description of optional `kwargs`.
 """
 function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d x n)
                  centers::AbstractMatrix{<:AbstractFloat}; # in: current centers (d x k)
@@ -51,10 +60,23 @@ end
 
 
 """
-    kmeans(X, k)
+    kmeans(X, k, [...])
 
-K-means clustering with `k` centroids of the data contained in `X` of size `d x n` where `d` is
-the dimension and `n` is the number of samples.
+K-means clustering of the ``d×n`` data matrix `X` (each column of `X`
+is a ``d``-dimensional data point) into `k` clusters.
+
+Returns `KmeansResult` object.
+
+# Algorithm Options
+ - `init` (defaults to `:kmpp`): how cluster seeds should be initialized, could
+   be one of the following:
+   * a `Symbol`, the name of a seeding algorithm (see [Seeding](@ref) for a list
+     of supported methods).
+   * an integer vector of length ``k`` that provides the indices of points to
+     use as initial seeds.
+ - `weights`: ``n``-element vector of point weights (the cluster centers are
+   the weighted means of cluster members)
+ - `maxiter`, `tol`, `display`: see [common options](@ref common_options)
 """
 function kmeans(X::AbstractMatrix{<:Real},                # in: data matrix (d x n) columns = obs
                 k::Integer;                               # in: number of centers

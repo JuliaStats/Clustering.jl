@@ -1,9 +1,21 @@
 # MCL (Markov CLustering algorithm)
 
 """
-    struct MCLResult <: ClusteringResult
+The output of [`mcl`](@ref) function.
 
-Result returned by `mcl()`.
+# Fields
+ - `mcl_adj::AbstractMatrix`: the final MCL adjacency matrix
+   (equilibrium state matrix if the algorithm converged), empty if
+   `save_final_matrix` option is disabled
+ - `assignments::Vector{Int}`: indices of the points clusters.
+   `assignments[i]` is the index of the cluster for the ``i``-th point
+    (``0`` if unassigned)
+ - `counts::Vector{Int}`: the ``k``-length vector of cluster sizes
+ - `nunassigned::Int`: the number of standalone points not assigned to any
+   cluster
+ - `iterations::Int`: the number of elapsed iterations
+ - `rel_Δ::Float64`: the final relative Δ
+ - `converged::Bool`: whether the method converged
 """
 struct MCLResult <: ClusteringResult
     mcl_adj::AbstractMatrix     # final MCL adjacency matrix (equilibrium state matrix if converged)
@@ -109,28 +121,30 @@ function _mcl_prune!(mtx::AbstractMatrix, prune_tol::Number)
 end
 
 """
-    mcl(adj::Matrix; [keyword arguments])::MCLResult
+    mcl(adj::AbstractMatrix; [kwargs...])
 
-Identify clusters in the weighted graph using Markov Clustering Algorithm (MCL).
+Perform MCL (Markov Cluster Algorithm) clustering using ``n×n``
+adjacency (points similarity) matrix `adj`.
 
-# Arguments
-* `adj::Matrix{Float64}`: adjacency matrix that defines the weighted graph
-  to cluster
-* `add_loops::Bool`: whether edges of weight 1.0 from the node to itself
-  should be appended to the graph (enabled by default)
-* `expansion::Number`: MCL expansion constant (2)
-* `inflation::Number`: MCL inflation constant (2.0)
-* `save_final_matrix::Bool`: save final equilibrium state in the result,
-  otherwise leave it empty; disabled by default, could be useful if
-  MCL doesn't converge
-* `max_iter::Integer`: max number of MCL iterations
-* `tol::Number`: MCL adjacency matrix convergence threshold
-* `prune_tol::Number`: pruning threshold
-* `display::Symbol`: `:none` for no output or `:verbose` for diagnostic messages
+Returns [`MCLResult`](@ref) object.
 
-See [original MCL implementation](http://micans.org/mcl).
+# Algorithm Options
+ - `add_loops::Bool` (enabled by default): whether the edges of weight 1.0
+   from the node to itself should be appended to the graph
+ - `expansion::Number` (defaults to 2): MCL *expansion* constant
+ - `inflation::Number` (defaults to 2): MCL *inflation* constant
+ - `save_final_matrix::Bool` (disabled by default): whether to save the final
+   equilibrium state in the `mcl_adj` field of the result; could provide useful
+   diagnostic if the method doesn't converge
+ - `prune_tol::Number`: pruning threshold
+ - `display::Symbol` (defaults to `:none`): `:none` for no output or `:verbose`
+   for diagnostic messages
+ - `max_iter`, `tol`: see [common options](@ref common_options)
 
-Ref: Stijn van Dongen, "Graph clustering by flow simulation", 2001
+### References
+> Stijn van Dongen, *"Graph clustering by flow simulation"*, 2001
+
+> [Original MCL implementation](http://micans.org/mcl).
 """
 function mcl(adj::AbstractMatrix{T};
              add_loops::Bool = true,
