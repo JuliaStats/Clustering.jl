@@ -89,17 +89,20 @@ _mcl_el_inflate(el::Number, inflation::Integer) = el^inflation
 _mcl_el_inflate(el::Number, inflation::Number) = real((el+0im)^inflation)
 
 # adjacency matrix inflation (element-wise raising to a given power) kernel
-function _mcl_inflate!(dest::AbstractMatrix, src::AbstractMatrix, inflation::Number)
+function _mcl_inflate(src::AbstractMatrix, inflation::Number)
+    dest = real(similar(src))
     @inbounds for i in eachindex(src)
         dest[i] = _mcl_el_inflate(src[i], inflation)
     end
+    dest
 end
 
-function _mcl_inflate!(dest::SparseMatrixCSC, src::SparseMatrixCSC, inflation::Number)
-    dest = similar(src, eltype(dest))
+function _mcl_inflate(dest::SparseMatrixCSC, src::SparseMatrixCSC, inflation::Number)
+    dest = similar(src)
     @inbounds for i in 1:length(src.nzval)
         dest.nzval[i] = _mcl_el_inflate(src.nzval[i], inflation)
     end
+    dest
 end
 
 # adjacency matrix pruning
@@ -132,10 +135,11 @@ function _set_diag_to_one(adj::AbstractMatrix)
     @inbounds for i in 1:size(adj, 1)
         adj[i, i] = 1.0
     end
+    adj
 end
 
 function _set_diag_to_one(adj::SparseMatrixCSC)
-    adj + spdiagm(0=>ones(size(adj,2)))
+    adj + spdiagm(0 => (ones(size(adj,2)) .- adj[diagind(size(adj)...)]))
 end
 
 """
@@ -172,7 +176,7 @@ function mcl(adj::AbstractMatrix{T};
     m, n = size(adj)
     m == n || throw(DimensionMismatch("Square adjacency matrix expected"))
     if add_loops
-        _set_diag_to_one(adj)
+        adj = _set_diag_to_one(adj)
     end
 
     # initialize the MCL adjacency matrix by normalized `adj` weights
@@ -183,7 +187,6 @@ function mcl(adj::AbstractMatrix{T};
     if !isfinite(mcl_norm)
         throw(OverflowError("The norm of the input adjacency matrix is not finite"))
     end
-    next_mcl_adj = similar(mcl_adj)
 
     # do MCL iterations
     if display != :none
@@ -194,7 +197,7 @@ function mcl(adj::AbstractMatrix{T};
     rel_delta = NaN
     while !converged && niter < max_iter
         expanded = _mcl_expand(mcl_adj, expansion)
-        _mcl_inflate!(next_mcl_adj, expanded, inflation)
+        next_mcl_adj = _mcl_inflate(expanded, inflation)
         _mcl_prune!(next_mcl_adj, prune_tol)
 
         # normalize in columns

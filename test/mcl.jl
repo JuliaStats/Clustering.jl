@@ -71,13 +71,14 @@ end
 end
 
 @testset "sparse input matrix" begin
+    adj = sparse(adj_matrix)
     res = mcl(sparse(adj_matrix), display=:none, expansion=2)
     @test isa(res, MCLResult)
     @test length(res.assignments) == length(nodes)
     @test res.nunassigned == 0
     @test eltype(res.mcl_adj) === Float64
     res_dense = mcl(adj_matrix, display=:none, expansion=2)
-    @test Matrix(res.mcl_adj) == res_dense.assignments
+    @test Matrix(res.mcl_adj) == res_dense.mcl_adj
     @test res.assignments == res_dense.assignments
     @test res.counts == res_dense.counts
     @test res.rel_Δ ≈ res_dense.rel_Δ
