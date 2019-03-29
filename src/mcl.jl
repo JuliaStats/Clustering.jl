@@ -97,7 +97,7 @@ function _mcl_inflate(src::AbstractMatrix, inflation::Number)
     dest
 end
 
-function _mcl_inflate(dest::SparseMatrixCSC, src::SparseMatrixCSC, inflation::Number)
+function _mcl_inflate(src::SparseMatrixCSC, inflation::Number)
     dest = similar(src)
     @inbounds for i in 1:length(src.nzval)
         dest.nzval[i] = _mcl_el_inflate(src.nzval[i], inflation)
