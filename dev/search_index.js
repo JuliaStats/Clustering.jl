@@ -169,27 +169,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "init.html#Clustering.kmpp",
-    "page": "Initialization",
-    "title": "Clustering.kmpp",
-    "category": "function",
-    "text": "kmpp(X, k)\n\nUse Kmeans++ to choose k seeds from the dn data matrix X.\n\n\n\n\n\n"
-},
-
-{
-    "location": "init.html#Clustering.kmpp_by_costs",
-    "page": "Initialization",
-    "title": "Clustering.kmpp_by_costs",
-    "category": "function",
-    "text": "kmpp_by_costs(C, k)\n\nUse Kmeans++ to choose k seeds based on the nn cost matrix C.\n\n\n\n\n\n"
-},
-
-{
     "location": "init.html#Seeding-1",
     "page": "Initialization",
     "title": "Seeding",
     "category": "section",
-    "text": "Seeding is a type of clustering initialization, which provides a few seeds – points from a data set that would serve as the initial cluster centers (one for each cluster).Each seeding algorithm implemented by Clustering.jl is a subtype of SeedingAlgorithm:SeedingAlgorithm\ninitseeds!\ninitseeds_by_costs!There are several seeding methods described in the literature. Clustering.jl implements three popular ones:KmppAlg\nKmCentralityAlg\nRandSeedAlgFor convenience, the package also defines the two wrapper methods that take the name of the seeding algorithm and the number of clusters and take care of allocating iseeds and applying the proper SeedingAlgorithm instance:initseeds\ninitseeds_by_costsIn practice, we found that Kmeans++ is the most effective seeding method. To simplify its usage we provide:kmpp\nkmpp_by_costs"
+    "text": "Seeding is a type of clustering initialization, which provides a few seeds – points from a data set that would serve as the initial cluster centers (one for each cluster).Each seeding algorithm implemented by Clustering.jl is a subtype of SeedingAlgorithm:SeedingAlgorithm\ninitseeds!\ninitseeds_by_costs!There are several seeding methods described in the literature. Clustering.jl implements three popular ones:KmppAlg\nKmCentralityAlg\nRandSeedAlgIn practice, we have found that Kmeans++ is the most effective choice.For convenience, the package defines the two wrapper functions that accept the short name of the seeding algorithm and the number of clusters and take care of allocating iseeds and applying the proper SeedingAlgorithm:initseeds\ninitseeds_by_costs"
 },
 
 {
