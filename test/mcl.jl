@@ -76,7 +76,14 @@ end
     @test length(res.assignments) == length(nodes)
     @test res.nunassigned == 0
     @test eltype(res.mcl_adj) === Float64
-
+    res_dense = mcl(adj_matrix, display=:none, expansion=2)
+    @test Matrix(res.mcl_adj) == res_dense.assignments
+    @test res.assignments == res_dense.assignments
+    @test res.counts == res_dense.counts
+    @test res.rel_Δ ≈ res_dense.rel_Δ
+    @test res.converged == res_dense.converged
+    @test res.nunassigned == res_dense.nunassigned
+    @test res.iterations == res_dense.iterations
     # fractional powers not supported for sparse matrices
     @test_broken mcl(sparse(adj_matrix), display=:none, expansion=2.1)
 end
