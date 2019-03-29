@@ -41,3 +41,9 @@ Pkg.add("Clustering")
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: http://JuliaStats.github.io/Clustering.jl/stable/
+
+## See Also
+
+Julia packages providing other clustering methods:
+ - [QuickShiftClustering.jl](https://github.com/rened/QuickShiftClustering.jl)
+ - [SpectralClustering.jl](https://github.com/lucianolorenti/SpectralClustering.jl)
