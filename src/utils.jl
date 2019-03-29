@@ -2,12 +2,37 @@
 
 ##### common types
 
+"""
+Base type for the output of clustering algorithm.
+"""
 abstract type ClusteringResult end
 
 # generic functions
 
+"""
+    nclusters(R::ClusteringResult)
+
+Get the number of clusters.
+"""
 nclusters(R::ClusteringResult) = length(R.counts)
+
+"""
+    counts(R::ClusteringResult)
+
+Get the vector of cluster sizes.
+
+`counts(R)[k]` is the number of points assigned to the ``k``-th cluster.
+"""
 counts(R::ClusteringResult) = R.counts
+
+"""
+    assignments(R::ClusteringResult)
+
+Get the vector of cluster indices for each point.
+
+`assignments(R)[i]` is the index of the cluster to which the ``i``-th point
+is assigned.
+"""
 assignments(R::ClusteringResult) = R.assignments
 
 

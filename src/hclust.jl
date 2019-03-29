@@ -4,16 +4,30 @@
 ## Algorithms are based upon C. F. Olson, Parallel Computing 21 (1995) 1313--1325.
 
 """
-Hierarchical clustering of the data returned by `hclust()`.
-The data hierarchy is defined by the `merges` matrix:
- - each row specifies which subtrees (referenced by their IDs) are merged into a higher-level subtree
- - negative subtree `id` denotes leaf node and corresponds to the datapoint
-   at position `-id`
- - positive `id` denotes nontrivial subtree:
-   the row `merges[id, :]` specifies its left and right subtrees,
-   and `heights[id]` -- its height.
+The output of [`hclust`](@ref), hierarchical clustering of data points.
+
+Provides the bottom-up definition of the dendrogram as the sequence of
+merges of the two lower subtrees into a higher level subtree.
 
 This type mostly follows R's `hclust` class.
+
+# Fields
+ - `merges::Matrix{Int}`: ``N×2`` matrix encoding subtree merges:
+   * each row specifies the left and right subtrees (referenced by their ``id``s)
+     that are merged
+   * negative subtree ``id`` denotes the leaf node and corresponds to the data
+     point at position ``-id``
+   * positive ``id`` denotes nontrivial subtree (the row `merges[id, :]`
+     specifies its left and right subtrees)
+ - `linkage::Symbol`: the name of *cluster linkage* function used to construct
+   the hierarchy (see [`hclust`](@ref))
+ - `heights::Vector{T}`: subtree heights, i.e. the distances between the left
+    and right branches of each subtree calculated using the specified `linkage`
+ - `order::Vector{Int}`: the data point indices ordered so that there are no
+    intersecting branches on the *dendrogram* plot. This ordering also puts
+    the points of the same cluster close together.
+
+See also: [`hclust`](@ref).
 """
 struct Hclust{T<:Real}
     merges::Matrix{Int} # the tree merge sequence. 1st column: left subtree, 2nd column: right subtree
@@ -610,8 +624,33 @@ function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:R
     return rorder!(htre.merges)
 end
 
-## this calls the routine that gives the correct answer, fastest
-## linkage names are inspired by R's hclust
+"""
+    hclust(d::AbstractMatrix; [linkage], [uplo])
+
+Perform hierarchical clustering using the distance matrix `d` and
+the cluster `linkage` function.
+
+Returns the dendrogram as an object of type [`Hclust`](@ref).
+
+# Arguments
+ - `d::AbstractMatrix`: the pairwise distance matrix. ``d_{ij}`` is the distance
+    between ``i``-th and ``j``-th points.
+ - `linkage::Symbol`: *cluster linkage* function to use. `linkage` defines how
+   the distances between the data points are aggregated into the distances between
+   the clusters. Naturally, it affects what clusters are merged on each
+   iteration. The valid choices are:
+   * `:single` (the default): use the minimum distance between any of the
+     cluster members
+   * `:average`: use the mean distance between any of the cluster members
+   * `:complete`: use the maximum distance between any of the members
+   * `:ward`: the distance is the increase of the average squared distance of
+     a point to its cluster centroid after merging the two clusters
+   * `:ward_presquared`: same as `:ward`, but assumes that the distances
+     in `d` are already squared.
+ - `uplo::Symbol` (optional): specifies whether the upper (`:U`) or the
+   lower (`:L`) triangle of `d` should be used to get the distances.
+   If not specified, the method expects `d` to be symmetric.
+"""
 function hclust(d::AbstractMatrix; linkage::Symbol = :single,
                 uplo::Union{Symbol, Nothing} = nothing)
     if uplo !== nothing
@@ -645,7 +684,24 @@ end
 
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)
 
-## cut a tree at height `h' or to `k' clusters
+"""
+    cutree(hclu::Hclust; [k], [h])
+
+Cuts the `hclu` dendrogram to produce clusters at the specified level of
+granularity.
+
+Returns the cluster assignments vector ``z`` (``z_i`` is the index of the
+cluster for the ``i``-th data point).
+
+# Arguments
+ - `k::Integer` (optional) the number of desired clusters.
+ - `h::Real` (optional) the height at which the tree is cut.
+
+If both `k` and `h` are specified, it's guaranteed that the
+number of clusters is not less than `k` and their height is not above `h`.
+
+See also: [`hclust`](@ref)
+"""
 function cutree(hclu::Hclust;
                 k::Union{Integer, Nothing} = nothing,
                 h::Union{Real, Nothing} = nothing)

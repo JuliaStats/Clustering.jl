@@ -7,14 +7,31 @@
 #       in large spatial databases with noise. 1996.
 #
 
+"""
+The output of [`dbscan`](@ref) function (distance matrix-based implementation).
 
+## Fields
+ - `seeds::Vector{Int}`: indices of cluster starting points
+ - `assignments::Vector{Int}`: vector of clusters indices, where each point was assigned to
+ - `counts::Vector{Int}`: cluster sizes (number of assigned points)
+end
+```
+"""
 mutable struct DbscanResult <: ClusteringResult
     seeds::Vector{Int}          # starting points of clusters, size (k,)
     assignments::Vector{Int}    # assignments, size (n,)
     counts::Vector{Int}         # number of points in each cluster, size (k,)
 end
 
+"""
+DBSCAN cluster returned by [`dbscan`](@ref) function (point coordinates-based
+implementation)
 
+## Fields
+ * `size::Int`: number of points in a cluster (core + boundary)
+ * `core_indices::Vector{Int}`: indices of points in the cluster *core*
+ * `boundary_indices::Vector{Int}`: indices of points on the cluster *boundary*
+"""
 struct DbscanCluster <: ClusteringResult
     size::Int                      # number of points in cluster
     core_indices::Vector{Int}      # core points indices
@@ -23,6 +40,20 @@ end
 
 ## main algorithm
 
+"""
+    dbscan(D::DenseMatrix, eps::Real, minpts::Int)
+
+Perform DBSCAN algorithm using the distance matrix `D`.
+
+Returns an instance of [`DbscanResult`](@ref).
+
+# Algorithm Options
+The following options control which points would be considered
+*density reachable*:
+  - `eps::Real`: the radius of a point neighborhood
+  - `minpts::Int`: the minimum number of neighboring points (including itself)
+     to qualify a point as a density point.
+"""
 function dbscan(D::DenseMatrix{T}, eps::Real, minpts::Int) where T<:Real
     # check arguments
     n = size(D, 1)
@@ -109,26 +140,32 @@ function _dbs_expand_cluster!(D::DenseMatrix{T},           # distance matrix
 end
 
 """
-    dbscan(points, radius ; leafsize = 20, min_neighbors = 1, min_cluster_size = 1) -> clusters
+    dbscan(points::AbstractMatrix, radius::Real;
+           leafsize = 20, min_neighbors = 1, min_cluster_size = 1)
 
-Cluster points using the DBSCAN (density-based spatial clustering of applications with noise) algorithm.
+Cluster `points` using the DBSCAN (density-based spatial clustering of
+applications with noise) algorithm.
+
+Returns the clustering as a vector of [`DbscanCluster`](@ref) objects.
 
 ### Arguments
-* `points`: matrix of points
-* `radius::Real`: query radius
+ - `points`: the ``d×n`` matrix of points. `points[:, j]` is a
+   ``d``-dimensional coordinates of ``j``-th point
+ - `radius::Real`: query radius
 
-### Keyword Arguments
-* `leafsize::Int`: number of points binned in each leaf node in the `KDTree`
-* `min_neighbors::Int`: minimum number of neighbors to be a core point
-* `min_cluster_size::Int`: minimum number of points to be a valid cluster
-
-### Output
-* `Vector{DbscanCluster}`: an array of clusters with the id, size core indices and boundary indices
+Additional keyword options to control the algorithm:
+ - `leafsize::Int` (defaults to 20): the number of points binned in each
+   leaf node in the `KDTree`
+ - `min_neighbors::Int` (defaults to 1): the minimum number of a *core* point
+   neighbors
+ - `min_cluster_size::Int` (defaults to 1): the minimum number of points in
+   a valid cluster
 
 ### Example:
 ``` julia
 points = randn(3, 10000)
-clusters = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20) # clusters with less than 20 points will be discarded
+# DBSCAN clustering, clusters with less than 20 points will be discarded:
+clusters = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20)
 ```
 """
 function dbscan(points::AbstractMatrix, radius::Real; leafsize::Int = 20, kwargs ...)
@@ -137,7 +174,7 @@ function dbscan(points::AbstractMatrix, radius::Real; leafsize::Int = 20, kwargs
 end
 
 
-""" An implementation of DBSCAN algorithm that keeps track of both the core and boundary points """
+# An implementation of DBSCAN algorithm that keeps track of both the core and boundary points
 function _dbscan(kdtree::KDTree, points::AbstractMatrix, radius::Real;
                  min_neighbors::Int = 1, min_cluster_size::Int = 1)
     dim, num_points = size(points)

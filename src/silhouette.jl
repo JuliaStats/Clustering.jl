@@ -23,21 +23,18 @@ end
     silhouettes(assignments::AbstractVector, [counts,] dists)
     silhouettes(clustering::ClusteringResult, dists)
 
-Compute silhouette values for individual points w.r.t. given clustering.
+Compute *silhouette* values for individual points w.r.t. given clustering.
 
-  * `assignments` the vector of point assignments (cluster indices)
-  * `counts` the optional vector of cluster sizes (how many points assigned to each cluster; should match `assignments`)
-  * `clustering` the output of some clustering method
-  * `dists` point×point pairwise distance matrix
+Returns the ``n``-length vector of silhouette values for each individual point.
 
-Returns a vector of silhouette values for each individual point.
-
-`mean(silhouettes(...))` could be used as a measure of clustering quality;
-higher values indicate better separation of clusters w.r.t. distances provided in `dists`.
-
-#### References
-  1. [Silhouette Wikipedia page](http://en.wikipedia.org/wiki/Silhouette_(clustering)).
-  2. Peter J. Rousseeuw (1987). "Silhouettes: a Graphical Aid to the Interpretation and Validation of Cluster Analysis". Computational and Applied Mathematics. 20: 53–65.
+# Arguments
+ - `assignments::AbstractVector{Int}`: the vector of point assignments
+   (cluster indices)
+ - `counts::AbstractVector{Int}`: the optional vector of cluster sizes (how many
+   points assigned to each cluster; should match `assignments`)
+ - `clustering::ClusteringResult`: the output of some clustering method
+ - `dists::AbstractMatrix`: ``n×n`` matrix of pairwise distances between
+   the points
 """
 function silhouettes(assignments::AbstractVector{<:Integer},
                      counts::AbstractVector{<:Integer},

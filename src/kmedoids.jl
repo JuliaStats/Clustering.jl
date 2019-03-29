@@ -3,6 +3,21 @@
 
 #### Result type
 
+"""
+The output of [`kmedoids`](@ref) function.
+
+# Fields
+ - `medoids::Vector{Int}`: the indices of ``k`` medoids
+ - `assignments::Vector{Int}`: the indices of clusters the points are assigned
+   to, so that `medoids[assignments[i]]` is the index of the medoid for the
+   ``i``-th point
+ - `acosts::Vector{T}`: assignment costs, i.e. `acosts[i]` is the cost of
+   assigning ``i``-th point to its medoid
+ - `counts::Vector{Int}`: cluster sizes
+ - `totalcost::Float64`: total assignment cost (the sum of `acosts`)
+ - `iterations::Int`: the number of executed algorithm iterations
+ - `converged::Bool`: whether the procedure converged
+"""
 mutable struct KmedoidsResult{T} <: ClusteringResult
     medoids::Vector{Int}        # indices of methods (k)
     assignments::Vector{Int}    # assignments (n)
@@ -21,6 +36,28 @@ const _kmed_default_maxiter = 200
 const _kmed_default_tol = 1.0e-8
 const _kmed_default_display = :none
 
+"""
+    kmedoids(costs::DenseMatrix, k::Integer; ...)
+
+Performs K-medoids clustering of ``n`` points into `k` clusters,
+given the `costs` matrix (``n×n``, ``\\mathrm{costs}_{ij}`` is the cost of
+assigning ``j``-th point to the mediod represented by the ``i``-th point).
+
+Returns an object of type [`KmedoidsResult`](@ref).
+
+# Note
+This package implements a K-means style algorithm instead of PAM, which
+is considered much more efficient and reliable.
+
+# Algorithm Options
+ - `init` (defaults to `:kmpp`): how medoids should be initialized, could
+   be one of the following:
+   * a `Symbol` indicating the name of a seeding algorithm (see
+     [Seeding](@ref Seeding) for a list of supported methods).
+   * an integer vector of length `k` that provides the indices of points to
+     use as initial medoids.
+ - `maxiter`, `tol`, `display`: see [common options](@ref common_options)
+"""
 function kmedoids(costs::DenseMatrix{T}, k::Integer;
                   init=_kmed_default_init,
                   maxiter::Integer=_kmed_default_maxiter,
@@ -40,6 +77,16 @@ function kmedoids(costs::DenseMatrix{T}, k::Integer;
                round(Int, maxiter), tol, display_level(display))
 end
 
+"""
+    kmedoids!(costs::DenseMatrix, medoids::Vector{Int}; [kwargs...])
+
+Performs K-medoids clustering starting with the provided indices of initial
+`medoids`.
+
+Returns [`KmedoidsResult`](@ref) object and updates the `medoids` indices in-place.
+
+See [`kmedoids`](@ref) for the description of optional `kwargs`.
+"""
 function kmedoids!(costs::DenseMatrix{T}, medoids::Vector{Int};
                    maxiter::Integer=_kmed_default_maxiter,
                    tol::Real=_kmed_default_tol,
