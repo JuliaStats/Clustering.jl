@@ -202,21 +202,6 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmppAlg,
 end
 
 """
-    kmpp(X, k)
-
-Use *Kmeans++* to choose `k` seeds from the ``d×n`` data matrix `X`.
-"""
-kmpp(X::AbstractMatrix{<:Real}, k::Int) = initseeds(KmppAlg(), X, k)
-
-"""
-    kmpp_by_costs(C, k)
-
-Use *Kmeans++* to choose `k` seeds based on the ``n×n`` cost matrix `C`.
-"""
-kmpp_by_costs(costs::AbstractMatrix{<:Real}, k::Int) = initseeds(KmppAlg(), costs, k)
-
-
-"""
 K-medoids initialization based on centrality (`:kmcen`).
 
 Choose the ``k`` points with the highest *centrality* as seeds.

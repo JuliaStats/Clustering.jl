@@ -81,19 +81,19 @@ end
     @test min_interdist((Xt')[:, iseeds]) > 20 * md0
 
     Random.seed!(34568)
-    iseeds = kmpp(X, k)
+    iseeds = initseeds(:kmpp, X, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
     Random.seed!(34568)
-    iseeds_t = kmpp(Xt', k)
+    iseeds_t = initseeds(:kmpp, Xt', k)
     @test iseeds_t == iseeds
 
     Random.seed!(34568)
-    iseeds = kmpp_by_costs(C, k)
+    iseeds = initseeds_by_costs(:kmpp, C, k)
     @test length(iseeds) == k
     @test alldistinct(iseeds)
     Random.seed!(34568)
-    iseeds_t = kmpp_by_costs(Ct', k)
+    iseeds_t = initseeds_by_costs(:kmpp, Ct', k)
     @test iseeds_t == iseeds
 end
 
