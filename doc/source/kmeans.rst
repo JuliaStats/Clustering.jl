@@ -129,4 +129,4 @@ Example with plot
     
     using Gadfly
     
-    plot(iris, x = "PetalLength", y = "PetalWidth", color = result.assignments, Geom.point)
+    plot(iris, x = "PetalLength", y = "PetalWidth", color = assignments(result), Geom.point)
