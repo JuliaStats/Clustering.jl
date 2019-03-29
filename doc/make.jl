@@ -28,3 +28,7 @@ makedocs(
     ],
     debug = false,
 )
+
+deploydocs(
+    repo = "github.com/JuliaStats/Clustering.jl.git",
+)
