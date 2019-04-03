@@ -6,7 +6,7 @@ makedocs(
     sitename = "Clustering.jl",
     modules = [Clustering],
     pages = [
-        "Clustering.jl Docs" => "index.md",
+        "Introduction" => "index.md",
         "Algorithms" => [
             "algorithms.md",
             "init.md",
@@ -26,7 +26,6 @@ makedocs(
             "vmeasure.md",
         ]
     ],
-    debug = false,
 )
 
 deploydocs(

@@ -3,6 +3,8 @@
 ## Interface
 
 """
+    FuzzyCMeansResult{T<:AbstractFloat} <: ClusteringResult
+
 The output of [`fuzzy_cmeans`](@ref) function.
 
 # Fields
@@ -58,11 +60,10 @@ const _fcmeans_default_tol = 1.0e-3
 const _fcmeans_default_display = :none
 
 """
-    fuzzy_cmeans(data::AbstractMatrix, C::Int, fuzziness::Real; [...])
+    fuzzy_cmeans(data::AbstractMatrix, C::Int, fuzziness::Real,
+                 [...]) -> FuzzyCMeansResult
 
-Performs Fuzzy C-means clustering over the given `data`.
-
-Returns an instance of [`FuzzyCMeansResult`](@ref).
+Perform Fuzzy C-means clustering over the given `data`.
 
 # Arguments
  - `data::AbstractMatrix`: ``d×n`` data matrix. Each column represents
@@ -71,7 +72,7 @@ Returns an instance of [`FuzzyCMeansResult`](@ref).
  - `fuzziness::Real`: clusters fuzziness (see ``m`` in the
    [mathematical formulation](@ref fuzzy_cmeans_def)), ``\\mathrm{fuzziness} > 1``.
 
-One may also control the algorithm via the following optional keyword arguments:
+Optional keyword arguments:
  - `dist_metric::Metric` (defaults to `Euclidean`): the `Metric` object
     that defines the distance between the data points
  - `maxiter`, `tol`, `display`: see [common options](@ref common_options)

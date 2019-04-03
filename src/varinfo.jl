@@ -1,9 +1,9 @@
 # Variation of Information
 
 """
-    varinfo(k1::Int, a1::AbstractVector{Int}, k2::Int, a2::AbstractVector{Int})
-    varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int})
-    varinfo(R1::ClusteringResult, R2::ClusteringResult)
+    varinfo(k1::Int, a1::AbstractVector{Int}, k2::Int, a2::AbstractVector{Int}) -> Float64
+    varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}) -> Float64
+    varinfo(R1::ClusteringResult, R2::ClusteringResult) -> Float64
 
 Compute the variation of information between the two clusterings.
 
@@ -11,6 +11,10 @@ Each clustering is provided either as an instance of [`ClusteringResult`](@ref)
 subtype or as a pair of arguments:
  - a number of clusters (`k1`, `k2`, `k0`)
  - a vector of point to cluster assignments (`a1`, `a2`, `a0`).
+
+# References
+> Meila, Marina (2003). *Comparing Clusterings by the Variation of
+> Information.* Learning Theory and Kernel Machines: 173–187.
 """
 function varinfo(k1::Int, a1::AbstractVector{Int},
                  k2::Int, a2::AbstractVector{Int})

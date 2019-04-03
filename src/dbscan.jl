@@ -8,14 +8,14 @@
 #
 
 """
+    DbscanResult <: ClusteringResult
+
 The output of [`dbscan`](@ref) function (distance matrix-based implementation).
 
-## Fields
+# Fields
  - `seeds::Vector{Int}`: indices of cluster starting points
  - `assignments::Vector{Int}`: vector of clusters indices, where each point was assigned to
  - `counts::Vector{Int}`: cluster sizes (number of assigned points)
-end
-```
 """
 mutable struct DbscanResult <: ClusteringResult
     seeds::Vector{Int}          # starting points of clusters, size (k,)
@@ -24,15 +24,17 @@ mutable struct DbscanResult <: ClusteringResult
 end
 
 """
+    DbscanCluster
+
 DBSCAN cluster returned by [`dbscan`](@ref) function (point coordinates-based
 implementation)
 
-## Fields
+# Fields
  * `size::Int`: number of points in a cluster (core + boundary)
  * `core_indices::Vector{Int}`: indices of points in the cluster *core*
  * `boundary_indices::Vector{Int}`: indices of points on the cluster *boundary*
 """
-struct DbscanCluster <: ClusteringResult
+struct DbscanCluster
     size::Int                      # number of points in cluster
     core_indices::Vector{Int}      # core points indices
     boundary_indices::Vector{Int}  # boundary points indices
@@ -41,13 +43,11 @@ end
 ## main algorithm
 
 """
-    dbscan(D::DenseMatrix, eps::Real, minpts::Int)
+    dbscan(D::DenseMatrix, eps::Real, minpts::Int) -> DbscanResult
 
 Perform DBSCAN algorithm using the distance matrix `D`.
 
-Returns an instance of [`DbscanResult`](@ref).
-
-# Algorithm Options
+# Arguments
 The following options control which points would be considered
 *density reachable*:
   - `eps::Real`: the radius of a point neighborhood
@@ -140,20 +140,18 @@ function _dbs_expand_cluster!(D::DenseMatrix{T},           # distance matrix
 end
 
 """
-    dbscan(points::AbstractMatrix, radius::Real;
-           leafsize = 20, min_neighbors = 1, min_cluster_size = 1)
+    dbscan(points::AbstractMatrix, radius::Real,
+           [leafsize], [min_neighbors], [min_cluster_size]) -> Vector{DbscanCluster}
 
 Cluster `points` using the DBSCAN (density-based spatial clustering of
 applications with noise) algorithm.
 
-Returns the clustering as a vector of [`DbscanCluster`](@ref) objects.
-
-### Arguments
+# Arguments
  - `points`: the ``d×n`` matrix of points. `points[:, j]` is a
    ``d``-dimensional coordinates of ``j``-th point
  - `radius::Real`: query radius
 
-Additional keyword options to control the algorithm:
+Optional keyword arguments to control the algorithm:
  - `leafsize::Int` (defaults to 20): the number of points binned in each
    leaf node in the `KDTree`
  - `min_neighbors::Int` (defaults to 1): the minimum number of a *core* point
@@ -161,7 +159,7 @@ Additional keyword options to control the algorithm:
  - `min_cluster_size::Int` (defaults to 1): the minimum number of points in
    a valid cluster
 
-### Example:
+# Example
 ``` julia
 points = randn(3, 10000)
 # DBSCAN clustering, clusters with less than 20 points will be discarded:
@@ -215,17 +213,17 @@ function _dbscan(kdtree::KDTree, points::AbstractMatrix, radius::Real;
 end
 
 """
-    update_exploration_list!(adj_list, exploration_list, visited)
+    update_exploration_list!(adj_list, exploration_list, visited) -> adj_list
 
-Update the queue for expanding the cluster
+Update the queue for expanding the cluster.
 
-### Input
-
-* `adj_list :: Vector{Int}`: indices of the neighboring points
-* `exploration_list :: Vector{Int}`: the indices that  will be explored in the future
-* `visited :: Vector{Bool}`: a flag to indicate whether a point has been explored already
+# Arguments
+- `adj_list::Vector{Int}`: indices of the neighboring points to move to queue
+- `exploration_list::Vector{Int}`: the indices that will be explored in the future
+- `visited::BitVector`: a flag indicating whether a point has been explored already
 """
-function update_exploration_list!(adj_list::Array{T}, exploration_list::Vector{T}, visited::BitArray{1}) where T <: Int
+function update_exploration_list!(adj_list::Vector{T}, exploration_list::Vector{T},
+                                  visited::BitVector) where T <: Integer
     for j in adj_list
         visited[j] && continue
         push!(exploration_list, j)
@@ -234,15 +232,14 @@ function update_exploration_list!(adj_list::Array{T}, exploration_list::Vector{T
 end
 
 """
-    accept_cluster!(clusters, core_selection, cluster_selection)
+    accept_cluster!(clusters, core_selection, cluster_selection) -> clusters
 
-Accept cluster and update the clusters list
+Accept cluster and update the clusters list.
 
-### Input
-
-* `clusters :: Vector{DbscanCluster}`: a list of the accepted clusters
-* `core_selection :: Vector{Bool}`: selection of the core points of the cluster
-* `cluster_selection :: Vector{Bool}`: selection of all the cluster points
+# Arguments
+- `clusters::Vector{DbscanCluster}`: a list of the accepted clusters
+- `core_selection::Vector{Bool}`: selection of the core points of the cluster
+- `cluster_selection::Vector{Bool}`: selection of all the cluster points
 """
 function accept_cluster!(clusters::Vector{DbscanCluster}, core_selection::BitVector,
                          cluster_selection::BitVector, cluster_size::Int)

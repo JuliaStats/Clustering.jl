@@ -3,6 +3,8 @@
 ##### common types
 
 """
+    ClusteringResult
+
 Base type for the output of clustering algorithm.
 """
 abstract type ClusteringResult end
@@ -10,14 +12,14 @@ abstract type ClusteringResult end
 # generic functions
 
 """
-    nclusters(R::ClusteringResult)
+    nclusters(R::ClusteringResult) -> Int
 
 Get the number of clusters.
 """
 nclusters(R::ClusteringResult) = length(R.counts)
 
 """
-    counts(R::ClusteringResult)
+    counts(R::ClusteringResult) -> Vector{Int}
 
 Get the vector of cluster sizes.
 
@@ -26,7 +28,7 @@ Get the vector of cluster sizes.
 counts(R::ClusteringResult) = R.counts
 
 """
-    assignments(R::ClusteringResult)
+    assignments(R::ClusteringResult) -> Vector{Int}
 
 Get the vector of cluster indices for each point.
 
