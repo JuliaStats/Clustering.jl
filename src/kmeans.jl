@@ -72,7 +72,8 @@ is a ``d``-dimensional data point) into `k` clusters.
  - `init` (defaults to `:kmpp`): how cluster seeds should be initialized, could
    be one of the following:
    * a `Symbol`, the name of a seeding algorithm (see [Seeding](@ref) for a list
-     of supported methods).
+     of supported methods);
+   * an instance of [`SeedingAlgorithm`](@ref);
    * an integer vector of length ``k`` that provides the indices of points to
      use as initial seeds.
  - `weights`: ``n``-element vector of point weights (the cluster centers are
@@ -82,7 +83,8 @@ is a ``d``-dimensional data point) into `k` clusters.
 function kmeans(X::AbstractMatrix{<:Real},                # in: data matrix (d x n) columns = obs
                 k::Integer;                               # in: number of centers
                 weights::Union{Nothing, AbstractVector{<:Real}}=nothing, # in: data point weights (n)
-                init::Symbol=_kmeans_default_init,        # in: initialization algorithm
+                init::Union{Symbol, SeedingAlgorithm, AbstractVector{<:Integer}}=
+                        _kmeans_default_init,             # in: initialization algorithm
                 maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
                 tol::Real=_kmeans_default_tol,            # in: tolerance  of change at convergence
                 display::Symbol=_kmeans_default_display,  # in: level of display
