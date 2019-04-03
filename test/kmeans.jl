@@ -126,6 +126,26 @@ end
     @test equal_kmresults(r, r_t)
 end
 
+@testset "Argument checks" begin
+    Random.seed!(34568)
+    n = 50
+    k = 10
+    x = randn(m, n)
+
+    @testset "init=" begin
+        @test_throws ArgumentError kmeans(x, k, init=1:(k-2))
+        @test_throws ArgumentError kmeans(x, k, init=1:(k+2))
+        @test kmeans(x, k, init=1:k, maxiter=5) isa KmeansResult
+
+        @test_throws ArgumentError kmeans(x, k, init=:myseeding)
+        for algname in (:kmpp, :kmcen, :rand)
+            alg = Clustering.seeding_algorithm(algname)
+            @test kmeans(x, k, init=algname) isa KmeansResult
+            @test kmeans(x, k, init=alg) isa KmeansResult
+        end
+    end
+end
+
 @testset "Integer data" begin
     x = rand(Int16, m, n)
     Random.seed!(654)
