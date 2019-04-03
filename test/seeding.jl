@@ -53,10 +53,10 @@ md0 = min_interdist(X)
     iseeds_t = initseeds_by_costs(RandSeedAlg(), Ct', k)
     @test iseeds == iseeds_t
 
-    R = copyseeds(X, iseeds)
+    R = copyseeds!(Matrix{Float64}(undef, d, k), X, iseeds)
     @test isa(R, Matrix{Float64})
     @test R == X[:, iseeds]
-    R_t = copyseeds(Xt', iseeds)
+    R_t = copyseeds!(Matrix{Float64}(undef, d, k), Xt', iseeds)
     @test R == R_t
 end
 
