@@ -61,7 +61,15 @@ seeding_algorithm(s::Symbol) =
     s == :rand ? RandSeedAlg() :
     s == :kmpp ? KmppAlg() :
     s == :kmcen ? KmCentralityAlg() :
-    error("Unknown seeding algorithm $s")
+    throw(ArgumentError("Unknown seeding algorithm $s"))
+
+function check_seeding_args(n::Integer, k::Integer)
+    k >= 1 || throw(ArgumentError("The number of seeds ($k) must be positive."))
+    k <= n || throw(ArgumentError("Cannot select more seeds ($k) than data points ($n)."))
+end
+
+check_seeding_args(X::AbstractMatrix, iseeds::AbstractVector) =
+    check_seeding_args(size(X, 2), length(iseeds))
 
 initseeds(algname::Symbol, X::AbstractMatrix{<:Real}, k::Integer) =
     initseeds(seeding_algorithm(algname), X, k)::Vector{Int}
@@ -76,16 +84,12 @@ function copyseeds!(S::Matrix{<:AbstractFloat}, X::AbstractMatrix{<:Real},
                     iseeds::AbstractVector)
     d, n = size(X)
     k = length(iseeds)
-    size(S) == (d, k) || throw(DimensionMismatch("Inconsistent array dimensions."))
+    size(S) == (d, k) ||
+        throw(DimensionMismatch("Inconsistent seeds matrix dimensions: $((d, k)) expected, $(size(S)) given."))
     for j = 1:k
         copyto!(view(S, :, j), view(X, :, iseeds[j]))
     end
     return S
-end
-
-function check_seeding_args(n::Integer, k::Integer)
-    k >= 1 || error("The number of seeds must be positive.")
-    k <= n || error("Attempted to select more seeds than data points.")
 end
 
 """
@@ -104,8 +108,10 @@ struct RandSeedAlg <: SeedingAlgorithm end
 Initialize `iseeds` with the indices of cluster seeds for the `X` data matrix
 using the `alg` seeding algorithm.
 """
-initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real}) =
+function initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real})
+    check_seeding_args(X, iseeds)
     sample!(1:size(X, 2), iseeds; replace=false)
+end
 
 """
     initseeds_by_costs!(iseeds::AbstractVector{Int}, alg::SeedingAlgorithm,
@@ -118,8 +124,10 @@ Here, `costs[i, j]` is the cost of assigning points ``i`` and ``j``
 to the same cluster. One may, for example, use the squared Euclidean distance
 between the points as the cost.
 """
-initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real}) =
+function initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real})
+    check_seeding_args(X, iseeds)
     sample!(1:size(X,2), iseeds; replace=false)
+end
 
 """
     KmppAlg <: SeedingAlgorithm
