@@ -37,6 +37,14 @@ Ct = copy(transpose(C))
 md0 = min_interdist(X)
 
 @testset "Argument checks" begin
+    @test_throws ArgumentError initseeds([1, 2], X, 3)
+    @test initseeds([1, 2], X, 2) == [1, 2]
+    @test_throws ArgumentError initseeds([-1, 2, 3], X, 3)
+    @test_throws ArgumentError initseeds([1, n+2, 3], X, 3)
+
+    @test_throws ArgumentError initseeds_by_costs([1, 2], C, 3)
+    @test initseeds_by_costs([1, 2], C, 2) == [1, 2]
+
     @test_throws ArgumentError initseeds(:myseeding, X, 2)
     iseeds = initseeds(:kmpp, X, k)
     @test_throws DimensionMismatch copyseeds!(Matrix{Float64}(undef, 3, 6), X, iseeds)
