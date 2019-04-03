@@ -244,8 +244,6 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,
 
     # scores[j] = \sum_j costs[i,j] / (\sum_{j'} costs[i,j'])
     #           = costs[i,j] * coefs[i]
-    #
-    # So this is matrix-vector multiplication
     scores = costs'coefs
 
     # lower score indicates better seeds
