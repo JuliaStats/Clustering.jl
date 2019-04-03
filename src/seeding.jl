@@ -93,16 +93,14 @@ end
 initseeds_by_costs(iseeds::AbstractVector{<:Integer}, costs::AbstractMatrix{<:Real}, k::Integer) =
     initseeds(iseeds, costs, k) # NOTE: passing costs as X, but should be fine since only size(X, 2) is used
 
-function copyseeds!(S::Matrix{<:AbstractFloat}, X::AbstractMatrix{<:Real},
+function copyseeds!(S::AbstractMatrix{<:AbstractFloat},
+                    X::AbstractMatrix{<:Real},
                     iseeds::AbstractVector)
     d, n = size(X)
     k = length(iseeds)
     size(S) == (d, k) ||
         throw(DimensionMismatch("Inconsistent seeds matrix dimensions: $((d, k)) expected, $(size(S)) given."))
-    for j = 1:k
-        copyto!(view(S, :, j), view(X, :, iseeds[j]))
-    end
-    return S
+    return copyto!(S, view(X, :, iseeds))
 end
 
 """
