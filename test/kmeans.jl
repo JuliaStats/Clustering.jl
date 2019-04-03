@@ -54,7 +54,7 @@ equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
     @test length(r.costs) == n
     @test length(r.counts) == k
     @test sum(r.counts) == n
-    @test r.cweights == map(Float64, r.counts)
+    @test r.cweights == r.counts
     @test sum(r.costs) ≈ r.totalcost
 
     Random.seed!(34568)
@@ -74,7 +74,7 @@ end
     @test length(r.costs) == n
     @test length(r.counts) == k
     @test sum(r.counts) == n
-    @test r.cweights == map(Float64, r.counts)
+    @test r.cweights == r.counts
     @test sum(r.costs) ≈ r.totalcost
 
     Random.seed!(34568)
@@ -117,7 +117,7 @@ end
     @test length(r.costs) == n
     @test length(r.counts) == k
     @test sum(r.counts) == n
-    @test r.cweights == map(Float64, r.counts)
+    @test r.cweights == r.counts
     @test sum(r.costs) ≈ r.totalcost
     @test equal_kmresults(r, r2)
 
