@@ -83,10 +83,6 @@ function copyseeds!(S::Matrix{<:AbstractFloat}, X::AbstractMatrix{<:Real},
     return S
 end
 
-# NOTE: this should eventually be removed as only `copyseeds!` is used in `kmeans`.
-copyseeds(X::AbstractMatrix{<:Real}, iseeds::AbstractVector) =
-    copyseeds!(Matrix{eltype(X)}(undef, size(X, 1), length(iseeds)), X, iseeds)
-
 function check_seeding_args(n::Integer, k::Integer)
     k >= 1 || error("The number of seeds must be positive.")
     k <= n || error("Attempted to select more seeds than data points.")
@@ -219,7 +215,7 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,
 
     n = size(costs, 1)
     k = length(iseeds)
-    k <= n || error("Attempted to select more seeds than points.")
+    check_seeding_args(n, k)
 
     # compute score for each item
     coefs = vec(sum(costs, dims=2))
