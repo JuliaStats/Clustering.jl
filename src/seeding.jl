@@ -77,8 +77,21 @@ initseeds(algname::Symbol, X::AbstractMatrix{<:Real}, k::Integer) =
 initseeds_by_costs(algname::Symbol, costs::AbstractMatrix{<:Real}, k::Integer) =
     initseeds_by_costs(seeding_algorithm(algname), costs, k)
 
-initseeds(iseeds::Vector{Int}, X::AbstractMatrix{<:Real}, k::Integer) = iseeds
-initseeds_by_costs(iseeds::Vector{Int}, costs::AbstractMatrix{<:Real}, k::Integer) = iseeds
+# use specified vector of seeds
+function initseeds(iseeds::AbstractVector{<:Integer}, X::AbstractMatrix{<:Real}, k::Integer)
+    length(iseeds) == k ||
+        throw(ArgumentError("The length of seeds vector ($(length(iseeds))) differs from the number of seeds requested ($k)"))
+    check_seeding_args(X, iseeds)
+    n = size(X, 2)
+    # check that seed indices are fine
+    for (i, seed) in enumerate(iseeds)
+        (1 <= seed <= n) || throw(ArgumentError("Seed #$i refers to an incorrect data point ($seed)"))
+    end
+    # NOTE no duplicate checks are done, should we?
+    convert(Vector{Int}, iseeds)
+end
+initseeds_by_costs(iseeds::AbstractVector{<:Integer}, costs::AbstractMatrix{<:Real}, k::Integer) =
+    initseeds(iseeds, costs, k) # NOTE: passing costs as X, but should be fine since only size(X, 2) is used
 
 function copyseeds!(S::Matrix{<:AbstractFloat}, X::AbstractMatrix{<:Real},
                     iseeds::AbstractVector)
