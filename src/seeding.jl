@@ -141,7 +141,8 @@ proportional to the minimum cost of assigning it to the existing seeds.
 struct KmppAlg <: SeedingAlgorithm end
 
 function initseeds!(iseeds::IntegerVector, alg::KmppAlg,
-                    X::AbstractMatrix{<:Real}, metric::PreMetric)
+                    X::AbstractMatrix{<:Real},
+                    metric::PreMetric = SqEuclidean())
     n = size(X, 2)
     k = length(iseeds)
     check_seeding_args(n, k)
@@ -170,9 +171,6 @@ function initseeds!(iseeds::IntegerVector, alg::KmppAlg,
 
     return iseeds
 end
-
-initseeds!(iseeds::IntegerVector, alg::KmppAlg, X::AbstractMatrix{<:Real}) =
-    initseeds!(iseeds, alg, X, SqEuclidean())
 
 function initseeds_by_costs!(iseeds::IntegerVector, alg::KmppAlg,
                              costs::AbstractMatrix{<:Real})
@@ -243,8 +241,6 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,
     return iseeds
 end
 
-initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::AbstractMatrix{<:Real}, metric::PreMetric) =
+initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::AbstractMatrix{<:Real},
+           metric::PreMetric = SqEuclidean()) =
     initseeds_by_costs!(iseeds, alg, pairwise(metric, X, dims=2))
-
-initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::AbstractMatrix{<:Real}) =
-    initseeds!(iseeds, alg, X, SqEuclidean())
