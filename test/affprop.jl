@@ -8,6 +8,18 @@ using Random
 using Statistics
 
 @testset "affinityprop() (affinity propagation)" begin
+    @testset "Argument checks" begin
+        Random.seed!(34568)
+        @test_throws ArgumentError affinityprop(randn(2, 3))
+        @test_throws ArgumentError affinityprop(randn(1, 1))
+        @test_throws ArgumentError affinityprop(randn(2, 2), tol=0.0)
+        @test_throws ArgumentError affinityprop(randn(2, 2), damp=-0.1)
+        @test_throws ArgumentError affinityprop(randn(2, 2), damp=1.0)
+        @test affinityprop(randn(2, 2), damp=0.5, tol=0.5) isa AffinityPropResult
+        for disp in keys(Clustering.DisplayLevels)
+            @test affinityprop(randn(2, 2), tol=0.1, display=disp) isa AffinityPropResult
+        end
+    end
 
     Random.seed!(34568)
 

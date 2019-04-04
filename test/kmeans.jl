@@ -21,6 +21,17 @@ end
 
 @testset "kmeans() (k-means)" begin
 
+@testset "Argument checks" begin
+    Random.seed!(34568)
+    @test_throws ArgumentError kmeans(randn(2, 3), 1)
+    @test_throws ArgumentError kmeans(randn(2, 3), 4)
+    @test kmeans(randn(2, 3), 2) isa KmeansResult
+    @test_throws ArgumentError kmeans(randn(2, 3), 2, display=:mylog)
+    for disp in keys(Clustering.DisplayLevels)
+        @test kmeans(randn(2, 3), 2, display=disp) isa KmeansResult
+    end
+end
+
 Random.seed!(34568)
 
 m = 3

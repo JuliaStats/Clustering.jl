@@ -60,10 +60,10 @@ function affinityprop(S::DenseMatrix{T};
 
     # check arguments
     n = size(S, 1)
-    size(S, 2) == n || error("S must be a square matrix.")
-    n >= 2 || error("the number of data points must be at least 2.")
-    tol > 0 || error("tol must be a positive value.")
-    0 <= damp < 1 || error("damp must be a non-negative real value below 1.")
+    size(S, 2) == n || throw(ArgumentError("S must be a square matrix ($(size(S)) given)."))
+    n >= 2 || throw(ArgumentError("At least two data points are required ($n given)."))
+    tol > 0 || throw(ArgumentError("tol must be a positive value ($tol given)."))
+    0 <= damp < 1 || throw(ArgumentError("damp must be a non-negative real value below 1 ($damp given)."))
 
     # invoke core implementation
     _affinityprop(S, round(Int, maxiter), tol, convert(T, damp), display_level(display))

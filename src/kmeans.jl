@@ -52,7 +52,7 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
     dc, k = size(centers)
 
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
-    (2 <= k < n) || error("k must have 2 <= k < n.")
+    (2 <= k < n) || throw(ArgumentError("k must have 2 <= k < n=$n ($k given)."))
     if weights !== nothing
         length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
     end

@@ -3,6 +3,16 @@ using Clustering
 
 @testset "fuzzy_cmeans()" begin
 
+@testset "Argument checks" begin
+    Random.seed!(34568)
+    @test_throws ArgumentError fuzzy_cmeans(randn(2, 3), 1, 2.0)
+    @test_throws ArgumentError fuzzy_cmeans(randn(2, 3), 4, 2.0)
+    @test_throws ArgumentError fuzzy_cmeans(randn(2, 3), 2, 1.0)
+    for disp in keys(Clustering.DisplayLevels)
+        @test fuzzy_cmeans(randn(2, 3), 2, 2.0, tol=0.1, display=disp) isa FuzzyCMeansResult
+    end
+end
+
 Random.seed!(34568)
 
 m = 3

@@ -5,11 +5,17 @@ using Clustering
 
 @testset "MCL" begin
 
-Random.seed!(34568)
-
-@testset "nonsquare matrices not supported" begin
-    @test_throws DimensionMismatch mcl(zeros(Float64, 4, 3))
+@testset "Argument Checks" begin
+    Random.seed!(34568)
+    @test_throws DimensionMismatch mcl(zeros(Float64, 4, 3)) # nonsquare
+    adj = inv.(max.(pairwise(Euclidean(), randn(2, 3)), 0.1))
+    @test_throws ArgumentError mcl(zeros(Float64, 3, 3), display=:mylog)
+    for disp in keys(Clustering.DisplayLevels)
+        @test mcl(zeros(Float64, 3, 3), display=disp) isa MCLResult
+    end
 end
+
+Random.seed!(34568)
 
 # initialize adjacency matrix of a weighted graph
 nodes = [:bat, :bit, :cat, :fit, :hat, :hit]

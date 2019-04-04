@@ -88,8 +88,8 @@ function fuzzy_cmeans(
     ) where T<:Real
 
     nrows, ncols = size(data)
-    2 <= C < ncols || error("C must have 2 <= C < n")
-    1 < fuzziness || error("fuzziness must be greater than 1")
+    2 <= C < ncols || throw(ArgumentError("C must have 2 <= C < n=$ncols ($C given)"))
+    1 < fuzziness || throw(ArgumentError("fuzziness must be greater than 1 ($fuzziness given)"))
 
     _fuzzy_cmeans(data, C, fuzziness, maxiter, tol, dist_metric, display_level(display))
 

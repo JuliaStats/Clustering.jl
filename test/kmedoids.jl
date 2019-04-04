@@ -5,6 +5,18 @@ using Clustering
 
 @testset "kmedoids() (k-medoids)" begin
 
+@testset "Argument checks" begin
+    Random.seed!(34568)
+    @test_throws ArgumentError kmedoids(randn(2, 3), 1)
+    @test_throws ArgumentError kmedoids(randn(2, 3), 4)
+    costs = inv.(max.(pairwise(Euclidean(), randn(2, 3), dims=2), 0.1))
+    @test kmedoids(costs, 2) isa KmedoidsResult
+    @test_throws ArgumentError kmedoids(costs, 2, display=:mylog)
+    for disp in keys(Clustering.DisplayLevels)
+        @test kmedoids(costs, 2, display=disp) isa KmedoidsResult
+    end
+end
+
 Random.seed!(34568)
 
 d = 3

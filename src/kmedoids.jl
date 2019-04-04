@@ -65,8 +65,8 @@ function kmedoids(costs::DenseMatrix{T}, k::Integer;
                   display::Symbol=_kmed_default_display) where T<:Real
     # check arguments
     n = size(costs, 1)
-    size(costs, 2) == n || error("costs must be a square matrix.")
-    k <= n || error("Number of medoids should be less than n.")
+    size(costs, 2) == n || throw(ArgumentError("costs must be a square matrix ($(size(costs)) given)."))
+    k <= n || throw(ArgumentError("Requested number of medoids exceeds n=$n ($k given)."))
 
     # initialize medoids
     medoids = initseeds_by_costs(init, costs, k)::Vector{Int}
@@ -95,8 +95,10 @@ function kmedoids!(costs::DenseMatrix{T}, medoids::Vector{Int};
 
     # check arguments
     n = size(costs, 1)
-    size(costs, 2) == n || error("costs must be a square matrix.")
-    length(medoids) <= n || error("Number of medoids should be less than n.")
+    size(costs, 2) == n ||
+        throw(ArgumentError("costs must be a square matrix ($(size(costs)) given)."))
+    length(medoids) <= n ||
+        throw(ArgumentError("Requested number of medoids exceeds n=$n ($(length(medoids)) given)."))
 
     # invoke core algorithm
     _kmedoids!(medoids, costs,
