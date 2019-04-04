@@ -4,6 +4,15 @@ using Distances
 
 @testset "dbscan() (DBSCAN clustering)" begin
 
+@testset "Argument checks" begin
+    Random.seed!(34568)
+    @test_throws ArgumentError dbscan(randn(2, 3), 1.0, 1)
+    @test_throws ArgumentError dbscan(randn(1, 1), 1.0, 1)
+    @test_throws ArgumentError dbscan(randn(2, 2), 0.0, 1)
+    @test_throws ArgumentError dbscan(randn(2, 2), 1.0, 0)
+    @test dbscan(randn(2, 2), 0.5, 1) isa DbscanResult
+end
+
 Random.seed!(34568)
 
 X1 = randn(2, 200) .+ [0., 5.]

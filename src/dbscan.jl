@@ -57,10 +57,10 @@ The following options control which points would be considered
 function dbscan(D::DenseMatrix{T}, eps::Real, minpts::Int) where T<:Real
     # check arguments
     n = size(D, 1)
-    size(D, 2) == n || error("D must be a square matrix.")
-    n >= 2 || error("There must be at least two points.")
-    eps > 0 || error("eps must be a positive real value.")
-    minpts >= 1 || error("minpts must be a positive integer.")
+    size(D, 2) == n || throw(ArgumentError("D must be a square matrix ($(size(D)) given)."))
+    n >= 2 || throw(ArgumentError("At least two data points are required ($n given)."))
+    eps > 0 || throw(ArgumentError("eps must be a positive value ($eps given)."))
+    minpts >= 1 || throw(ArgumentError("minpts must be positive integer ($minpts given)."))
 
     # invoke core algorithm
     _dbscan(D, convert(T, eps), minpts, 1:n)
