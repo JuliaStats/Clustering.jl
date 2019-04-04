@@ -39,13 +39,11 @@ assignments(R::ClusteringResult) = R.assignments
 
 
 ##### convert display symbol to disp level
+const DisplayLevels = Dict(:none => 0, :final => 1, :iter => 2)
 
-display_level(s::Symbol) =
-    s == :none ? 0 :
-    s == :final ? 1 :
-    s == :iter ? 2 :
-    error("Invalid value for the option 'display'.")
-
+display_level(s::Symbol) = get(DisplayLevels, s) do
+    throw(ArgumentError("Invalid value for the 'display' option: $s."))
+end
 
 ##### update minimum value
 
