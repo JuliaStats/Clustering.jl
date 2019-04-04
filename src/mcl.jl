@@ -138,7 +138,7 @@ Keyword arguments to control the MCL algorithm:
    equilibrium state in the `mcl_adj` field of the result; could provide useful
    diagnostic if the method doesn't converge
  - `prune_tol::Number`: pruning threshold
- - `display`, `max_iter`, `tol`: see [common options](@ref common_options)
+ - `display`, `maxiter`, `tol`: see [common options](@ref common_options)
 
 # References
 > Stijn van Dongen, *"Graph clustering by flow simulation"*, 2001
@@ -150,10 +150,18 @@ function mcl(adj::AbstractMatrix{T};
              expansion::Number = 2, inflation::Number = 2,
              save_final_matrix::Bool = false,
              allow_singles::Bool = true,
-             max_iter::Integer = 100, tol::Number=1.0e-5,
+             max_iter::Union{Integer, Nothing} = nothing,
+             maxiter::Integer = 100, tol::Number=1.0e-5,
              prune_tol::Number=1.0e-5, display::Symbol=:none) where T<:Real
     m, n = size(adj)
     m == n || throw(DimensionMismatch("Square adjacency matrix expected"))
+
+    # FIXME max_iter is deprecated as of 0.13.1
+    if max_iter !== nothing
+        Base.depwarn("max_iter parameter is deprecated, use maxiter instead",
+                     Symbol("mcl"))
+        maxiter = max_iter
+    end
 
     # FIXME :verbose is deprecated as of 0.13.1
     if display == :verbose
@@ -184,7 +192,7 @@ function mcl(adj::AbstractMatrix{T};
     niter = 0
     converged = false
     rel_delta = NaN
-    while !converged && niter < max_iter
+    while !converged && niter < maxiter
         expanded = _mcl_expand(mcl_adj, expansion)
         _mcl_inflate!(next_mcl_adj, expanded, inflation)
         _mcl_prune!(next_mcl_adj, prune_tol)
