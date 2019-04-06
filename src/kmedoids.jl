@@ -42,8 +42,8 @@ const _kmed_default_display = :none
     kmedoids(costs::DenseMatrix, k::Integer; ...) -> KmedoidsResult
 
 Perform K-medoids clustering of ``n`` points into `k` clusters,
-given the `costs` matrix (``n×n``, ``\\mathrm{costs}_{ij}`` is the cost of
-assigning ``j``-th point to the mediod represented by the ``i``-th point).
+given the `costs` matrix (``n×n``, `costs[i, j]` is the cost of
+assigning `j`-th point to the medoid represented by the `i`-th point).
 
 # Note
 This package implements a K-means style algorithm instead of PAM, which
@@ -82,6 +82,9 @@ end
               [kwargs...]) -> KmedoidsResult
 
 Update the current cluster `medoids` using the `costs` matrix.
+
+The `medoids` field of the returned `KmedoidsResult` points to the same array
+as `medoids` argument.
 
 See [`kmedoids`](@ref) for the description of optional `kwargs`.
 """

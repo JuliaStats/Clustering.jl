@@ -642,6 +642,8 @@ end
 Perform hierarchical clustering using the distance matrix `d` and
 the cluster `linkage` function.
 
+Returns the dendrogram as a [`Hclust`](@ref) object.
+
 # Arguments
  - `d::AbstractMatrix`: the pairwise distance matrix. ``d_{ij}`` is the distance
     between ``i``-th and ``j``-th points.
