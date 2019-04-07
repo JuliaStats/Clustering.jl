@@ -1,6 +1,8 @@
 # MCL (Markov CLustering algorithm)
 
 """
+    MCLResult <: ClusteringResult
+
 The output of [`mcl`](@ref) function.
 
 # Fields
@@ -121,14 +123,13 @@ function _mcl_prune!(mtx::AbstractMatrix, prune_tol::Number)
 end
 
 """
-    mcl(adj::AbstractMatrix; [kwargs...])
+    mcl(adj::AbstractMatrix; [kwargs...]) -> MCLResult
 
 Perform MCL (Markov Cluster Algorithm) clustering using ``n×n``
 adjacency (points similarity) matrix `adj`.
 
-Returns [`MCLResult`](@ref) object.
-
-# Algorithm Options
+# Arguments
+Keyword arguments to control the MCL algorithm:
  - `add_loops::Bool` (enabled by default): whether the edges of weight 1.0
    from the node to itself should be appended to the graph
  - `expansion::Number` (defaults to 2): MCL *expansion* constant
@@ -141,7 +142,7 @@ Returns [`MCLResult`](@ref) object.
    for diagnostic messages
  - `max_iter`, `tol`: see [common options](@ref common_options)
 
-### References
+# References
 > Stijn van Dongen, *"Graph clustering by flow simulation"*, 2001
 
 > [Original MCL implementation](http://micans.org/mcl).

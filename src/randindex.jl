@@ -1,5 +1,5 @@
 """
-    randindex(c1, c2)
+    randindex(c1, c2) -> NTuple{4, Float64}
 
 Compute the tuple of Rand-related indices between the clusterings `c1` and `c2`.
 
@@ -11,6 +11,13 @@ Returns a tuple of indices:
   - Rand index
   - Mirkin's index
   - Hubert's index
+
+# References
+> Lawrence Hubert and Phipps Arabie (1985). *Comparing partitions.*
+> Journal of Classification 2 (1): 193–218
+
+> Meila, Marina (2003). *Comparing Clusterings by the Variation of
+> Information.* Learning Theory and Kernel Machines: 173–187.
 """
 function randindex(c1,c2)
     c = counts(c1,c2,(1:maximum(c1),1:maximum(c2))) # form contingency matrix

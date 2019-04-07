@@ -3,11 +3,7 @@
 [Silhouettes](http://en.wikipedia.org/wiki/Silhouette_(clustering)) is
 a method for evaluating the quality of clustering. Particularly, it provides a
 quantitative way to measure how well each point lies within its cluster in
-comparison to the other clusters. It was introduced in
-
-> Peter J. Rousseeuw (1987). *Silhouettes: a Graphical Aid to the
-> Interpretation and Validation of Cluster Analysis*. Computational and
-> Applied Mathematics. 20: 53–65.
+comparison to the other clusters.
 
 The *Silhouette* value for the ``i``-th data point is:
 ```math

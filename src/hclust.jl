@@ -4,6 +4,8 @@
 ## Algorithms are based upon C. F. Olson, Parallel Computing 21 (1995) 1313--1325.
 
 """
+    Hclust{T<:Real}
+
 The output of [`hclust`](@ref), hierarchical clustering of data points.
 
 Provides the bottom-up definition of the dendrogram as the sequence of
@@ -244,6 +246,8 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
 end
 
 """
+    ReducibleMetric{T<:Real}
+
 Base type for _reducible_ Lance–Williams cluster metrics.
 
 The metric `d` is called _reducible_ if for any clusters `A`, `B` and `C` and
@@ -262,6 +266,8 @@ formula that defines `d(A∪B, C)` using `d(A, C)`, `d(B, C)` and `d(A, B)`.
 abstract type ReducibleMetric{T <: Real} end
 
 """
+    MinimalDistance <: ReducibleMetric
+
 Distance between the clusters is the minimal distance between any pair of their
 points.
 """
@@ -278,6 +284,8 @@ end
     (d[k, i] > d_kj) && (d[k, i] = d_kj)
 
 """
+    WardDistance <: ReducibleMetric
+
 Ward distance between the two clusters `A` and `B` is the amount by
 which merging the two clusters into a single larger cluster `A∪B` would increase
 the average squared distance of a point to its cluster centroid.
@@ -297,6 +305,8 @@ end
 end
 
 """
+    AverageDistance <: ReducibleMetric
+
 Average distance between a pair of points from each clusters.
 """
 struct AverageDistance{T} <: ReducibleMetric{T}
@@ -314,7 +324,9 @@ end
 end
 
 """
-Maximum distance between a pair of point from each clusters.
+    MaximumDistance <: ReducibleMetric
+
+Maximum distance between a pair of points from each clusters.
 """
 struct MaximumDistance{T} <: ReducibleMetric{T}
     MaximumDistance(d::AbstractMatrix{T}) where T<:Real = new{T}()
@@ -625,12 +637,12 @@ function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:R
 end
 
 """
-    hclust(d::AbstractMatrix; [linkage], [uplo])
+    hclust(d::AbstractMatrix; [linkage], [uplo]) -> Hclust
 
 Perform hierarchical clustering using the distance matrix `d` and
 the cluster `linkage` function.
 
-Returns the dendrogram as an object of type [`Hclust`](@ref).
+Returns the dendrogram as a [`Hclust`](@ref) object.
 
 # Arguments
  - `d::AbstractMatrix`: the pairwise distance matrix. ``d_{ij}`` is the distance
@@ -685,9 +697,9 @@ end
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)
 
 """
-    cutree(hclu::Hclust; [k], [h])
+    cutree(hclu::Hclust; [k], [h]) -> Vector{Int}
 
-Cuts the `hclu` dendrogram to produce clusters at the specified level of
+Cut the `hclu` dendrogram to produce clusters at the specified level of
 granularity.
 
 Returns the cluster assignments vector ``z`` (``z_i`` is the index of the

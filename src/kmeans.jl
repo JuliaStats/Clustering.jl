@@ -7,9 +7,14 @@
 # WC is the type of cluster weights, either Int (in the case where points are
 # unweighted) or eltype(weights) (in the case where points are weighted).
 """
-The output of K-means algorithm.
+    KmeansResult{C,D<:Real,WC<:Real} <: ClusteringResult
 
-See also: [`kmeans`](@ref), [`kmeans!`](@ref).
+The output of [`kmeans`](@ref) and [`kmeans!`](@ref).
+
+# Type parameters
+ * `C<:AbstractMatrix{<:AbstractFloat}`: type of the `centers` matrix
+ * `D<:Real`: type of the assignment cost
+ * `WC<:Real`: type of the cluster weight
 """
 struct KmeansResult{C<:AbstractMatrix{<:AbstractFloat},D<:Real,WC<:Real} <: ClusteringResult
     centers::C                 # cluster centers (d x k)
@@ -28,13 +33,11 @@ const _kmeans_default_tol = 1.0e-6
 const _kmeans_default_display = :none
 
 """
-    kmeans!(X, centers; [kwargs...])
+    kmeans!(X, centers; [kwargs...]) -> KmeansResult
 
 Update the current cluster `centers` (``d×k`` matrix, where ``d`` is the
 dimension and ``k`` the number of centroids) using the ``d×n`` data
 matrix `X` (each column of `X` is a ``d``-dimensional data point).
-
-Returns `KmeansResult` object.
 
 See [`kmeans`](@ref) for the description of optional `kwargs`.
 """
@@ -60,14 +63,12 @@ end
 
 
 """
-    kmeans(X, k, [...])
+    kmeans(X, k, [...]) -> KmeansResult
 
 K-means clustering of the ``d×n`` data matrix `X` (each column of `X`
 is a ``d``-dimensional data point) into `k` clusters.
 
-Returns `KmeansResult` object.
-
-# Algorithm Options
+# Arguments
  - `init` (defaults to `:kmpp`): how cluster seeds should be initialized, could
    be one of the following:
    * a `Symbol`, the name of a seeding algorithm (see [Seeding](@ref) for a list
