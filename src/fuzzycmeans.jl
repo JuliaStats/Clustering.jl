@@ -3,7 +3,7 @@
 ## Interface
 
 """
-    FuzzyCMeansResult{T<:AbstractFloat} <: ClusteringResult
+    FuzzyCMeansResult{T<:AbstractFloat}
 
 The output of [`fuzzy_cmeans`](@ref) function.
 
@@ -16,7 +16,7 @@ The output of [`fuzzy_cmeans`](@ref) function.
 - `iterations::Int`: the number of executed algorithm iterations
 - `converged::Bool`: whether the procedure converged
 """
-struct FuzzyCMeansResult{T<:AbstractFloat} <: ClusteringResult
+struct FuzzyCMeansResult{T<:AbstractFloat}
     centers::Matrix{T}          # cluster centers (d x C)
     weights::Matrix{Float64}    # assigned weights (n x C)
     iterations::Int             # number of elasped iterations
