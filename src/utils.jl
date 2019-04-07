@@ -29,6 +29,7 @@ counts(R::ClusteringResult) = R.counts
 
 """
     wcounts(R::ClusteringResult) -> Vector{Float64}
+    wcounts(R::FuzzyCMeansResult) -> Vector{Float64}
 
 Get the weighted cluster sizes as the sum of weights of points assigned to each
 cluster.

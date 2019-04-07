@@ -23,6 +23,10 @@ struct FuzzyCMeansResult{T<:AbstractFloat}
     converged::Bool             # whether the procedure converged
 end
 
+nclusters(R::FuzzyCMeansResult) = size(R.centers, 2)
+
+wcounts(R::FuzzyCMeansResult) = dropdims(sum(R.weights, dims=2), dims=2)
+
 ## Utility functions
 
 function update_weights!(weights, data, centers, fuzziness, dist_metric)
