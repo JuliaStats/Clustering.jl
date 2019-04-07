@@ -51,5 +51,6 @@ The following generic methods are supported by any subtype of `ClusteringResult`
 ```@docs
 nclusters(::ClusteringResult)
 counts(::ClusteringResult)
+wcounts(::ClusteringResult)
 assignments(::ClusteringResult)
 ```

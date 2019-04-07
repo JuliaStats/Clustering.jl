@@ -55,7 +55,7 @@ equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
     @test length(r.costs) == n
     @test length(counts(r)) == k
     @test sum(counts(r)) == n
-    @test r.cweights == counts(r)
+    @test wcounts(r) == counts(r)
     @test sum(r.costs) ≈ r.totalcost
 
     Random.seed!(34568)
@@ -76,7 +76,7 @@ end
     @test length(r.costs) == n
     @test length(counts(r)) == k
     @test sum(counts(r)) == n
-    @test r.cweights == counts(r)
+    @test wcounts(r) == counts(r)
     @test sum(r.costs) ≈ r.totalcost
 
     Random.seed!(34568)
@@ -101,7 +101,7 @@ end
     for i = 1:n
         cw[r.assignments[i]] += w[i]
     end
-    @test r.cweights ≈ cw
+    @test wcounts(r) ≈ cw
     @test dot(r.costs, w) ≈ r.totalcost
 
     Random.seed!(34568)
@@ -121,7 +121,7 @@ end
     @test length(r.costs) == n
     @test length(counts(r)) == k
     @test sum(counts(r)) == n
-    @test r.cweights == counts(r)
+    @test wcounts(r) == r.counts
     @test sum(r.costs) ≈ r.totalcost
     @test equal_kmresults(r, r2)
 

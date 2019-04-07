@@ -27,6 +27,8 @@ struct KmeansResult{C<:AbstractMatrix{<:AbstractFloat},D<:Real,WC<:Real} <: Clus
     converged::Bool            # whether the procedure converged
 end
 
+wcounts(clu::KmeansResult) = clu.cweights
+
 const _kmeans_default_init = :kmpp
 const _kmeans_default_maxiter = 100
 const _kmeans_default_tol = 1.0e-6
