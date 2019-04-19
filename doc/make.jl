@@ -18,14 +18,7 @@ makedocs(
             "dbscan.md",
             "fuzzycmeans.md",
         ],
-        "Evaluation & Validation" => [
-            "validate.md",
-            "counts.md",
-            "silhouette.md",
-            "randindex.md",
-            "varinfo.md",
-            "vmeasure.md",
-        ]
+        "validate.md",
     ],
 )
 
