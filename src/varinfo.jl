@@ -1,72 +1,29 @@
 # Variation of Information
 
 """
-    varinfo(k1::Int, a1::AbstractVector{Int}, k2::Int, a2::AbstractVector{Int}) -> Float64
-    varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}) -> Float64
-    varinfo(R1::ClusteringResult, R2::ClusteringResult) -> Float64
+    varinfo(a, b) -> Float64
 
-Compute the variation of information between the two clusterings.
+Compute the *variation of information* between the two clusterings of the same
+data points.
 
-Each clustering is provided either as an instance of [`ClusteringResult`](@ref)
-subtype or as a pair of arguments:
- - a number of clusters (`k1`, `k2`, `k0`)
- - a vector of point to cluster assignments (`a1`, `a2`, `a0`).
+`a` and `b` can be either [`ClusteringResult`](@ref) instances or
+assignments vectors (`AbstractVector{<:Integer}`).
 
 # References
 > Meila, Marina (2003). *Comparing Clusterings by the Variation of
 > Information.* Learning Theory and Kernel Machines: 173–187.
 """
-function varinfo(k1::Int, a1::AbstractVector{Int},
-                 k2::Int, a2::AbstractVector{Int})
-
-    # check input arguments
-    n = length(a1)
-    length(a2) == n || throw(DimensionMismatch("Inconsistent array length."))
-
-    # count & compute probabilities
-    p1 = zeros(k1)
-    p2 = zeros(k2)
-    P = zeros(k1, k2)
-
-    for i = 1:n
-        @inbounds l1 = a1[i]
-        @inbounds l2 = a2[i]
-        p1[l1] += 1.0
-        p2[l2] += 1.0
-        P[l1, l2] += 1.0
-    end
-
-    for i = 1:k1
-        @inbounds p1[i] /= n
-    end
-    for i = 1:k2
-        @inbounds p2[i] /= n
-    end
-    for i = 1:(k1*k2)
-        @inbounds P[i] /= n
-    end
-
-    # compute variation of information
-
-    H1 = entropy(p1)
-    H2 = entropy(p2)
-
+function varinfo(a, b)
+    C = counts(a, b)
+    isempty(C) && return 0.0
+    countsA = a isa ClusteringResult ? counts(a) : sum(C, dims=2)
+    countsB = b isa ClusteringResult ? counts(b) : sum(C, dims=1)
     I = 0.0
-    for j = 1:k2, i = 1:k1
-        pi = p1[i]
-        pj = p2[j]
-        pij = P[i,j]
-        if pij > 0.0
-            I += pij * log(pij / (pi * pj))
+    @inbounds for (i, ci) in enumerate(countsA), (j, cj) in enumerate(countsB)
+        cij = C[i, j]
+        if cij > 0.0
+            I += cij * log(cij*cij / (ci*cj))
         end
     end
-
-    return H1 + H2 - I * 2.0
+    return -I/sum(countsA)
 end
-
-varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}) =
-    varinfo(nclusters(R), assignments(R), k0, a0)
-
-varinfo(R1::ClusteringResult, R2::ClusteringResult) =
-    varinfo(nclusters(R1), assignments(R1),
-            nclusters(R2), assignments(R2))
