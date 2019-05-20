@@ -25,11 +25,11 @@ function _vmeasure(A::AbstractMatrix{<:Integer}; β::Real)
 end
 
 """
-    vmeasure(assign1, assign2; [β = 1.0]) -> Float64
+    vmeasure(a, b; [β = 1.0]) -> Float64
 
-V-measure between two clustering assignments.
+V-measure between the two clusterings.
 
-`assign1` and `assign2` can be either [`ClusteringResult`](@ref) instances or
+`a` and `b` can be either [`ClusteringResult`](@ref) instances or
 assignments vectors (`AbstractVector{<:Integer}`).
 
 The `β` parameter defines trade-off between _homogeneity_ and _completeness_:
@@ -40,11 +40,4 @@ The `β` parameter defines trade-off between _homogeneity_ and _completeness_:
 > Andrew Rosenberg and Julia Hirschberg, 2007. *V-Measure: A conditional
 > entropy-based external cluster evaluation measure*
 """
-function vmeasure(assign1::Union{AbstractVector{<:Integer}, ClusteringResult},
-                  assign2::Union{AbstractVector{<:Integer}, ClusteringResult};
-                  β::Real = 1.0)
-    _assign1 = isa(assign1, AbstractVector) ? assign1 : assignments(assign1)
-    _assign2 = isa(assign2, AbstractVector) ? assign2 : assignments(assign2)
-    return _vmeasure(counts(_assign1, _assign2,
-                            (1:maximum(_assign1), 1:maximum(_assign2))), β=β)
-end
+vmeasure(a, b; β::Real = 1.0) = _vmeasure(counts(a, b), β=float(β))
