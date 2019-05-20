@@ -42,6 +42,9 @@ module Clustering
     # fuzzy_cmeans
     fuzzy_cmeans, FuzzyCMeansResult,
 
+    # counts
+    counts, # reexport StatsBase.counts
+
     # silhouette
     silhouettes,
 
@@ -72,6 +75,7 @@ module Clustering
     include("mcl.jl")
     include("fuzzycmeans.jl")
 
+    include("counts.jl")
     include("silhouette.jl")
     include("randindex.jl")
     include("varinfo.jl")

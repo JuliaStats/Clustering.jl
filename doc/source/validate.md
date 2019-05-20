@@ -4,5 +4,6 @@
 a clustering algorithm and/or to validate its correctness:
 
 ```@contents
-Pages=["silhouette.md", "varinfo.md", "randindex.md", "vmeasure.md"]
+Pages=["silhouette.md",
+       "counts.md", "varinfo.md", "randindex.md", "vmeasure.md"]
 ```

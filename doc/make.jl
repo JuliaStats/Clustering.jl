@@ -20,6 +20,7 @@ makedocs(
         ],
         "Evaluation & Validation" => [
             "validate.md",
+            "counts.md",
             "silhouette.md",
             "randindex.md",
             "varinfo.md",
