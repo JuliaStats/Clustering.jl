@@ -805,41 +805,30 @@ comparisons.
 Based on:
 [Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
 """
-function optimalorder(hc::Hclust, dm::Array{Float64,2})
-    ord = deepcopy(hc)
-    optimalorder!(ord, dm)
-    return ord
-end
-
-
-function optimalorder!(hc::Hclust, dm::Array{Float64,2})
-    ord = hc.order
-    orderleaves!(ord, hc, dm)
-end
 
 """
     orderleaves!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
 
 
 """
-function orderleaves!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
+function orderleaves!(hcl::Hclust, dm::Array{Float64,2})
     extents = Tuple{Int,Int}[]
     for v in axes(hcl.merges, 1)
         vl, vr = hcl.merges[v, 1], hcl.merges[v, 2]
 
-        (u, m, uidx, midx) = leaflocs(vl, order, extents)
-        (k, w, kidx, widx) = leaflocs(vr, order, extents)
+        (u, m, uidx, midx) = leaflocs(vl, hcl.order, extents)
+        (k, w, kidx, widx) = leaflocs(vr, hcl.order, extents)
         if vl < 0 && vr < 0
             # Nothing needs to be done
         elseif vl < 0
             # check
-            dm[m,k] > dm[m,w] && reverse!(order, uidx, midx)
+            dm[m,k] > dm[m,w] && reverse!(hcl.order, uidx, midx)
         elseif vr < 0
-            dm[k,m] > dm[k,u] && reverse!(order, uidx, midx)
+            dm[k,m] > dm[k,u] && reverse!(hcl.order, uidx, midx)
         elseif vl > 0 && vr > 0
             flp = argmin((dm[m,k], dm[u,k], dm[m,w], dm[u,w]))
-            (flp == 2 || flp == 4) && reverse!(order, uidx, midx)
-            (flp == 3 || flp == 4) && reverse!(order, kidx, widx)
+            (flp == 2 || flp == 4) && reverse!(hcl.order, uidx, midx)
+            (flp == 3 || flp == 4) && reverse!(hcl.order, kidx, widx)
         else
             error("invalid 'merge' order in Hclust: ($vl, $vr) ")
         end
