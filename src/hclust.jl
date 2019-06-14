@@ -817,22 +817,27 @@ function optimalorder!(hc::Hclust, dm::Array{Float64,2})
     orderleaves!(ord, hc, dm)
 end
 
+"""
+    orderleaves!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
 
+
+"""
 function orderleaves!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
     extents = Tuple{Int,Int}[]
-    for (vl, vr) in zip(hcl.merges[:,1], hcl.merges[:,2])
+    for v in axes(hcl.merges, 1)
+        vl, vr = hcl.merges[v, 1], hcl.merges[v, 2]
+
         (u, m, uidx, midx) = leaflocs(vl, order, extents)
         (k, w, kidx, widx) = leaflocs(vr, order, extents)
         if vl < 0 && vr < 0
             # Nothing needs to be done
         elseif vl < 0
-            flp = flip1(m, k, w, dm)
-            flp == 2 && reverse!(order, kidx, widx)
+            # check
+            dm[m,k] > dm[m,w] && reverse!(order, uidx, midx)
         elseif vr < 0
-            flp = flip1(k, m, u, dm)
-            flp == 2 && reverse!(order, uidx, midx)
+            dm[k,m] > dm[k,u] && reverse!(order, uidx, midx)
         elseif vl > 0 && vr > 0
-            flp = flip2(u, m, k, w, dm)
+            flp = argmin((dm[m,k], dm[u,k], dm[m,w], dm[u,w]))
             (flp == 2 || flp == 4) && reverse!(order, uidx, midx)
             (flp == 3 || flp == 4) && reverse!(order, kidx, widx)
         else
@@ -842,21 +847,27 @@ function orderleaves!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
     end
 end
 
+"""
+    leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
 
+`v`: vertex - may be a leaf (negative numbers) or a merge index
+`order`: Vector of leaf positions, same as hclust.order
+`extents`: tuples of the order indices for outermost leaves for each merge
+
+Returns the `order` values and indices of the extents for a given `v`.
+If `v` is a leaf, left and right extents will be the same.
+"""
 function leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
-    ##################
     if v < 0
-        leftextent = findfirst(abs(v) .== order)
-        rightextent = leftextent
+        leftextent = rightextent = findfirst(isequal(-v), order)
     elseif v > 0
         leftextent = extents[v][1]
         rightextent = extents[v][2]
     else
         error("leaf position cannot be zero")
     end
-    left = order[leftextent]
-    right = order[rightextent]
-    return left, right, leftextent, rightextent
+
+    return order[leftextent], order[rightextent], leftextent, rightextent
 end
 
 
