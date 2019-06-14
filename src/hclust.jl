@@ -821,11 +821,17 @@ function orderleaves!(hcl::Hclust, dm::Array{Float64,2})
         if vl < 0 && vr < 0
             # Nothing needs to be done
         elseif vl < 0
-            # check
+            # check if flipping would reduce distance
             dm[m,k] > dm[m,w] && reverse!(hcl.order, uidx, midx)
+
         elseif vr < 0
             dm[k,m] > dm[k,u] && reverse!(hcl.order, uidx, midx)
         elseif vl > 0 && vr > 0
+            # For 2 multi-leaf branches, determine if one or two flips is required
+            # 1 = do not flip
+            # 2 = flip left
+            # 3 = flip right
+            # 4 = flip both
             flp = argmin((dm[m,k], dm[u,k], dm[m,w], dm[u,w]))
             (flp == 2 || flp == 4) && reverse!(hcl.order, uidx, midx)
             (flp == 3 || flp == 4) && reverse!(hcl.order, kidx, widx)
@@ -857,26 +863,4 @@ function leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
     end
 
     return order[leftextent], order[rightextent], leftextent, rightextent
-end
-
-
-
-"""
-For 1 multi-leaf branch and a leaf, determine if flipping branch is required
-1 = do not flip
-2 = flip right
-"""
-function flip1(m::Int, k::Int, w::Int, dm::Array{Float64,2})
-    dm[m,k] <= dm[m,w] ? 1 : 2
-end
-
-"""
-For 2 multi-leaf branches, determine if one or two flips is required
-1 = do not flip
-2 = flip left
-3 = flip right
-4 = flip both
-"""
-function flip2(u::Int, m::Int, k::Int, w::Int, dm::Array{Float64,2})
-    argmin([dm[m,k], dm[u,k], dm[m,w], dm[u,w]])
 end
