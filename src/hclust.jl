@@ -509,7 +509,7 @@ end
 
 ## reorders the tree merges by the height of resulting trees
 ## (to be compatible with R's hclust())
-function rorder!(hmer::HclustMerges)
+function orderleaves_r!(hmer::HclustMerges)
     o = sortperm(hmer.heights)
     io = invperm(o)
     ml = hmer.mleft
@@ -590,7 +590,7 @@ function hclust_nn(d::AbstractMatrix, linkage::Function)
         end
         isempty(NN) && push!(NN, 1) # restart NN chain
     end
-    return rorder!(htre.merges)
+    return orderleaves_r!(htre.merges)
 end
 
 ## Nearest neighbor chain algorithm for reducible Lance-Williams metrics.
@@ -633,7 +633,7 @@ function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:R
         end
         isempty(NN) && push!(NN, 1) # restart NN chain
     end
-    return rorder!(htre.merges)
+    return orderleaves_r!(htre.merges)
 end
 
 """
@@ -790,7 +790,7 @@ end
 
 
 """
-    optimalorder(hc::Hclust, dm::Array{Float64,2})
+    orderleaves!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
 
 Given a hierarchical cluster and the distance matrix used to generate it,
 use fast algorithm to determine optimal leaf order minimizing the distance
@@ -805,13 +805,7 @@ comparisons.
 Based on:
 [Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
 """
-
-"""
-    orderleaves!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
-
-
-"""
-function orderleaves!(hcl::Hclust, dm::Array{Float64,2})
+function orderleaves_barjoseph!(hcl::Hclust, dm::Array{Float64,2})
     extents = Tuple{Int,Int}[]
     for v in axes(hcl.merges, 1)
         vl, vr = hcl.merges[v, 1], hcl.merges[v, 2]
