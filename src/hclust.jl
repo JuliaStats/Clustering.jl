@@ -531,6 +531,77 @@ function orderleaves_r!(hmer::HclustMerges)
     return hmer
 end
 
+"""
+    orderleaves_barjoseph!!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
+
+Given a hierarchical cluster and the distance matrix used to generate it,
+use fast algorithm to determine optimal leaf order minimizing the distance
+between adjacent leaves. This is done using a heuristic where,
+when combining multi-leaf sub branches, only the outermost leaves are
+compared (a maximum of 4 comparisons per intersection).
+
+Sub branches are flipped if necessary to minimize the distance between adjacent
+nodes, and then the combined branches are treated as a block for future
+comparisons.
+
+Based on:
+[Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
+"""
+function orderleaves_barjoseph!(hcl::Hclust, dm::Array{Float64,2})
+    extents = Tuple{Int,Int}[]
+    for v in axes(hcl.merges, 1)
+        vl, vr = hcl.merges[v, 1], hcl.merges[v, 2]
+
+        (u, m, uidx, midx) = leaflocs(vl, hcl.order, extents)
+        (k, w, kidx, widx) = leaflocs(vr, hcl.order, extents)
+        if vl < 0 && vr < 0
+            # Nothing needs to be done
+        elseif vl < 0
+            # check if flipping would reduce distance
+            dm[m,k] > dm[m,w] && reverse!(hcl.order, uidx, midx)
+
+        elseif vr < 0
+            dm[k,m] > dm[k,u] && reverse!(hcl.order, uidx, midx)
+        elseif vl > 0 && vr > 0
+            # For 2 multi-leaf branches, determine if one or two flips is required
+            # 1 = do not flip
+            # 2 = flip left
+            # 3 = flip right
+            # 4 = flip both
+            flp = argmin((dm[m,k], dm[u,k], dm[m,w], dm[u,w]))
+            (flp == 2 || flp == 4) && reverse!(hcl.order, uidx, midx)
+            (flp == 3 || flp == 4) && reverse!(hcl.order, kidx, widx)
+        else
+            error("invalid 'merge' order in Hclust: ($vl, $vr) ")
+        end
+        push!(extents, (uidx, widx))
+    end
+end
+
+"""
+    leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
+
+`v`: vertex - may be a leaf (negative numbers) or a merge index
+`order`: Vector of leaf positions, same as hclust.order
+`extents`: tuples of the order indices for outermost leaves for each merge
+
+Returns the `order` values and indices of the extents for a given `v`.
+If `v` is a leaf, left and right extents will be the same.
+"""
+function leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
+    if v < 0
+        leftextent = rightextent = findfirst(isequal(-v), order)
+    elseif v > 0
+        leftextent = extents[v][1]
+        rightextent = extents[v][2]
+    else
+        error("leaf position cannot be zero")
+    end
+
+    return order[leftextent], order[rightextent], leftextent, rightextent
+end
+
+
 ## Another nearest neighbor algorithm, for reducible metrics
 ## From C. F. Olson, Parallel Computing 21 (1995) 1313--1325, fig 5
 ## Verfied against R implementation for mean and maximum, correct but ~ 5x slower
@@ -543,7 +614,7 @@ end
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
 ##   merge c[i] and nearest neighbor c[i]
 ##   if i>3 i -= 3 else i <- 1
-function hclust_nn(d::AbstractMatrix, linkage::Function)
+function hclust_nn(d::AbstractMatrix, linkage::Function, leaforder=:r)
     T = eltype(linkage(d, 1:0, 1:0))
     htre = HclustTrees{T}(size(d, 1))
     onerow = [0]  # placeholder for a leaf node of cl_i
@@ -597,7 +668,7 @@ end
 ## In comparison to hclust_nn() maintains the upper-triangular matrix
 ## of cluster-cluster distances, so it requires O(N²) memory, but it's faster,
 ## because distance calculation is more efficient.
-function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:Real}
+function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}, leaforder=:r) where {T<:Real}
     dd = copyto!(Matrix{T}(undef, size(d)...), d)
     htre = HclustTrees{T}(size(d, 1))
     NN = [1]      # nearest neighbors chain of tree indices, init by random tree index
@@ -637,7 +708,7 @@ function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:R
 end
 
 """
-    hclust(d::AbstractMatrix; [linkage], [uplo]) -> Hclust
+    hclust(d::AbstractMatrix; [linkage], [uplo], [leaforder]) -> Hclust
 
 Perform hierarchical clustering using the distance matrix `d` and
 the cluster `linkage` function.
@@ -662,9 +733,16 @@ Returns the dendrogram as a [`Hclust`](@ref) object.
  - `uplo::Symbol` (optional): specifies whether the upper (`:U`) or the
    lower (`:L`) triangle of `d` should be used to get the distances.
    If not specified, the method expects `d` to be symmetric.
+- `leaforder::Symbol` (optional): algorithm to determine ordering of leaves.
+   The valid choices are:
+   * `:r` (the default): ordered based on the height of merges (compatible) with
+     R's `hclust`
+   * `:barjoseph`: leaves are ordered to reduce the distance between neighboring
+     leaves from separate branches using the "fast optimal leaf ordering" algorithm
+     from Bar-Joseph et. al. _Bioinformatics_ (2001)
 """
 function hclust(d::AbstractMatrix; linkage::Symbol = :single,
-                uplo::Union{Symbol, Nothing} = nothing)
+                uplo::Union{Symbol, Nothing} = nothing, leaforder=:r)
     if uplo !== nothing
         sd = Symmetric(d, uplo) # use upper/lower part of d
     else
@@ -786,75 +864,4 @@ function printupper(d::Matrix)
         end
         println()
     end
-end
-
-
-"""
-    orderleaves!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
-
-Given a hierarchical cluster and the distance matrix used to generate it,
-use fast algorithm to determine optimal leaf order minimizing the distance
-between adjacent leaves. This is done using a heuristic where,
-when combining multi-leaf sub branches, only the outermost leaves are
-compared (a maximum of 4 comparisons per intersection).
-
-Sub branches are flipped if necessary to minimize the distance between adjacent
-nodes, and then the combined branches are treated as a block for future
-comparisons.
-
-Based on:
-[Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
-"""
-function orderleaves_barjoseph!(hcl::Hclust, dm::Array{Float64,2})
-    extents = Tuple{Int,Int}[]
-    for v in axes(hcl.merges, 1)
-        vl, vr = hcl.merges[v, 1], hcl.merges[v, 2]
-
-        (u, m, uidx, midx) = leaflocs(vl, hcl.order, extents)
-        (k, w, kidx, widx) = leaflocs(vr, hcl.order, extents)
-        if vl < 0 && vr < 0
-            # Nothing needs to be done
-        elseif vl < 0
-            # check if flipping would reduce distance
-            dm[m,k] > dm[m,w] && reverse!(hcl.order, uidx, midx)
-
-        elseif vr < 0
-            dm[k,m] > dm[k,u] && reverse!(hcl.order, uidx, midx)
-        elseif vl > 0 && vr > 0
-            # For 2 multi-leaf branches, determine if one or two flips is required
-            # 1 = do not flip
-            # 2 = flip left
-            # 3 = flip right
-            # 4 = flip both
-            flp = argmin((dm[m,k], dm[u,k], dm[m,w], dm[u,w]))
-            (flp == 2 || flp == 4) && reverse!(hcl.order, uidx, midx)
-            (flp == 3 || flp == 4) && reverse!(hcl.order, kidx, widx)
-        else
-            error("invalid 'merge' order in Hclust: ($vl, $vr) ")
-        end
-        push!(extents, (uidx, widx))
-    end
-end
-
-"""
-    leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
-
-`v`: vertex - may be a leaf (negative numbers) or a merge index
-`order`: Vector of leaf positions, same as hclust.order
-`extents`: tuples of the order indices for outermost leaves for each merge
-
-Returns the `order` values and indices of the extents for a given `v`.
-If `v` is a leaf, left and right extents will be the same.
-"""
-function leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
-    if v < 0
-        leftextent = rightextent = findfirst(isequal(-v), order)
-    elseif v > 0
-        leftextent = extents[v][1]
-        rightextent = extents[v][2]
-    else
-        error("leaf position cannot be zero")
-    end
-
-    return order[leftextent], order[rightextent], leftextent, rightextent
 end
