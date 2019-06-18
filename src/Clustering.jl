@@ -57,6 +57,9 @@ module Clustering
     # V-measure
     vmeasure,
 
+    # mutualinfo
+    mutualinfo,
+
     # hclust
     Hclust, hclust, cutree,
 
@@ -80,6 +83,7 @@ module Clustering
     include("randindex.jl")
     include("varinfo.jl")
     include("vmeasure.jl")
+    include("mutualinfo.jl")
 
     include("hclust.jl")
 
