@@ -531,6 +531,7 @@ function orderleaves_r!(hmer::HclustMerges)
     return hmer
 end
 
+
 """
     orderleaves_barjoseph!!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
 
@@ -558,10 +559,15 @@ function orderleaves_barjoseph!(hcl::Hclust, dm::Array{Float64,2})
             # Nothing needs to be done
         elseif vl < 0
             # check if flipping would reduce distance
-            dm[m,k] > dm[m,w] && reverse!(hcl.order, uidx, midx)
-
+            if dm[m,k] > dm[m,w]
+                reverse!(hcl.order, uidx, midx)
+                rotate_merges!(hcl.merges, vr)
+            end
         elseif vr < 0
-            dm[k,m] > dm[k,u] && reverse!(hcl.order, uidx, midx)
+            if dm[k,m] > dm[k,u]
+                reverse!(hcl.order, uidx, midx)
+                rotate_merges!(hcl.merges, vl)
+            end
         elseif vl > 0 && vr > 0
             # For 2 multi-leaf branches, determine if one or two flips is required
             # 1 = do not flip
@@ -569,11 +575,18 @@ function orderleaves_barjoseph!(hcl::Hclust, dm::Array{Float64,2})
             # 3 = flip right
             # 4 = flip both
             flp = argmin((dm[m,k], dm[u,k], dm[m,w], dm[u,w]))
-            (flp == 2 || flp == 4) && reverse!(hcl.order, uidx, midx)
-            (flp == 3 || flp == 4) && reverse!(hcl.order, kidx, widx)
+            if flp == 2 || flp == 4
+                reverse!(hcl.order, uidx, midx)
+                rotate_merges!(hcl.merges, vr)
+            end
+            if flp == 3 || flp == 4
+                reverse!(hcl.order, kidx, widx)
+                rotate_merges!(hcl.merges, vl)
+            end
         else
             error("invalid 'merge' order in Hclust: ($vl, $vr) ")
         end
+
         push!(extents, (uidx, widx))
     end
 end
@@ -599,6 +612,17 @@ function leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
     end
 
     return order[leftextent], order[rightextent], leftextent, rightextent
+end
+
+# recursively rotate merges
+function rotate_merges!(merges, idx)
+    merges[idx, [1,2]] = merges[idx, [2,1]]
+    if merges[idx, 1] > 0
+        rotate_merges!(merges, merges[idx, 1])
+    end
+    if merges[idx, 2] > 0
+        rotate_merges!(merges, merges[idx, 2])
+    end
 end
 
 
@@ -769,7 +793,11 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
         throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
 
-    Hclust(hmer, linkage)
+    hcl = Hclust(hmer, linkage)
+    if leaforder == :barjoseph
+        orderleaves_barjoseph!(hcl, d)
+    end
+    hcl
 end
 
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)

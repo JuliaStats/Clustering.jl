@@ -1,6 +1,7 @@
 using Clustering
 using Test
 using CodecZlib
+using Distances
 
 @testset "hclust() (hierarchical clustering)" begin
 
@@ -141,4 +142,21 @@ end
     @test cutree(hA, h=0.9) == [1, 1]
 end
 
+@testset "Leaf ordering methods"
+    Random.seed!(2)
+    n = 10
+    mat = zeros(Int, n, n)
+
+    for i in 1:n
+        last = minimum([i+Int(floor(n/5)), n])
+        for j in i:last
+            mat[i,j] = 1
+        end
+    end
+    mat = mat[:, randperm(n)]
+
+    dm = pairwise(Euclidean(), mat, dims=2)
+    hcl = hclust(dm, linkage=:average, leaforder=:barjoseph)
+
+    
 end
