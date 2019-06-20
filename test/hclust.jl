@@ -82,7 +82,7 @@ end
 @testset "hclust_n3()" begin
     # no thorough testing (it's O(N³)), just test one example
     example_n3 = examples[10]
-    hclu_n3 = @inferred(Clustering.hclust_n3(example_n3["D"], Clustering.slicemaximum))
+    hclu_n3 = @inferred(Clustering.orderbranches_r!(Clustering.hclust_n3(example_n3["D"], Clustering.slicemaximum)))
     @test hclu_n3.mleft == example_n3["merge"][:, 1]
     @test hclu_n3.mright == example_n3["merge"][:, 2]
     @test hclu_n3.heights ≈ example_n3["height"] atol=1e-5
