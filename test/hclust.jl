@@ -143,7 +143,6 @@ end
 end
 
 @testset "Leaf ordering methods" begin
-    Random.seed!(2)
     n = 10
     mat = zeros(Int, n, n)
 
@@ -153,10 +152,15 @@ end
             mat[i,j] = 1
         end
     end
-    mat = mat[:, randperm(n)]
 
     dm = pairwise(Euclidean(), mat, dims=2)
-    hcl = hclust(dm, linkage=:average, leaforder=:barjoseph)
 
+    hcl1 = hclust(dm, linkage=:average)
+    hcl2 = hclust(dm, linkage=:average, leaforder=:barjoseph)
 
+    @test hcl1.order == [3, 1, 2, 4, 5, 9, 10, 6, 7, 8]
+    @test hcl1.merges == [-1 -2; -3 1; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 4 6; 7 8]
+
+    @test hcl2.order == collect(1:10)
+    @test hcl2.merges == [-1 -2; 1 -3; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 6 4; 7 8]
 end
