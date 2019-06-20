@@ -552,8 +552,8 @@ function orderleaves_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
     order = invperm(hclust_perm(hmer))
     node_ranges = Tuple{Int,Int}[] # ranges of order array indices occupied by the leaves of each node
 
-    for v in 1:nnodes(hmer)
-        vl, vr = hmer.mleft[1], hmer.mright[2]
+    for v in 1:nnodes(hmer)-1
+        vl, vr = hmer.mleft[v], hmer.mright[v]
 
         (uidx, midx) = node_range(vl, order, node_ranges)
         (kidx, widx) = node_range(vr, order, node_ranges)
@@ -583,11 +583,11 @@ function orderleaves_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
             flp = argmin((dm[m,k], dm[u,k], dm[m,w], dm[u,w]))
             if flp == 2 || flp == 4
                 reverse!(order, uidx, midx)
-                rotate_merges!(hmer, vr)
+                rotate_merges!(hmer, vl)
             end
             if flp == 3 || flp == 4
                 reverse!(order, kidx, widx)
-                rotate_merges!(hmer, vl)
+                rotate_merges!(hmer, vr)
             end
         else
             error("invalid 'merge' order in Hclust: ($vl, $vr) ")
@@ -608,12 +608,12 @@ end
 Returns the `order` values and indices of the extents for a given `v`.
 If `v` is a leaf, left and right extents will be the same.
 """
-function node_range(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
+function node_range(v::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int,Int}})
     if v < 0
         left = right = findfirst(isequal(-v), order)
     elseif v > 0
-        left = extents[v][1]
-        right = extents[v][2]
+        left = node_ranges[v][1]
+        right = node_ranges[v][2]
     else
         error("leaf position cannot be zero")
     end
