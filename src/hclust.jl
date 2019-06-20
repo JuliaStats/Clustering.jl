@@ -543,7 +543,7 @@ end
 ## comparisons.
 ##
 ## Based on:
-## [Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
+## Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)
 function orderbranches_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
     order = invperm(hclust_perm(hmer))
     node_ranges = Tuple{Int,Int}[] # ranges of order array indices occupied by the leaves of each node
@@ -567,7 +567,7 @@ function orderbranches_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
             end
         elseif vr < 0
             if dm[k,m] > dm[k,u]
-                reverse!(order, uidx, midx)
+                reverse!(order, kidx, widx)
                 rotate_merges!(hmer, vl)
             end
         elseif vl > 0 && vr > 0
@@ -759,9 +759,9 @@ Returns the dendrogram as a [`Hclust`](@ref) object.
    The valid choices are:
    * `:r` (the default): ordered based on the node heights and original elements
      order (compatible with R's `hclust`)
-   * `:barjoseph` (or :optimal): leaves are ordered to reduce the distance between neighboring
+   * `:barjoseph` (or :optimal): branches are ordered to reduce the distance between neighboring
      leaves from separate branches using the "fast optimal leaf ordering" algorithm
-     from Bar-Joseph et. al. _Bioinformatics_ (2001)
+     from [Bar-Joseph et. al. _Bioinformatics_ (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
 """
 function hclust(d::AbstractMatrix; linkage::Symbol = :single,
                 uplo::Union{Symbol, Nothing} = nothing, branchorder::Symbol=:r)
