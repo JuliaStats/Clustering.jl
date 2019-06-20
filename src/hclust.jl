@@ -590,23 +590,24 @@ function orderleaves_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
                 rotate_merges!(hmer, vr)
             end
         else
-            error("invalid 'merge' order in Hclust: ($vl, $vr) ")
+            error("invalid 'merge' order in Hclust: ($vl, $vr)")
         end
 
         push!(node_ranges, (uidx, widx))
     end
-    @show order
+    return hmer
 end
 
 """
     node_range(v::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int,Int}})
 
+Get the left and right bounds of the range of the `order` array indices occupied by the elements of the `v` node.
+
 `v`: vertex - may be a leaf (negative numbers) or a merge index
 `order`: Vector of leaf positions, same as hclust.order
-`extents`: tuples of the order indices for outermost leaves for each merge
+`node_ranges`: tuples of the order indices for outermost leaves for each merge
 
-Returns the `order` values and indices of the extents for a given `v`.
-If `v` is a leaf, left and right extents will be the same.
+If `v` is a leaf, left and right bounds will be the same.
 """
 function node_range(v::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int,Int}})
     if v < 0
@@ -766,14 +767,14 @@ Returns the dendrogram as a [`Hclust`](@ref) object.
    If not specified, the method expects `d` to be symmetric.
 - `leaforder::Symbol` (optional): algorithm to determine ordering of leaves.
    The valid choices are:
-   * `:r` (the default): ordered based on the height of merges (compatible) with
-     R's `hclust`
+   * `:r` (the default): ordered based on the node heights and original elements
+     order (compatible with R's `hclust`)
    * `:barjoseph`: leaves are ordered to reduce the distance between neighboring
      leaves from separate branches using the "fast optimal leaf ordering" algorithm
      from Bar-Joseph et. al. _Bioinformatics_ (2001)
 """
 function hclust(d::AbstractMatrix; linkage::Symbol = :single,
-                uplo::Union{Symbol, Nothing} = nothing, leaforder=:r)
+                uplo::Union{Symbol, Nothing} = nothing, leaforder::Symbol=:r)
     if uplo !== nothing
         sd = Symmetric(d, uplo) # use upper/lower part of d
     else

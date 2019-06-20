@@ -58,7 +58,7 @@ module Clustering
     vmeasure,
 
     # hclust
-    Hclust, hclust, cutree, optimalorder, optimalorder!,
+    Hclust, hclust, cutree,
 
     # MCL
     mcl, MCLResult
