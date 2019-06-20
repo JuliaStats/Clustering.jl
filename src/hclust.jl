@@ -759,7 +759,7 @@ Returns the dendrogram as a [`Hclust`](@ref) object.
    The valid choices are:
    * `:r` (the default): ordered based on the node heights and original elements
      order (compatible with R's `hclust`)
-   * `:barjoseph`: leaves are ordered to reduce the distance between neighboring
+   * `:barjoseph` (or :optimal): leaves are ordered to reduce the distance between neighboring
      leaves from separate branches using the "fast optimal leaf ordering" algorithm
      from Bar-Joseph et. al. _Bioinformatics_ (2001)
 """
@@ -791,7 +791,7 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
         throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
 
-    if branchorder == :barjoseph
+    if branchorder == :barjoseph || branchorder == :optimal
         orderbranches_barjoseph!(hmer, sd)
     elseif branchorder == :r
         orderbranches_r!(hmer)
