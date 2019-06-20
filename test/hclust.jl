@@ -52,7 +52,7 @@ Base.include_string(@__MODULE__,
     if linkage ∈ [:complete, :average]
         @testset "hclust_nn()" begin
             linkage_fun = linkage == :complete ? Clustering.slicemaximum : Clustering.slicemean
-            hclu2 = Hclust(Clustering.orderleaves_r!(Clustering.hclust_nn(example["D"], linkage_fun)),
+            hclu2 = Hclust(Clustering.orderbranches_r!(Clustering.hclust_nn(example["D"], linkage_fun)),
                 linkage)
             @test hclu2.merges == hclu.merges
             @test hclu2.heights ≈ hclu.heights atol=1e-5
@@ -165,7 +165,7 @@ end
     @test hcl_barjoseph.order == collect(1:10)
     @test hcl_barjoseph.merges == [-1 -2; 1 -3; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 6 4; 7 8]
 
-    @test_throws ArgumentError hclust(dm, linkage=:average, leaforder=:wrong)
+    @test_throws ArgumentError hclust(dm, linkage=:average, branchorder=:wrong)
 
     hcl_zero = hclust(fill(0.0, 0, 0), linkage=:average, branchorder=:barjoseph)
     @test Clustering.nnodes(hcl_zero) == 0
