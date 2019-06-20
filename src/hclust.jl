@@ -509,7 +509,7 @@ end
 
 ## reorders the tree merges by the height of resulting trees
 ## (to be compatible with R's hclust())
-function orderleaves_r!(hmer::HclustMerges)
+function orderbranches_r!(hmer::HclustMerges)
     o = sortperm(hmer.heights)
     io = invperm(o)
     ml = hmer.mleft
@@ -532,23 +532,19 @@ function orderleaves_r!(hmer::HclustMerges)
 end
 
 
-"""
-    orderleaves_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
-
-Given a hierarchical cluster and the distance matrix used to generate it,
-use fast algorithm to determine optimal leaf order minimizing the distance
-between adjacent leaves. This is done using a heuristic where,
-when combining multi-leaf sub branches, only the outermost leaves are
-compared (a maximum of 4 comparisons per intersection).
-
-Sub branches are flipped if necessary to minimize the distance between adjacent
-nodes, and then the combined branches are treated as a block for future
-comparisons.
-
-Based on:
-[Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
-"""
-function orderleaves_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
+## Given a hierarchical cluster and the distance matrix used to generate it,
+## use fast algorithm to determine optimal leaf order minimizing the distance
+## between adjacent leaves. This is done using a heuristic where,
+## when combining multi-leaf sub branches, only the outermost leaves are
+## compared (a maximum of 4 comparisons per intersection).
+##
+## Sub branches are flipped if necessary to minimize the distance between adjacent
+## nodes, and then the combined branches are treated as a block for future
+## comparisons.
+##
+## Based on:
+## [Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
+function orderbranches_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
     order = invperm(hclust_perm(hmer))
     node_ranges = Tuple{Int,Int}[] # ranges of order array indices occupied by the leaves of each node
 
@@ -598,33 +594,27 @@ function orderleaves_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
     return hmer
 end
 
-"""
-    node_range(v::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int,Int}})
-
-Get the left and right bounds of the range of the `order` array indices occupied by the elements of the `v` node.
-
-`v`: vertex - may be a leaf (negative numbers) or a merge index
-`order`: Vector of leaf positions, same as hclust.order
-`node_ranges`: tuples of the order indices for outermost leaves for each merge
-
-If `v` is a leaf, left and right bounds will be the same.
-"""
-function node_range(v::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int,Int}})
-    if v < 0
+## Get the left and right bounds of the range of the `order` array indices occupied by the elements of the node.
+## If `node` is a leaf, left and right bounds will be the same.
+function node_range(node::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int,Int}})
+    if node < 0 # leaf node
         left = right = findfirst(isequal(-v), order)
-    elseif v > 0
+    elseif node > 0 # branch node
         left = node_ranges[v][1]
         right = node_ranges[v][2]
     else
-        error("leaf position cannot be zero")
+        error("node position cannot be zero")
     end
 
     return left, right
 end
 
-# recursively rotate merges
+## recursively rotate merges
 function rotate_merges!(hmer::HclustMerges, i::Integer)
     (hmer.mleft[i], hmer.mright[i]) = (hmer.mright[i], hmer.mleft[i])
+
+    # if a node is positive, it represents a merge,
+    # and all merges below should be rotated as well
     if hmer.mleft[i] > 0
         rotate_merges!(hmer, hmer.mleft[i])
     end
@@ -740,7 +730,7 @@ function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:R
 end
 
 """
-    hclust(d::AbstractMatrix; [linkage], [uplo], [leaforder]) -> Hclust
+    hclust(d::AbstractMatrix; [linkage], [uplo], [branchorder]) -> Hclust
 
 Perform hierarchical clustering using the distance matrix `d` and
 the cluster `linkage` function.
@@ -765,7 +755,7 @@ Returns the dendrogram as a [`Hclust`](@ref) object.
  - `uplo::Symbol` (optional): specifies whether the upper (`:U`) or the
    lower (`:L`) triangle of `d` should be used to get the distances.
    If not specified, the method expects `d` to be symmetric.
-- `leaforder::Symbol` (optional): algorithm to determine ordering of leaves.
+- `branchorder::Symbol` (optional): algorithm to determine ordering of leaves.
    The valid choices are:
    * `:r` (the default): ordered based on the node heights and original elements
      order (compatible with R's `hclust`)
@@ -774,7 +764,7 @@ Returns the dendrogram as a [`Hclust`](@ref) object.
      from Bar-Joseph et. al. _Bioinformatics_ (2001)
 """
 function hclust(d::AbstractMatrix; linkage::Symbol = :single,
-                uplo::Union{Symbol, Nothing} = nothing, leaforder::Symbol=:r)
+                uplo::Union{Symbol, Nothing} = nothing, branchorder::Symbol=:r)
     if uplo !== nothing
         sd = Symmetric(d, uplo) # use upper/lower part of d
     else
@@ -801,12 +791,12 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
         throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
 
-    if leaforder == :barjoseph
-        orderleaves_barjoseph!(hmer, sd)
-    elseif leaforder == :r
-        orderleaves_r!(hmer)
+    if branchorder == :barjoseph
+        orderbranches_barjoseph!(hmer, sd)
+    elseif branchorder == :r
+        orderbranches_r!(hmer)
     else
-        throw(ArgumentError("Unsupported leaforder=$leaforder method"))
+        throw(ArgumentError("Unsupported branchorder=$branchorder method"))
     end
     Hclust(hmer, linkage)
 end
