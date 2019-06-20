@@ -582,7 +582,7 @@ function orderbranches_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
                 reverse!(order, kidx, widx)
                 rotate_merges!(hmer, vr)
             end
-        else
+        else # vl == vr == 0
             error("Nodes of HclustMerges should never have a value of 0")
         end
 
