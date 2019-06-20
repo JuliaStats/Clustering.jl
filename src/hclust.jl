@@ -97,9 +97,6 @@ nnodes(hmer::HclustMerges) = hmer.nnodes
 
 # merges i-th and j-th subtrees into a new tree of height h and returns its index
 function push_merge!(hmer::HclustMerges{T}, i::Integer, j::Integer, h::T) where T<:Real
-    if !_isrordered(i, j)
-        i, j = j, i
-    end
     push!(hmer.mleft, i)
     push!(hmer.mright, j)
     push!(hmer.heights, h)
