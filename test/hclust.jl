@@ -164,6 +164,15 @@ end
 
     @test hcl_barjoseph.order == collect(1:10)
     @test hcl_barjoseph.merges == [-1 -2; 1 -3; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 6 4; 7 8]
+
+    @test_throws ArgumentError hclust(dm, linkage=:average, leaforder=:wrong)
+
+    hcl_zero = hclust(fill(0.0, 0, 0), linkage=:average, branchorder=:barjoseph)
+    @test Clustering.nnodes(hcl_zero) == 0
+
+    hcl_one = hclust(fill(0.0, 1, 1), linkage=:average, branchorder=:barjoseph)
+    @test Clustering.nnodes(hcl_one) == 1
+
 end
 
 end # testset "hclust()"
