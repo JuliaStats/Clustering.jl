@@ -158,12 +158,16 @@ end
 
     hcl_r = hclust(dm, linkage=:average)
     hcl_barjoseph = hclust(dm, linkage=:average, branchorder=:barjoseph)
+    hcl_optimal = hclust(dm, linkage=:average, branchorder=:optimal)
 
     @test hcl_r.order == [3, 1, 2, 4, 5, 9, 10, 6, 7, 8]
     @test hcl_r.merges == [-1 -2; -3 1; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 4 6; 7 8]
 
     @test hcl_barjoseph.order == collect(1:10)
     @test hcl_barjoseph.merges == [-1 -2; 1 -3; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 6 4; 7 8]
+
+    @test hcl_barjoseph.merges == hcl_optimal.merges
+    @test hcl_barjoseph.order == hcl_optimal.order
 
     @test_throws ArgumentError hclust(dm, linkage=:average, branchorder=:wrong)
 
