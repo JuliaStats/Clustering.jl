@@ -51,8 +51,9 @@ Base.include_string(@__MODULE__,
     # compare hclust_nn_lw() (the default) and hclust_nn() (slower) methods
     if linkage ∈ [:complete, :average]
         @testset "hclust_nn()" begin
-            hclu2 = Hclust(Clustering.hclust_nn(example["D"], linkage == :complete ? Clustering.slicemaximum : Clustering.slicemean),
-                           linkage)
+            linkage_fun = linkage == :complete ? Clustering.slicemaximum : Clustering.slicemean
+            hclu2 = Hclust(Clustering.orderleaves_r!(Clustering.hclust_nn(example["D"], linkage_fun)),
+                linkage)
             @test hclu2.merges == hclu.merges
             @test hclu2.heights ≈ hclu.heights atol=1e-5
             @test hclu2.order == hclu.order
@@ -155,14 +156,14 @@ end
 
     dm = pairwise(Euclidean(), mat, dims=2)
 
-    hcl1 = hclust(dm, linkage=:average)
-    hcl2 = hclust(dm, linkage=:average, leaforder=:barjoseph)
+    hcl_r = hclust(dm, linkage=:average)
+    hcl_barjoseph = hclust(dm, linkage=:average, branchorder=:barjoseph)
 
-    @test hcl1.order == [3, 1, 2, 4, 5, 9, 10, 6, 7, 8]
-    @test hcl1.merges == [-1 -2; -3 1; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 4 6; 7 8]
+    @test hcl_r.order == [3, 1, 2, 4, 5, 9, 10, 6, 7, 8]
+    @test hcl_r.merges == [-1 -2; -3 1; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 4 6; 7 8]
 
-    @test hcl2.order == collect(1:10)
-    @test hcl2.merges == [-1 -2; 1 -3; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 6 4; 7 8]
+    @test hcl_barjoseph.order == collect(1:10)
+    @test hcl_barjoseph.merges == [-1 -2; 1 -3; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 6 4; 7 8]
 end
 
 end # testset "hclust()"

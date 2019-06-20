@@ -598,10 +598,10 @@ end
 ## If `node` is a leaf, left and right bounds will be the same.
 function node_range(node::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int,Int}})
     if node < 0 # leaf node
-        left = right = findfirst(isequal(-v), order)
+        left = right = findfirst(isequal(-node), order)
     elseif node > 0 # branch node
-        left = node_ranges[v][1]
-        right = node_ranges[v][2]
+        left = node_ranges[node][1]
+        right = node_ranges[node][2]
     else
         error("node position cannot be zero")
     end
