@@ -533,7 +533,7 @@ end
 
 
 """
-    orderleaves_barjoseph!!(order::Vector{Int}, hcl::Hclust, dm::Array{Float64,2})
+    orderleaves_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
 
 Given a hierarchical cluster and the distance matrix used to generate it,
 use fast algorithm to determine optimal leaf order minimizing the distance
@@ -548,25 +548,31 @@ comparisons.
 Based on:
 [Bar-Joseph et. al. "Fast optimal leaf ordering for hierarchical clustering." _Bioinformatics_. (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
 """
-function orderleaves_barjoseph!(hcl::Hclust, dm::Array{Float64,2})
-    extents = Tuple{Int,Int}[]
-    for v in axes(hcl.merges, 1)
-        vl, vr = hcl.merges[v, 1], hcl.merges[v, 2]
+function orderleaves_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
+    order = invperm(hclust_perm(hmer))
+    node_ranges = Tuple{Int,Int}[] # ranges of order array indices occupied by the leaves of each node
 
-        (u, m, uidx, midx) = leaflocs(vl, hcl.order, extents)
-        (k, w, kidx, widx) = leaflocs(vr, hcl.order, extents)
+    for v in 1:nnodes(hmer)
+        vl, vr = hmer.mleft[1], hmer.mright[2]
+
+        (uidx, midx) = node_range(vl, order, node_ranges)
+        (kidx, widx) = node_range(vr, order, node_ranges)
+
+        (u, m) = (order[uidx], order[midx])
+        (k, w) = (order[kidx], order[widx])
+
         if vl < 0 && vr < 0
             # Nothing needs to be done
         elseif vl < 0
             # check if flipping would reduce distance
             if dm[m,k] > dm[m,w]
-                reverse!(hcl.order, uidx, midx)
-                rotate_merges!(hcl.merges, vr)
+                reverse!(order, uidx, midx)
+                rotate_merges!(hmer, vr)
             end
         elseif vr < 0
             if dm[k,m] > dm[k,u]
-                reverse!(hcl.order, uidx, midx)
-                rotate_merges!(hcl.merges, vl)
+                reverse!(order, uidx, midx)
+                rotate_merges!(hmer, vl)
             end
         elseif vl > 0 && vr > 0
             # For 2 multi-leaf branches, determine if one or two flips is required
@@ -576,23 +582,24 @@ function orderleaves_barjoseph!(hcl::Hclust, dm::Array{Float64,2})
             # 4 = flip both
             flp = argmin((dm[m,k], dm[u,k], dm[m,w], dm[u,w]))
             if flp == 2 || flp == 4
-                reverse!(hcl.order, uidx, midx)
-                rotate_merges!(hcl.merges, vr)
+                reverse!(order, uidx, midx)
+                rotate_merges!(hmer, vr)
             end
             if flp == 3 || flp == 4
-                reverse!(hcl.order, kidx, widx)
-                rotate_merges!(hcl.merges, vl)
+                reverse!(order, kidx, widx)
+                rotate_merges!(hmer, vl)
             end
         else
             error("invalid 'merge' order in Hclust: ($vl, $vr) ")
         end
 
-        push!(extents, (uidx, widx))
+        push!(node_ranges, (uidx, widx))
     end
+    @show order
 end
 
 """
-    leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
+    node_range(v::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int,Int}})
 
 `v`: vertex - may be a leaf (negative numbers) or a merge index
 `order`: Vector of leaf positions, same as hclust.order
@@ -601,27 +608,27 @@ end
 Returns the `order` values and indices of the extents for a given `v`.
 If `v` is a leaf, left and right extents will be the same.
 """
-function leaflocs(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
+function node_range(v::Int, order::Vector{Int}, extents::Vector{Tuple{Int,Int}})
     if v < 0
-        leftextent = rightextent = findfirst(isequal(-v), order)
+        left = right = findfirst(isequal(-v), order)
     elseif v > 0
-        leftextent = extents[v][1]
-        rightextent = extents[v][2]
+        left = extents[v][1]
+        right = extents[v][2]
     else
         error("leaf position cannot be zero")
     end
 
-    return order[leftextent], order[rightextent], leftextent, rightextent
+    return left, right
 end
 
 # recursively rotate merges
-function rotate_merges!(merges, idx)
-    merges[idx, [1,2]] = merges[idx, [2,1]]
-    if merges[idx, 1] > 0
-        rotate_merges!(merges, merges[idx, 1])
+function rotate_merges!(hmer::HclustMerges, i::Integer)
+    (hmer.mleft[i], hmer.mright[i]) = (hmer.mright[i], hmer.mleft[i])
+    if hmer.mleft[i] > 0
+        rotate_merges!(hmer, hmer.mleft[i])
     end
-    if merges[idx, 2] > 0
-        rotate_merges!(merges, merges[idx, 2])
+    if hmer.mright[i] > 0
+        rotate_merges!(hmer, hmer.mright[i])
     end
 end
 
@@ -638,7 +645,7 @@ end
 ##   until c[i] = c[i-2] ## nearest of nearest is cluster itself
 ##   merge c[i] and nearest neighbor c[i]
 ##   if i>3 i -= 3 else i <- 1
-function hclust_nn(d::AbstractMatrix, linkage::Function, leaforder=:r)
+function hclust_nn(d::AbstractMatrix, linkage::Function)
     T = eltype(linkage(d, 1:0, 1:0))
     htre = HclustTrees{T}(size(d, 1))
     onerow = [0]  # placeholder for a leaf node of cl_i
@@ -685,14 +692,14 @@ function hclust_nn(d::AbstractMatrix, linkage::Function, leaforder=:r)
         end
         isempty(NN) && push!(NN, 1) # restart NN chain
     end
-    return orderleaves_r!(htre.merges)
+    return htre.merges
 end
 
 ## Nearest neighbor chain algorithm for reducible Lance-Williams metrics.
 ## In comparison to hclust_nn() maintains the upper-triangular matrix
 ## of cluster-cluster distances, so it requires O(N²) memory, but it's faster,
 ## because distance calculation is more efficient.
-function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}, leaforder=:r) where {T<:Real}
+function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:Real}
     dd = copyto!(Matrix{T}(undef, size(d)...), d)
     htre = HclustTrees{T}(size(d, 1))
     NN = [1]      # nearest neighbors chain of tree indices, init by random tree index
@@ -728,7 +735,7 @@ function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}, leaforder=:
         end
         isempty(NN) && push!(NN, 1) # restart NN chain
     end
-    return orderleaves_r!(htre.merges)
+    return htre.merges
 end
 
 """
@@ -793,11 +800,14 @@ function hclust(d::AbstractMatrix; linkage::Symbol = :single,
         throw(ArgumentError("Unsupported cluster linkage $linkage"))
     end
 
-    hcl = Hclust(hmer, linkage)
     if leaforder == :barjoseph
-        orderleaves_barjoseph!(hcl, d)
+        orderleaves_barjoseph!(hmer, sd)
+    elseif leaforder == :r
+        orderleaves_r!(hmer)
+    else
+        throw(ArgumentError("Unsupported leaforder=$leaforder method"))
     end
-    hcl
+    Hclust(hmer, linkage)
 end
 
 @deprecate hclust(d, method::Symbol, uplo::Union{Symbol, Nothing} = nothing) hclust(d, linkage=method, uplo=uplo)

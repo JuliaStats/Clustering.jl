@@ -142,7 +142,7 @@ end
     @test cutree(hA, h=0.9) == [1, 1]
 end
 
-@testset "Leaf ordering methods"
+@testset "Leaf ordering methods" begin
     Random.seed!(2)
     n = 10
     mat = zeros(Int, n, n)
@@ -158,5 +158,5 @@ end
     dm = pairwise(Euclidean(), mat, dims=2)
     hcl = hclust(dm, linkage=:average, leaforder=:barjoseph)
 
-    
+
 end
