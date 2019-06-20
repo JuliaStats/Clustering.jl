@@ -177,6 +177,12 @@ end
     hcl_one = hclust(fill(0.0, 1, 1), linkage=:average, branchorder=:barjoseph)
     @test Clustering.nnodes(hcl_one) == 1
 
+    # Larger matrix to make sure all swaps are tested
+    Random.seed!(1)
+    D = rand(50,50)
+    Dm = D + D'
+    hcl_rand = hclust(Dm, linkage=:average, branchorder=:optimal)
+    @test Clustering.nnodes(hcl_rand) == 50
 end
 
 end # testset "hclust()"
