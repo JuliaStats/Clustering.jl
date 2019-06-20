@@ -164,3 +164,5 @@ end
     @test hcl2.order == collect(1:10)
     @test hcl2.merges == [-1 -2; 1 -3; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 6 4; 7 8]
 end
+
+end # testset "hclust()"
