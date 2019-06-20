@@ -583,7 +583,7 @@ function orderbranches_barjoseph!(hmer::HclustMerges, dm::AbstractMatrix)
                 rotate_merges!(hmer, vr)
             end
         else
-            error("invalid 'merge' order in Hclust: ($vl, $vr)")
+            error("Nodes of HclustMerges should never have a value of 0")
         end
 
         push!(node_ranges, (uidx, widx))
