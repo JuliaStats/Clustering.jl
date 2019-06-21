@@ -751,7 +751,7 @@ Returns the dendrogram as a [`Hclust`](@ref) object.
  - `uplo::Symbol` (optional): specifies whether the upper (`:U`) or the
    lower (`:L`) triangle of `d` should be used to get the distances.
    If not specified, the method expects `d` to be symmetric.
-- `branchorder::Symbol` (optional): algorithm to determine order leaves and branches.
+- `branchorder::Symbol` (optional): algorithm to order leaves and branches.
    The valid choices are:
    * `:r` (the default): ordering based on the node heights and the original elements
      order (compatible with R's `hclust`)
