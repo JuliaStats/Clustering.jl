@@ -597,8 +597,7 @@ function node_range(node::Int, order::Vector{Int}, node_ranges::Vector{Tuple{Int
     if node < 0 # leaf node
         left = right = findfirst(isequal(-node), order)
     elseif node > 0 # branch node
-        left = node_ranges[node][1]
-        right = node_ranges[node][2]
+        left, right = node_ranges[node]
     else
         error("node position cannot be zero")
     end
@@ -752,13 +751,14 @@ Returns the dendrogram as a [`Hclust`](@ref) object.
  - `uplo::Symbol` (optional): specifies whether the upper (`:U`) or the
    lower (`:L`) triangle of `d` should be used to get the distances.
    If not specified, the method expects `d` to be symmetric.
-- `branchorder::Symbol` (optional): algorithm to determine ordering of leaves.
+- `branchorder::Symbol` (optional): algorithm to determine order leaves and branches.
    The valid choices are:
-   * `:r` (the default): ordered based on the node heights and original elements
+   * `:r` (the default): ordering based on the node heights and the original elements
      order (compatible with R's `hclust`)
-   * `:barjoseph` (or :optimal): branches are ordered to reduce the distance between neighboring
-     leaves from separate branches using the "fast optimal leaf ordering" algorithm
-     from [Bar-Joseph et. al. _Bioinformatics_ (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
+   * `:barjoseph` (or `:optimal`): branches are ordered to reduce the distance between
+     neighboring leaves from separate branches using the "fast optimal leaf ordering"
+     algorithm from
+     [Bar-Joseph et. al. _Bioinformatics_ (2001)](https://doi.org/10.1093/bioinformatics/17.suppl_1.S22)
 """
 function hclust(d::AbstractMatrix; linkage::Symbol = :single,
                 uplo::Union{Symbol, Nothing} = nothing, branchorder::Symbol=:r)
