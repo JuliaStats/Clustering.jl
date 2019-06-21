@@ -1,6 +1,7 @@
 using Clustering
 using Test
 using CodecZlib
+using Distances
 
 @testset "hclust() (hierarchical clustering)" begin
 
@@ -50,8 +51,9 @@ Base.include_string(@__MODULE__,
     # compare hclust_nn_lw() (the default) and hclust_nn() (slower) methods
     if linkage ∈ [:complete, :average]
         @testset "hclust_nn()" begin
-            hclu2 = Hclust(Clustering.hclust_nn(example["D"], linkage == :complete ? Clustering.slicemaximum : Clustering.slicemean),
-                           linkage)
+            linkage_fun = linkage == :complete ? Clustering.slicemaximum : Clustering.slicemean
+            hclu2 = Hclust(Clustering.orderbranches_r!(Clustering.hclust_nn(example["D"], linkage_fun)),
+                linkage)
             @test hclu2.merges == hclu.merges
             @test hclu2.heights ≈ hclu.heights atol=1e-5
             @test hclu2.order == hclu.order
@@ -80,7 +82,7 @@ end
 @testset "hclust_n3()" begin
     # no thorough testing (it's O(N³)), just test one example
     example_n3 = examples[10]
-    hclu_n3 = @inferred(Clustering.hclust_n3(example_n3["D"], Clustering.slicemaximum))
+    hclu_n3 = @inferred(Clustering.orderbranches_r!(Clustering.hclust_n3(example_n3["D"], Clustering.slicemaximum)))
     @test hclu_n3.mleft == example_n3["merge"][:, 1]
     @test hclu_n3.mright == example_n3["merge"][:, 2]
     @test hclu_n3.heights ≈ example_n3["height"] atol=1e-5
@@ -141,4 +143,60 @@ end
     @test cutree(hA, h=0.9) == [1, 1]
 end
 
+@testset "Leaf ordering methods" begin
+    n = 10
+    mat = zeros(Int, n, n)
+
+    for i in 1:n
+        last = minimum([i+Int(floor(n/5)), n])
+        for j in i:last
+            mat[i,j] = 1
+        end
+    end
+
+    dm = pairwise(Euclidean(), mat, dims=2)
+
+    hcl_r = hclust(dm, linkage=:average)
+    hcl_barjoseph = hclust(dm, linkage=:average, branchorder=:barjoseph)
+    hcl_optimal = hclust(dm, linkage=:average, branchorder=:optimal)
+
+    @test hcl_r.order == [3, 1, 2, 4, 5, 9, 10, 6, 7, 8]
+    @test hcl_r.merges == [-1 -2; -3 1; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 4 6; 7 8]
+
+    @test hcl_barjoseph.order == collect(1:10)
+    @test hcl_barjoseph.merges == [-1 -2; 1 -3; -4 -5; -9 -10; -7 -8; -6 5; 2 3; 6 4; 7 8]
+
+    @test hcl_barjoseph.merges == hcl_optimal.merges
+    @test hcl_barjoseph.order == hcl_optimal.order
+
+    @test_throws ArgumentError hclust(dm, linkage=:average, branchorder=:wrong)
+
+    hcl_zero = hclust(fill(0.0, 0, 0), linkage=:average, branchorder=:barjoseph)
+    @test Clustering.nnodes(hcl_zero) == 0
+
+    hcl_one = hclust(fill(0.0, 1, 1), linkage=:average, branchorder=:barjoseph)
+    @test Clustering.nnodes(hcl_one) == 1
+
+    # Larger matrix to make sure all swaps are tested
+    Random.seed!(1)
+    D = rand(50,50)
+    Dm = D + D'
+    hcl_rand = hclust(Dm, linkage=:average, branchorder=:optimal)
+
+    @test hcl_rand.merges == [-29 -1; -32 -24; -46 -44; -10 -41; -17 -12; -40 5;
+                              -8 -28; -13 -35; -19 -20; -43 -42; -34 -18; -15 -39;
+                              -30 -49; -26 -22; -36 -31; -38 -4; -5 -9; 1 16; -6 13;
+                              17 10; -33 -45; -7 -2; -23 -21; -48 -27; -37 -16; -14 8;
+                              2 -50; 19 20; -47 -11; 9 -3; 6 15; 14 22; 31 18; 23 25;
+                              11 3; 32 29; 33 30; 7 12; 35 38; -25 4; 21 28; 26 34;
+                              41 27; 24 40; 39 42; 37 43; 45 46; 47 36; 48 44]
+
+    @test hcl_rand.order == [34, 18, 46, 44, 8, 28, 15, 39, 14, 13, 35, 23, 21, 37,
+                             16, 40, 17, 12, 36, 31, 29, 1, 38, 4, 19, 20, 3, 33, 45,
+                             6, 30, 49, 5, 9, 43, 42, 32, 24, 50, 26, 22, 7, 2, 47,
+                             11, 48, 27, 25, 10, 41]
+
+    @test Clustering.nnodes(hcl_rand) == 50
 end
+
+end # testset "hclust()"
