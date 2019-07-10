@@ -35,3 +35,20 @@ Base.propertynames(hclu::Hclust, private::Bool = false) =
         return getfield(hclu, prop)
     end
 end
+
+# FIXME remove after deprecation period for cweights
+Base.propertynames(clu::KmeansResult, private::Bool = false) =
+    (:centers, :assignments, :costs, :counts, :wcounts,
+     :totalcost, :iterations, :converged,
+     #= deprecated as of 0.13.2 =# :cweights)
+
+# FIXME remove after deprecation period for cweights
+@inline function Base.getproperty(clu::KmeansResult, prop::Symbol)
+    if prop === :cweights
+        Base.depwarn("KmeansResult::cweights is deprecated, use wcounts(clu::KmeansResult)",
+                     Symbol("KmeansResult::cweights"))
+        return clu.wcounts
+    else
+        return getfield(clu, prop)
+    end
+end
