@@ -11,3 +11,27 @@
 @deprecate varinfo(k1::Int, a1::AbstractVector{Int},
                    k2::Int, a2::AbstractVector{Int}) varinfo(a1, a2)
 @deprecate varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}) varinfo(R, a0)
+
+# FIXME remove after deprecation period for merge/labels/height/method
+Base.propertynames(hclu::Hclust, private::Bool = false) =
+    (:merges, :heights, :order, :linkage,
+     #= deprecated as of 0.12 =# :height, :labels, :merge, :method)
+
+# FIXME remove after deprecation period for merge/labels/height/method
+@inline function Base.getproperty(hclu::Hclust, prop::Symbol)
+    if prop === :height
+        Base.depwarn("Hclust::height is deprecated, use Hclust::heights", Symbol("Hclust::height"))
+        return getfield(hclu, :heights)
+    elseif prop === :labels
+        Base.depwarn("Hclust::labels is deprecated and will be removed in future versions", Symbol("Hclust::labels"))
+        return 1:nnodes(hclu)
+    elseif prop === :merge
+        Base.depwarn("Hclust::merge is deprecated, use Hclust::merges", Symbol("Hclust::merge"))
+        return getfield(hclu, :merges)
+    elseif prop === :method
+        Base.depwarn("Hclust::method is deprecated, use Hclust::linkage", Symbol("Hclust::method"))
+        return getfield(hclu, :linkage)
+    else
+        return getfield(hclu, prop)
+    end
+end

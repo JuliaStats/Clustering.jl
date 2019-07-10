@@ -42,30 +42,6 @@ nmerges(h::Hclust) = length(h.heights)  # number of tree merges
 nnodes(h::Hclust) = length(h.order)     # number of datapoints (leaf nodes)
 height(h::Hclust) = isempty(h.heights) ? typemin(eltype(h.heights)) : last(h.heights)
 
-# FIXME remove after deprecation period for merge/height/method
-Base.propertynames(hclu::Hclust, private::Bool = false) =
-    (:merges, :heights, :order, :linkage,
-     #= deprecated =# :height, :labels, :merge, :method)
-
-# FIXME remove after deprecation period for height/labels/merge/method
-function Base.getproperty(hclu::Hclust, prop::Symbol)
-    if prop == :height
-        Base.depwarn("Hclust::height is deprecated, use Hclust::heights", Symbol("Hclust::height"))
-        return getfield(hclu, :heights)
-    elseif prop == :labels
-        Base.depwarn("Hclust::labels is deprecated and will be removed in future versions", Symbol("Hclust::labels"))
-        return 1:nnodes(hclu)
-    elseif prop == :merge
-        Base.depwarn("Hclust::merge is deprecated, use Hclust::merges", Symbol("Hclust::merge"))
-        return getfield(hclu, :merges)
-    elseif prop == :method
-        Base.depwarn("Hclust::method is deprecated, use Hclust::linkage", Symbol("Hclust::method"))
-        return getfield(hclu, :linkage)
-    else
-        return getfield(hclu, prop)
-    end
-end
-
 function assertdistancematrix(d::AbstractMatrix)
     nr, nc = size(d)
     nr == nc || throw(DimensionMismatch("Distance matrix should be square."))
