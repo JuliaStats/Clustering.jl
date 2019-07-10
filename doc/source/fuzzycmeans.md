@@ -19,6 +19,7 @@ and ``m > 1`` is a user-defined fuzziness parameter.
 ```@docs
 fuzzy_cmeans
 FuzzyCMeansResult
+wcounts(::FuzzyCMeansResult)
 ```
 
 ## Examples

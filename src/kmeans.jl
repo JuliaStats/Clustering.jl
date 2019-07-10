@@ -21,11 +21,13 @@ struct KmeansResult{C<:AbstractMatrix{<:AbstractFloat},D<:Real,WC<:Real} <: Clus
     assignments::Vector{Int}   # assignments (n)
     costs::Vector{D}           # cost of the assignments (n)
     counts::Vector{Int}        # number of points assigned to each cluster (k)
-    cweights::Vector{WC}       # cluster weights (k)
+    wcounts::Vector{WC}        # cluster weights (k)
     totalcost::D               # total cost (i.e. objective)
     iterations::Int            # number of elapsed iterations
     converged::Bool            # whether the procedure converged
 end
+
+wcounts(clu::KmeansResult) = clu.wcounts
 
 const _kmeans_default_init = :kmpp
 const _kmeans_default_maxiter = 100
@@ -126,7 +128,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
     # compute pairwise distances, preassign costs and cluster weights
     dmat = pairwise(distance, centers, X, dims=2)
     WC = (weights === nothing) ? Int : eltype(weights)
-    cweights = Vector{WC}(undef, k)
+    wcounts = Vector{WC}(undef, k)
     D = typeof(one(eltype(dmat)) * one(WC))
     costs = Vector{D}(undef, n)
 
@@ -147,7 +149,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
         t += 1
 
         # update (affected) centers
-        update_centers!(X, weights, assignments, to_update, centers, cweights)
+        update_centers!(X, weights, assignments, to_update, centers, wcounts)
 
         if !isempty(unused)
             repick_unused_centers(X, costs, centers, unused, distance)
@@ -194,7 +196,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
     end
 
     return KmeansResult(centers, assignments, costs, counts,
-                        cweights, objv, t, converged)
+                        wcounts, objv, t, converged)
 end
 
 #
@@ -268,19 +270,19 @@ function update_centers!(X::AbstractMatrix{<:Real},        # in: data matrix (d 
                          assignments::Vector{Int},         # in: assignments (n)
                          to_update::Vector{Bool},          # in: whether a center needs update (k)
                          centers::AbstractMatrix{<:AbstractFloat}, # out: updated centers (d x k)
-                         cweights::Vector{Int})            # out: updated cluster weights (k)
+                         wcounts::Vector{Int})             # out: updated cluster weights (k)
     d, n = size(X)
     k = size(centers, 2)
 
     # initialize center weights
-    cweights[to_update] .= 0
+    wcounts[to_update] .= 0
 
     # accumulate columns
     @inbounds for j in 1:n
         # skip points assigned to a center that doesn't need to be updated
         cj = assignments[j]
         if to_update[cj]
-            if cweights[cj] > 0
+            if wcounts[cj] > 0
                 for i in 1:d
                     centers[i, cj] += X[i, j]
                 end
@@ -289,14 +291,14 @@ function update_centers!(X::AbstractMatrix{<:Real},        # in: data matrix (d 
                     centers[i, cj] = X[i, j]
                 end
             end
-            cweights[cj] += 1
+            wcounts[cj] += 1
         end
     end
 
     # sum ==> mean
     @inbounds for j in 1:k
         if to_update[j]
-            cj = cweights[j]
+            cj = wcounts[j]
             for i in 1:d
                 centers[i, j] /= cj
             end
@@ -314,13 +316,13 @@ function update_centers!(X::AbstractMatrix{<:Real}, # in: data matrix (d x n)
                          assignments::Vector{Int},  # in: assignments (n)
                          to_update::Vector{Bool},   # in: whether a center needs update (k)
                          centers::AbstractMatrix{<:Real}, # out: updated centers (d x k)
-                         cweights::Vector{W}        # out: updated cluster weights (k)
+                         wcounts::Vector{W}         # out: updated cluster weights (k)
                          ) where W<:Real
     d, n = size(X)
     k = size(centers, 2)
 
     # initialize center weights
-    cweights[to_update] .= 0
+    wcounts[to_update] .= 0
 
     # accumulate columns
     @inbounds for j in 1:n
@@ -329,7 +331,7 @@ function update_centers!(X::AbstractMatrix{<:Real}, # in: data matrix (d x n)
         wj = weights[j]
         cj = assignments[j]
         if wj > 0 && to_update[cj]
-            if cweights[cj] > 0
+            if wcounts[cj] > 0
                 for i in 1:d
                     centers[i, cj] += X[i, j] * wj
                 end
@@ -338,14 +340,14 @@ function update_centers!(X::AbstractMatrix{<:Real}, # in: data matrix (d x n)
                     centers[i, cj] = X[i, j] * wj
                 end
             end
-            cweights[cj] += wj
+            wcounts[cj] += wj
         end
     end
 
     # sum ==> mean
     @inbounds for j in 1:k
         if to_update[j]
-            cj = cweights[j]
+            cj = wcounts[j]
             for i in 1:d
                 centers[i, j] /= cj
             end

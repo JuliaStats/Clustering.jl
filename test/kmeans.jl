@@ -48,13 +48,14 @@ equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
     Random.seed!(34568)
     r = kmeans(x, k; maxiter=50)
     @test isa(r, KmeansResult{Matrix{Float64}, Float64, Int})
+    @test nclusters(r) == k
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
     @test length(r.costs) == n
-    @test length(r.counts) == k
-    @test sum(r.counts) == n
-    @test r.cweights == r.counts
+    @test length(counts(r)) == k
+    @test sum(counts(r)) == n
+    @test wcounts(r) == counts(r)
     @test sum(r.costs) ≈ r.totalcost
 
     Random.seed!(34568)
@@ -68,13 +69,14 @@ end
     x32t = copy(x32')
     r = kmeans(x32, k; maxiter=50)
     @test isa(r, KmeansResult{Matrix{Float32}, Float32, Int})
+    @test nclusters(r) == k
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
     @test length(r.costs) == n
-    @test length(r.counts) == k
-    @test sum(r.counts) == n
-    @test r.cweights == r.counts
+    @test length(counts(r)) == k
+    @test sum(counts(r)) == n
+    @test wcounts(r) == counts(r)
     @test sum(r.costs) ≈ r.totalcost
 
     Random.seed!(34568)
@@ -87,18 +89,19 @@ end
     Random.seed!(34568)
     r = kmeans(x, k; maxiter=50, weights=w)
     @test isa(r, KmeansResult{Matrix{Float64}, Float64, Float64})
+    @test nclusters(r) == k
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
     @test length(r.costs) == n
-    @test length(r.counts) == k
-    @test sum(r.counts) == n
+    @test length(counts(r)) == k
+    @test sum(counts(r)) == n
 
     cw = zeros(k)
     for i = 1:n
         cw[r.assignments[i]] += w[i]
     end
-    @test r.cweights ≈ cw
+    @test wcounts(r) ≈ cw
     @test dot(r.costs, w) ≈ r.totalcost
 
     Random.seed!(34568)
@@ -111,13 +114,14 @@ end
     r = kmeans(x, k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
     r2 = kmeans(x, k; maxiter=50, init=:kmcen)
     @test isa(r, KmeansResult{Matrix{Float64}, Float64, Int})
+    @test nclusters(r) == k
     @test size(r.centers) == (m, k)
     @test length(r.assignments) == n
     @test all(a -> 1 <= a <= k, r.assignments)
     @test length(r.costs) == n
-    @test length(r.counts) == k
-    @test sum(r.counts) == n
-    @test r.cweights == r.counts
+    @test length(counts(r)) == k
+    @test sum(counts(r)) == n
+    @test wcounts(r) == r.counts
     @test sum(r.costs) ≈ r.totalcost
     @test equal_kmresults(r, r2)
 

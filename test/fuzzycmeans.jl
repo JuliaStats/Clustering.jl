@@ -15,21 +15,27 @@ end
 
 Random.seed!(34568)
 
-m = 3
+d = 3
 n = 1000
 k = 5
 
-x = rand(m,n)
+x = rand(d, n)
 
 @testset "fuzziness = 2.0" begin
     fuzziness = 2.0
     Random.seed!(34568)
     r = fuzzy_cmeans(x, k, fuzziness)
     @test isa(r, FuzzyCMeansResult{Float64})
-    @test size(r.centers) == (m,k)
-    @test size(r.weights) == (n,k)
-    @test sum(r.weights, dims=2) ≈ fill(1.0, n)
+    @test nclusters(r) == k
+    @test size(r.centers) == (d, k)
+    @test size(r.weights) == (n, k)
     @test all(0 .<= r.weights .<= 1)
+    @test sum(r.weights, dims=2) ≈ fill(1.0, n)
+
+    @test wcounts(r) isa Vector{Float64}
+    @test length(wcounts(r)) == n
+    @test all(0 .<= wcounts(r) .<= n)
+    @test sum(wcounts(r)) ≈ n
 end
 
 @testset "fuzziness = 3.0" begin
@@ -37,10 +43,16 @@ end
     Random.seed!(34568)
     r = fuzzy_cmeans(x, k, fuzziness)
     @test isa(r, FuzzyCMeansResult{Float64})
-    @test size(r.centers) == (m,k)
-    @test size(r.weights) == (n,k)
+    @test nclusters(r) == k
+    @test size(r.centers) == (d, k)
+    @test size(r.weights) == (n, k)
     @test sum(r.weights, dims=2) ≈ fill(1.0, n)
     @test all(0 .<= r.weights .<= 1)
+
+    @test wcounts(r) isa Vector{Float64}
+    @test length(wcounts(r)) == n
+    @test all(0 .<= wcounts(r) .<= n)
+    @test sum(wcounts(r)) ≈ n
 end
 
 @testset "Abstract data matrix" begin
@@ -48,10 +60,16 @@ end
     Random.seed!(34568)
     r = fuzzy_cmeans(view(x, :, :), k, fuzziness)
     @test isa(r, FuzzyCMeansResult{Float64})
-    @test size(r.centers) == (m,k)
-    @test size(r.weights) == (n,k)
+    @test nclusters(r) == k
+    @test size(r.centers) == (d, k)
+    @test size(r.weights) == (n, k)
     @test sum(r.weights, dims=2) ≈ fill(1.0, n)
     @test all(0 .<= r.weights .<= 1)
+
+    @test wcounts(r) isa Vector{Float64}
+    @test length(wcounts(r)) == n
+    @test all(0 .<= wcounts(r) .<= n)
+    @test sum(wcounts(r)) ≈ n
 end
 
 end
