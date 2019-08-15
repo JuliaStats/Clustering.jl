@@ -31,7 +31,8 @@ data points.
 `a` and `b` can be either [`ClusteringResult`](@ref) instances or
 assignments vectors (`AbstractVector{<:Integer}`).
 
-If `normed` paremeter is `true`, the normalized mutual information (sum) is returned.
+If `normed` parameter is `true` the return value is the normalized mutual information (symmetric uncertainty),
+see "Data Mining Practical Machine Tools and Techniques", Witten & Frank 2005.
 
 # References
 > Vinh, Epps, and Bailey, (2009). “Information theoretic measures for clusterings comparison”.
