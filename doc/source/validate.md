@@ -88,3 +88,14 @@ weight, and when ``\beta < 1`` it's *homogeneity*.
 ```@docs
 vmeasure
 ```
+
+## Mutual information
+
+[Mutual information](https://en.wikipedia.org/wiki/Mutual_information)
+quantifies the "amount of information" obtained about one random variable
+through observing the other random variable. It is used in determining
+the similarity of two different clusterings of a dataset.
+
+```@docs
+mutualinfo
+```
