@@ -8,7 +8,7 @@ using Clustering
 @testset "Argument Checks" begin
     Random.seed!(34568)
     @test_throws DimensionMismatch mcl(zeros(Float64, 4, 3)) # nonsquare
-    adj = inv.(max.(pairwise(Euclidean(), randn(2, 3)), 0.1))
+    adj = inv.(max.(pairwise(Euclidean(), randn(2, 3), dims=2), 0.1))
     @test_throws ArgumentError mcl(zeros(Float64, 3, 3), display=:mylog)
     for disp in keys(Clustering.DisplayLevels)
         @test mcl(zeros(Float64, 3, 3), display=disp) isa MCLResult
