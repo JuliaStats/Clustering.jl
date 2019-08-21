@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Fuzzy C-means · Clustering.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="index.html"><img class="logo" src="assets/logo.png" alt="Clustering.jl logo"/></a><h1>Clustering.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Introduction</a></li><li><span class="toctext">Algorithms</span><ul><li><a class="toctext" href="algorithms.html">Basics</a></li><li><a class="toctext" href="init.html">Initialization</a></li><li><a class="toctext" href="kmeans.html">K-means</a></li><li><a class="toctext" href="kmedoids.html">K-medoids</a></li><li><a class="toctext" href="hclust.html">Hierarchical Clustering</a></li><li><a class="toctext" href="mcl.html">MCL (Markov Cluster Algorithm)</a></li><li><a class="toctext" href="affprop.html">Affinity Propagation</a></li><li><a class="toctext" href="dbscan.html">DBSCAN</a></li><li class="current"><a class="toctext" href="fuzzycmeans.html">Fuzzy C-means</a><ul class="internal"><li><a class="toctext" href="#Examples-1">Examples</a></li></ul></li></ul></li><li><a class="toctext" href="validate.html">Evaluation &amp; Validation</a></li></ul></nav><article id="docs"><header><nav><ul><li>Algorithms</li><li><a href="fuzzycmeans.html">Fuzzy C-means</a></li></ul><a class="edit-page" href="https://github.com/JuliaStats/Clustering.jl/blob/master/doc/source/fuzzycmeans.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Fuzzy C-means</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="fuzzy_cmeans_def-1" href="#fuzzy_cmeans_def-1">Fuzzy C-means</a></h1><p><a href="https://en.wikipedia.org/wiki/Fuzzy_clustering#Fuzzy_C-means_clustering">Fuzzy C-means</a> is a clustering method that provides cluster membership weights instead of &quot;hard&quot; classification (e.g. K-means).</p><p>From a mathematical standpoint, fuzzy C-means solves the following optimization problem:</p><div>\[\arg\min_C \ \sum_{i=1}^n \sum_{j=1}^c w_{ij}^m \| \mathbf{x}_i - \mathbf{c}_{j} \|^2, \
+\text{where}\ w_{ij} = \left(\sum_{k=1}^{c} \left(\frac{\left\|\mathbf{x}_i - \mathbf{c}_j \right\|}{\left\|\mathbf{x}_i - \mathbf{c}_k \right\|}\right)^{\frac{2}{m-1}}\right)^{-1}\]</div><p>Here, <span>$\mathbf{c}_j$</span> is the center of the <span>$j$</span>-th cluster, <span>$w_{ij}$</span> is the membership weight of the <span>$i$</span>-th point in the <span>$j$</span>-th cluster, and <span>$m &gt; 1$</span> is a user-defined fuzziness parameter.</p><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Clustering.fuzzy_cmeans" href="#Clustering.fuzzy_cmeans"><code>Clustering.fuzzy_cmeans</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-julia">fuzzy_cmeans(data::AbstractMatrix, C::Int, fuzziness::Real,
+             [...]) -&gt; FuzzyCMeansResult</code></pre><p>Perform Fuzzy C-means clustering over the given <code>data</code>.</p><p><strong>Arguments</strong></p><ul><li><code>data::AbstractMatrix</code>: <span>$d×n$</span> data matrix. Each column represents one <span>$d$</span>-dimensional data point.</li><li><code>C::Int</code>: the number of fuzzy clusters, <span>$2 ≤ C &lt; n$</span>.</li><li><code>fuzziness::Real</code>: clusters fuzziness (see <span>$m$</span> in the <a href="fuzzycmeans.html#fuzzy_cmeans_def-1">mathematical formulation</a>), <span>$\mathrm{fuzziness} &gt; 1$</span>.</li></ul><p>Optional keyword arguments:</p><ul><li><code>dist_metric::Metric</code> (defaults to <code>Euclidean</code>): the <code>Metric</code> object  that defines the distance between the data points</li><li><code>maxiter</code>, <code>tol</code>, <code>display</code>: see <a href="algorithms.html#common_options-1">common options</a></li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/JuliaStats/Clustering.jl/blob/d2500396611bc742a6e3c5a9947115fde9b56938/src/fuzzycmeans.jl#L66-L83">source</a></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Clustering.FuzzyCMeansResult" href="#Clustering.FuzzyCMeansResult"><code>Clustering.FuzzyCMeansResult</code></a> — <span class="docstring-category">Type</span>.</div><div><div><pre><code class="language-julia">FuzzyCMeansResult{T&lt;:AbstractFloat}</code></pre><p>The output of <a href="fuzzycmeans.html#Clustering.fuzzy_cmeans"><code>fuzzy_cmeans</code></a> function.</p><p><strong>Fields</strong></p><ul><li><code>centers::Matrix{T}</code>: the <span>$d×C$</span> matrix with columns being the centers of resulting fuzzy clusters</li><li><code>weights::Matrix{Float64}</code>: the <span>$n×C$</span> matrix of assignment weights (<span>$\mathrm{weights}_{ij}$</span> is the weight (probability) of assigning <span>$i$</span>-th point to the <span>$j$</span>-th cluster)</li><li><code>iterations::Int</code>: the number of executed algorithm iterations</li><li><code>converged::Bool</code>: whether the procedure converged</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/JuliaStats/Clustering.jl/blob/d2500396611bc742a6e3c5a9947115fde9b56938/src/fuzzycmeans.jl#L5-L18">source</a></section><div class="admonition warning"><div class="admonition-title">Missing docstring.</div><div class="admonition-text"><p>Missing docstring for <code>wcounts(::FuzzyCMeansResult)</code>. Check Documenter&#39;s build log for details.</p></div></div><h2><a class="nav-anchor" id="Examples-1" href="#Examples-1">Examples</a></h2><pre><code class="language-julia">using Clustering
+
+# make a random dataset with 1000 points
+# each point is a 5-dimensional vector
+X = rand(5, 1000)
+
+# performs Fuzzy C-means over X, trying to group them into 3 clusters
+# with a fuzziness factor of 2. Set maximum number of iterations to 200
+# set display to :iter, so it shows progressive info at each iteration
+R = fuzzy_cmeans(X, 3, 2, maxiter=200, display=:iter)
+
+# get the centers (i.e. weighted mean vectors)
+# M is a 5x3 matrix
+# M[:, k] is the center of the k-th cluster
+M = R.centers
+
+# get the point memberships over all the clusters
+# memberships is a 20x3 matrix
+memberships = R.weights</code></pre><pre><code class="language-none">1000×3 Array{Float64,2}:
+ 0.334497  0.33401   0.331493
+ 0.331813  0.337684  0.330503
+ 0.331747  0.333906  0.334347
+ 0.333689  0.334181  0.33213 
+ 0.332384  0.33515   0.332466
+ 0.33243   0.333606  0.333964
+ 0.331706  0.335773  0.332522
+ 0.332995  0.334379  0.332626
+ 0.333513  0.334275  0.332212
+ 0.335175  0.331833  0.332992
+ ⋮                           
+ 0.334288  0.333698  0.332014
+ 0.332024  0.335817  0.332159
+ 0.332453  0.336499  0.331048
+ 0.330226  0.335953  0.33382 
+ 0.331372  0.338455  0.330174
+ 0.335412  0.332579  0.332009
+ 0.334452  0.330964  0.334583
+ 0.331649  0.336055  0.332296
+ 0.333945  0.331006  0.335049</code></pre><footer><hr/><a class="previous" href="dbscan.html"><span class="direction">Previous</span><span class="title">DBSCAN</span></a><a class="next" href="validate.html"><span class="direction">Next</span><span class="title">Evaluation &amp; Validation</span></a></footer></article></body></html>
