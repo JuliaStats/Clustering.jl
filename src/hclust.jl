@@ -695,10 +695,17 @@ function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:R
         last_tree = ntrees(htre)
         ## update the distance matrix (while the trees are not merged yet)
         update_distances_upon_merge!(dd, metric, i -> tree_size(htre, i), NNlo, NNhi, last_tree)
-        merge_trees!(htre, NNlo, NNhi, NNmindist)
-        ## replace any nearest neighbor referring to the last cluster with NNhi
+        merge_trees!(htre, NNlo, NNhi, NNmindist) # side effect: puts last_tree to NNhi
         for k in eachindex(NN)
-            if NN[k] == last_tree
+            NNk = NN[k]
+            if (NNk == NNlo) || (NNk == NNhi)
+                # in case of duplicate distances, NNlo or NNhi may appear in NN
+                # several times, if that's detected, restart NN search
+                empty!(NN)
+                break
+            elseif NNk == last_tree
+                ## the last_tree was moved to NNhi slot by merge_trees!()
+                # update the NN references to it
                 NN[k] = NNhi
             end
         end

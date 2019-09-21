@@ -2,6 +2,7 @@ using Clustering
 using Test
 using CodecZlib
 using Distances
+using DelimitedFiles
 
 @testset "hclust() (hierarchical clustering)" begin
 
@@ -203,6 +204,17 @@ end
     hclupi = hclust(fill(3.141592653589, 4, 4), linkage=:average)
     @test hclupi.heights == fill(3.141592653589, 3)
     @test hclupi.merges == [-1 -2; -4 1; -3 2]
+
+    # check that the tree construction with the given matrix does not fail
+    dist1_mtx = readdlm(joinpath(@__DIR__, "data", "hclust_dist_issue176_1.txt"), ',', Float64)
+    hclu1_avg = hclust(dist1_mtx, linkage=:average)
+    hclu1_min = hclust(dist1_mtx, linkage=:single)
+    hclu1_ward = hclust(dist1_mtx, linkage=:ward)
+
+    dist2_mtx = readdlm(joinpath(@__DIR__, "data", "hclust_dist_issue176_2.txt"), ',', Float64)
+    hclu2_avg = hclust(dist2_mtx, linkage=:average)
+    hclu2_min = hclust(dist2_mtx, linkage=:single)
+    hclu2_ward = hclust(dist2_mtx, linkage=:ward)
 end
 
 end # testset "hclust()"
