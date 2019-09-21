@@ -440,7 +440,6 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
             end
         end
         NN[i] = NNi
-#        for n in NN[1:nc] print(n, " ") end; println()
     end
     return hmer
 end
