@@ -47,7 +47,7 @@ assigning `j`-th point to the medoid represented by the `i`-th point).
 
 # Note
 This package implements a K-means style algorithm instead of PAM, which
-is considered much more efficient and reliable.
+converges in fewer iterations, but was shown to produce worse results.
 
 # Arguments
  - `init` (defaults to `:kmpp`): how medoids should be initialized, could
