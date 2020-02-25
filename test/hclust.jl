@@ -199,4 +199,10 @@ end
     @test Clustering.nnodes(hcl_rand) == 50
 end
 
+@testset "Tree construction with duplicate distances (#176)" begin
+    hclupi = hclust(fill(3.141592653589, 4, 4), linkage=:average)
+    @test hclupi.heights == fill(3.141592653589, 3)
+    @test hclupi.merges == [-1 -2; -4 1; -3 2]
+end
+
 end # testset "hclust()"

@@ -238,6 +238,11 @@ formula that defines `d(A∪B, C)` using `d(A, C)`, `d(B, C)` and `d(A, B)`.
 """
 abstract type ReducibleMetric{T <: Real} end
 
+# due to reducibility, new_dki=d[k,i∪j] distance should not be less than
+# min(d[k,i], d[k,j]), enforce this property to workaround floating-point
+# arithmetic errors in Lance-Williams formula
+@inline clamp_reducible_metric(new_dki, dki, dkj) = max(new_dki, min(dki, dkj))
+
 """
     MinimalDistance <: ReducibleMetric
 
@@ -273,8 +278,9 @@ end
     k::Integer, i::Integer, d_ij::T, d_kj::T,
     ni::Integer, nj::Integer, nk::Integer
 ) where T
-    nall = ni + nj + nk
-    d[k, i] = ((ni + nk) * d[k, i] + (nj + nk) * d_kj - nk * d_ij) / nall
+    d_ki = d[k, i]
+    d[k, i] = clamp_reducible_metric(((ni+nk)*d_ki + (nj+nk)*d_kj - nk*d_ij) / (ni+nj+nk),
+                                     d_ki, d_kj)
 end
 
 """
@@ -293,7 +299,8 @@ end
     ni::Integer, nj::Integer, nk::Integer
 ) where T
     nij = ni + nj
-    d[k, i] = (ni * d[k, i] + nj * d_kj) / nij
+    d_ki = d[k, i]
+    d[k, i] = clamp_reducible_metric((ni * d_ki + nj * d_kj) / nij, d_ki, d_kj)
 end
 
 """
