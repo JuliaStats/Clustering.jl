@@ -23,13 +23,19 @@ end
 
 @testset "Argument checks" begin
     Random.seed!(34568)
-    @test_throws ArgumentError kmeans(randn(2, 3), 1)
+    @test_throws ArgumentError kmeans(randn(2, 3), 0)
     @test_throws ArgumentError kmeans(randn(2, 3), 4)
     @test kmeans(randn(2, 3), 2) isa KmeansResult
     @test_throws ArgumentError kmeans(randn(2, 3), 2, display=:mylog)
     for disp in keys(Clustering.DisplayLevels)
         @test kmeans(randn(2, 3), 2, display=disp) isa KmeansResult
     end
+end
+
+@testset "Argument corner cases" begin
+    Random.seed!(34568)
+    @test length(kmeans(randn(2,3), 1).centers) == 2
+    @test length(kmeans(randn(2,3), 3).centers) == 6
 end
 
 Random.seed!(34568)
