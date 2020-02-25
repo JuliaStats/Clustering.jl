@@ -54,13 +54,27 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
     dc, k = size(centers)
 
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
-    (2 <= k < n) || throw(ArgumentError("k must have 2 <= k < n=$n ($k given)."))
-    if weights !== nothing
-        length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
-    end
+    (1 <= k <= n) || throw(ArgumentError("k must have 1 <= k <= n=$n ($k given)."))
+    if (k == 1 )
+      WC = (weights === nothing) ? Int : eltype(weights)
+      D = typeof(one(eltype(centers)) * one(WC))
+      # all data points belong to this one cluster
+      return KmeansResult(centers, Base.ones(Int, n), Base.zeros(D, n), Base.fill(n,1),
+                          Base.fill(n,1), D(1), 0, true)
+    elseif ( k == n)
+      WC = (weights === nothing) ? Int : eltype(weights)
+      D = typeof(one(eltype(centers)) * one(WC))
+      # each data point is its own cluster center
+      return KmeansResult(typeof(centers)(X), Base.cumsum(ones(Int, n)), Base.zeros(D, n), Base.ones(Int, k),
+                          Base.ones(Int, k), D(1), 0, true)
+    else
+      if weights !== nothing
+          length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
+      end
 
-    _kmeans!(X, weights, centers, Int(maxiter), Float64(tol),
-             display_level(display), distance)
+      return _kmeans!(X, weights, centers, Int(maxiter), Float64(tol),
+               display_level(display), distance)
+    end
 end
 
 
@@ -92,7 +106,7 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: data matrix (d x
                 display::Symbol=_kmeans_default_display,  # in: level of display
                 distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
     d, n = size(X)
-    (2 <= k < n) || throw(ArgumentError("k must be 2 <= k < n, k=$k given."))
+    (1 <= k <= n) || throw(ArgumentError("k must be 1 <= k <= n, k=$k given."))
 
     # initialize the centers using a type wide enough so that the updates
     # centers[i, cj] += X[i, j] * wj will occur without loss of precision through rounding
