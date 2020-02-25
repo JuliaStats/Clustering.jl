@@ -238,6 +238,11 @@ formula that defines `d(A∪B, C)` using `d(A, C)`, `d(B, C)` and `d(A, B)`.
 """
 abstract type ReducibleMetric{T <: Real} end
 
+# due to reducibility, new_dki=d[k,i∪j] distance should not be less than
+# min(d[k,i], d[k,j]), enforce this property to workaround floating-point
+# arithmetic errors in Lance-Williams formula
+@inline clamp_reducible_metric(new_dki, dki, dkj) = max(new_dki, min(dki, dkj))
+
 """
     MinimalDistance <: ReducibleMetric
 
@@ -273,8 +278,9 @@ end
     k::Integer, i::Integer, d_ij::T, d_kj::T,
     ni::Integer, nj::Integer, nk::Integer
 ) where T
-    nall = ni + nj + nk
-    d[k, i] = ((ni + nk) * d[k, i] + (nj + nk) * d_kj - nk * d_ij) / nall
+    d_ki = d[k, i]
+    d[k, i] = clamp_reducible_metric(((ni+nk)*d_ki + (nj+nk)*d_kj - nk*d_ij) / (ni+nj+nk),
+                                     d_ki, d_kj)
 end
 
 """
@@ -293,7 +299,8 @@ end
     ni::Integer, nj::Integer, nk::Integer
 ) where T
     nij = ni + nj
-    d[k, i] = (ni * d[k, i] + nj * d_kj) / nij
+    d_ki = d[k, i]
+    d[k, i] = clamp_reducible_metric((ni * d_ki + nj * d_kj) / nij, d_ki, d_kj)
 end
 
 """
@@ -314,9 +321,9 @@ end
     (d[k, i] < d_kj) && (d[k, i] = d_kj)
 
 # Update upper-triangular matrix `d` of cluster-cluster `metric`-based distances
-# after merging cluster `j` into cluster `i` and
+# when merging cluster `j` into cluster `i` and
 # moving the last cluster (`N`) into the `j`-th slot
-function update_distance_after_merge!(
+function update_distances_upon_merge!(
     d::AbstractMatrix{T},
     metric::ReducibleMetric{T},
     clu_size::Function,
@@ -409,7 +416,7 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
             i, j = j, i     # make sure i < j
         end
         last_tree = length(trees)
-        update_distance_after_merge!(d, mindist, i -> 0, i, j, last_tree)
+        update_distances_upon_merge!(d, mindist, i -> 0, i, j, last_tree)
         trees[i] = push_merge!(hmer, trees[i], trees[j], NNmindist)
         # reassign the last tree to position j
         trees[j] = trees[last_tree]
@@ -440,7 +447,6 @@ function hclust_minimum(ds::AbstractMatrix{T}) where T<:Real
             end
         end
         NN[i] = NNi
-#        for n in NN[1:nc] print(n, " ") end; println()
     end
     return hmer
 end
@@ -688,11 +694,18 @@ function hclust_nn_lw(d::AbstractMatrix, metric::ReducibleMetric{T}) where {T<:R
         end
         last_tree = ntrees(htre)
         ## update the distance matrix (while the trees are not merged yet)
-        update_distance_after_merge!(dd, metric, i -> tree_size(htre, i), NNlo, NNhi, last_tree)
-        merge_trees!(htre, NNlo, NNhi, NNmindist)
-        ## replace any nearest neighbor referring to the last cluster with NNhi
+        update_distances_upon_merge!(dd, metric, i -> tree_size(htre, i), NNlo, NNhi, last_tree)
+        merge_trees!(htre, NNlo, NNhi, NNmindist) # side effect: puts last_tree to NNhi
         for k in eachindex(NN)
-            if NN[k] == last_tree
+            NNk = NN[k]
+            if (NNk == NNlo) || (NNk == NNhi)
+                # in case of duplicate distances, NNlo or NNhi may appear in NN
+                # several times, if that's detected, restart NN search
+                empty!(NN)
+                break
+            elseif NNk == last_tree
+                ## the last_tree was moved to NNhi slot by merge_trees!()
+                # update the NN references to it
                 NN[k] = NNhi
             end
         end
