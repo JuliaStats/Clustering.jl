@@ -39,6 +39,10 @@ R = kmedoids(costs, k)
 @test isapprox(sum(R.acosts), R.totalcost)
 @test R.converged
 
+# k=1 and k=n cases
+@test kmedoids(costs, 1).medoids == [94]
+@test sum(kmedoids(costs, n).medoids) == 20100
+
 
 # this data set has three obvious groups:
 # group 1: [1, 3, 4], values: [1, 2, 3]
