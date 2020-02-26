@@ -44,7 +44,7 @@ x = pairwise(SqEuclidean(), [1 2 3; .1 .2 .3; 4 5.6 7], dims=2)
 kmed1 = kmedoids(x, 1)
 @test nclusters(kmed1) == 1
 @test assignments(kmed1) == [1, 1, 1]
-@test kmed1.medoids == [1]
+@test kmed1.medoids == [2]
 kmed3 = kmedoids(x, 3)
 @test nclusters(kmed3) == 3
 @test sort(assignments(kmed3)) == [1, 2, 3]
