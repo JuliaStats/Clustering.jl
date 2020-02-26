@@ -32,7 +32,7 @@ end
     end
 end
 
-@testset "Argument corner cases" begin
+@testset "k=1 and k=n corner cases" begin
     Random.seed!(34568)
     @test length(kmeans(randn(2,3), 1).centers) == 2
     @test length(kmeans(randn(2,3), 3).centers) == 6

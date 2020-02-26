@@ -52,20 +52,16 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
                  distance::SemiMetric=SqEuclidean())       # in: function to compute distances
     d, n = size(X)
     dc, k = size(centers)
+    WC = (weights === nothing) ? Int : eltype(weights)
+    D = typeof(one(eltype(centers)) * one(WC))
 
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
-    (1 <= k <= n) || throw(ArgumentError("k must have 1 <= k <= n=$n ($k given)."))
-    if (k == 1 )
-      WC = (weights === nothing) ? Int : eltype(weights)
-      D = typeof(one(eltype(centers)) * one(WC))
-      # all data points belong to this one cluster
-      return KmeansResult(centers, Base.ones(Int, n), Base.zeros(D, n), Base.fill(n,1),
-                          Base.fill(n,1), D(1), 0, true)
-    elseif ( k == n)
-      WC = (weights === nothing) ? Int : eltype(weights)
-      D = typeof(one(eltype(centers)) * one(WC))
-      # each data point is its own cluster center
-      return KmeansResult(typeof(centers)(X), Base.cumsum(ones(Int, n)), Base.zeros(D, n), Base.ones(Int, k),
+    (1 <= k <= n) || throw(ArgumentError("k must be from 1:n (n=$n), k=$k given."))
+    if k == 1 # all points belong to the single cluster
+      return KmeansResult(mean!(centers, X), fill(1, n), zeros(D, n), fill(n, 1),
+                          fill(n, 1), D(1), 0, true)
+    elseif k == n # each point in its own cluster
+      return KmeansResult(copyto!(centers, X), 1:k, zeros(D, k), fill(1, k),
                           Base.ones(Int, k), D(1), 0, true)
     else
       if weights !== nothing
@@ -73,7 +69,7 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
       end
 
       return _kmeans!(X, weights, centers, Int(maxiter), Float64(tol),
-               display_level(display), distance)
+                      display_level(display), distance)
     end
 end
 
@@ -106,7 +102,7 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: data matrix (d x
                 display::Symbol=_kmeans_default_display,  # in: level of display
                 distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
     d, n = size(X)
-    (1 <= k <= n) || throw(ArgumentError("k must be 1 <= k <= n, k=$k given."))
+    (1 <= k <= n) || throw(ArgumentError("k must be from 1:n (n=$n), k=$k given."))
 
     # initialize the centers using a type wide enough so that the updates
     # centers[i, cj] += X[i, j] * wj will occur without loss of precision through rounding
