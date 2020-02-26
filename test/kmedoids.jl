@@ -35,8 +35,8 @@ R = kmedoids(costs, k)
 @test R.assignments[R.medoids] == 1:k # Every medoid should belong to its own cluster
 @test sum(counts(R)) == n
 @test wcounts(R) == counts(R)
-@test R.acosts == costs[LinearIndices((n, n))[CartesianIndex.(R.medoids[R.assignments], 1:n)]]
-@test isapprox(sum(R.acosts), R.totalcost)
+@test R.costs == costs[LinearIndices((n, n))[CartesianIndex.(R.medoids[R.assignments], 1:n)]]
+@test isapprox(sum(R.costs), R.totalcost)
 @test R.converged
 
 
@@ -56,7 +56,7 @@ R = kmedoids!(costs, [1, 2, 6])
 @test R.assignments == [1, 2, 1, 1, 2, 3, 2, 3, 3]
 @test counts(R) == [3, 3, 3]
 @test wcounts(R) == counts(R)
-@test R.acosts ≈ [1, 1, 0, 1, 0, 0, 1, 1, 1]
+@test R.costs ≈ [1, 1, 0, 1, 0, 0, 1, 1, 1]
 @test R.totalcost ≈ 6.0
 @test R.converged
 

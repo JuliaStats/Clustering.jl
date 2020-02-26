@@ -13,7 +13,7 @@ The output of [`kmedoids`](@ref) function.
  - `assignments::Vector{Int}`: the indices of clusters the points are assigned
    to, so that `medoids[assignments[i]]` is the index of the medoid for the
    ``i``-th point
- - `acosts::Vector{T}`: assignment costs, i.e. `acosts[i]` is the cost of
+ - `costs::Vector{T}`: assignment costs, i.e. `acosts[i]` is the cost of
    assigning ``i``-th point to its medoid
  - `counts::Vector{Int}`: cluster sizes
  - `totalcost::Float64`: total assignment cost (the sum of `acosts`)
@@ -23,7 +23,7 @@ The output of [`kmedoids`](@ref) function.
 mutable struct KmedoidsResult{T} <: ClusteringResult
     medoids::Vector{Int}        # indices of methods (k)
     assignments::Vector{Int}    # assignments (n)
-    acosts::Vector{T}           # costs of the resultant assignments (n)
+    costs::Vector{T}           # costs of the resultant assignments (n)
     counts::Vector{Int}         # number of points assigned to each cluster (k)
     totalcost::Float64          # total assignment cost (i.e. objective) (k)
     iterations::Int             # number of elapsed iterations
