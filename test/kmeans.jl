@@ -36,6 +36,9 @@ end
     Random.seed!(34568)
     @test length(kmeans(randn(2,3), 1).centers) == 2
     @test length(kmeans(randn(2,3), 3).centers) == 6
+    x = [[ 0.5 1 ]; [ 1 0.5 ]]
+    @test kmeans(x,1).centers == [ 0.75 0.75 ]
+    @test kmeans(x,2).centers == x
 end
 
 Random.seed!(34568)

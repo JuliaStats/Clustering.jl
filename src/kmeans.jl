@@ -61,7 +61,7 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
       return KmeansResult(mean!(centers, X), fill(1, n), zeros(D, n), fill(n, 1),
                           fill(n, 1), D(1), 0, true)
     elseif k == n # each point in its own cluster
-      return KmeansResult(copyto!(centers, X), 1:k, zeros(D, k), fill(1, k),
+      return KmeansResult(copyto!(centers, X), collect(1:k), zeros(D, k), fill(1, k),
                           Base.ones(Int, k), D(1), 0, true)
     else
       if weights !== nothing
