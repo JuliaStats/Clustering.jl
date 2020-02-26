@@ -56,7 +56,7 @@ const _kmed_default_display = :none
     kmedoids(dist::DenseMatrix, k::Integer; ...) -> KmedoidsResult
 
 Perform K-medoids clustering of ``n`` points into `k` clusters,
-given the `dist` matrix (``n×n``, `dist[i, j]` is the cost of
+given the `distance` matrix (``n×n``, `dist[i, j]` is the cost of
 assigning `j`-th point to the medoid represented by the `i`-th point).
 
 # Note
@@ -123,7 +123,7 @@ end
 #### core algorithm
 
 function _kmedoids!(medoids::Vector{Int},      # initialized medoids
-                    dist::DenseMatrix{T},      # cost matrix
+                    dist::DenseMatrix{T},      # distance matrix
                     maxiter::Int,              # maximum number of iterations
                     tol::Real,                 # tolerable change of objective
                     displevel::Int) where T<:Real            # level of display
