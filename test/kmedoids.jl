@@ -46,9 +46,9 @@ kmed1 = kmedoids(x, 1)
 @test assignments(kmed1) == [1, 1, 1]
 @test kmed1.medoids == [1]
 kmed3 = kmedoids(x, 3)
-@test nclusters(kmed3) ==  3
-@test Set(assignments(kmed3)) == Set([1, 2, 3])
-@test Set(kmed3.medoids) == Set([1,2,3])
+@test nclusters(kmed3) == 3
+@test sort(assignments(kmed3)) == [1, 2, 3]
+@test sort(kmed3.medoids) == [1, 2, 3]
 
 
 # this data set has three obvious groups:

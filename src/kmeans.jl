@@ -56,10 +56,10 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
     D = typeof(one(eltype(centers)) * one(WC))
 
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
+    (1 <= k <= n) || throw(ArgumentError("k must be from 1:n (n=$n), k=$k given."))
     if weights !== nothing
       length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
     end
-    (1 <= k <= n) || throw(ArgumentError("k must be from 1:n (n=$n), k=$k given."))
     if k == n # each point in its own cluster
       return KmeansResult(copyto!(centers, X), collect(1:k), zeros(D, k), fill(1, k),
                           weights !== nothing ? copy(weights) : fill(1, k), D(0), 0, true)
