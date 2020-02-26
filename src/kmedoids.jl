@@ -32,11 +32,11 @@ end
 
 # FIXME remove after deprecation period for acosts
 Base.propertynames(kmed::KmedoidsResult, private::Bool = false) =
-    (fieldnames(kmed)..., #= deprecated =# :acosts)
+    (fieldnames(kmed)..., #= deprecated since v0.13.4=# :acosts)
 
 # FIXME remove after deprecation period for acosts
 function Base.getproperty(kmed::KmedoidsResult, prop::Symbol)
-    if prop == :acosts
+    if prop == :acosts # deprecated since v0.13.4
         Base.depwarn("KmedoidsResult::acosts is deprecated, use KmedoidsResult::costs", Symbol("KmedoidsResult::costs"))
         return getfield(kmed, :costs)
     else
@@ -53,10 +53,10 @@ const _kmed_default_tol = 1.0e-8
 const _kmed_default_display = :none
 
 """
-    kmedoids(costs::DenseMatrix, k::Integer; ...) -> KmedoidsResult
+    kmedoids(dist::DenseMatrix, k::Integer; ...) -> KmedoidsResult
 
 Perform K-medoids clustering of ``n`` points into `k` clusters,
-given the `costs` matrix (``n×n``, `costs[i, j]` is the cost of
+given the `dist` matrix (``n×n``, `dist[i, j]` is the cost of
 assigning `j`-th point to the medoid represented by the `i`-th point).
 
 # Note
@@ -72,50 +72,50 @@ is considered much more efficient and reliable.
      use as initial medoids.
  - `maxiter`, `tol`, `display`: see [common options](@ref common_options)
 """
-function kmedoids(costs::DenseMatrix{T}, k::Integer;
+function kmedoids(dist::DenseMatrix{T}, k::Integer;
                   init=_kmed_default_init,
                   maxiter::Integer=_kmed_default_maxiter,
                   tol::Real=_kmed_default_tol,
                   display::Symbol=_kmed_default_display) where T<:Real
     # check arguments
-    n = size(costs, 1)
-    size(costs, 2) == n || throw(ArgumentError("costs must be a square matrix ($(size(costs)) given)."))
+    n = size(dist, 1)
+    size(dist, 2) == n || throw(ArgumentError("dist must be a square matrix ($(size(dist)) given)."))
     k <= n || throw(ArgumentError("Requested number of medoids exceeds n=$n ($k given)."))
 
     # initialize medoids
-    medoids = initseeds_by_costs(init, costs, k)::Vector{Int}
+    medoids = initseeds_by_costs(init, dist, k)::Vector{Int}
     @assert length(medoids) == k
 
     # invoke core algorithm
-    _kmedoids!(medoids, costs,
+    _kmedoids!(medoids, dist,
                round(Int, maxiter), tol, display_level(display))
 end
 
 """
-    kmedoids!(costs::DenseMatrix, medoids::Vector{Int};
+    kmedoids!(dist::DenseMatrix, medoids::Vector{Int};
               [kwargs...]) -> KmedoidsResult
 
-Update the current cluster `medoids` using the `costs` matrix.
+Update the current cluster `medoids` using the `dist` matrix.
 
 The `medoids` field of the returned `KmedoidsResult` points to the same array
 as `medoids` argument.
 
 See [`kmedoids`](@ref) for the description of optional `kwargs`.
 """
-function kmedoids!(costs::DenseMatrix{T}, medoids::Vector{Int};
+function kmedoids!(dist::DenseMatrix{T}, medoids::Vector{Int};
                    maxiter::Integer=_kmed_default_maxiter,
                    tol::Real=_kmed_default_tol,
                    display::Symbol=_kmed_default_display) where T<:Real
 
     # check arguments
-    n = size(costs, 1)
-    size(costs, 2) == n ||
-        throw(ArgumentError("costs must be a square matrix ($(size(costs)) given)."))
+    n = size(dist, 1)
+    size(dist, 2) == n ||
+        throw(ArgumentError("dist must be a square matrix ($(size(dist)) given)."))
     length(medoids) <= n ||
         throw(ArgumentError("Requested number of medoids exceeds n=$n ($(length(medoids)) given)."))
 
     # invoke core algorithm
-    _kmedoids!(medoids, costs,
+    _kmedoids!(medoids, dist,
                round(Int, maxiter), tol, display_level(display))
 end
 
@@ -123,25 +123,25 @@ end
 #### core algorithm
 
 function _kmedoids!(medoids::Vector{Int},      # initialized medoids
-                    costs::DenseMatrix{T},     # cost matrix
+                    dist::DenseMatrix{T},      # cost matrix
                     maxiter::Int,              # maximum number of iterations
                     tol::Real,                 # tolerable change of objective
                     displevel::Int) where T<:Real            # level of display
 
-    # cost[i, j] is the cost of assigning point j to the medoid i
+    # dist[i, j] is the cost of assigning point j to the medoid i
 
-    n = size(costs, 1)
+    n = size(dist, 1)
     k = length(medoids)
 
     # prepare storage
-    acosts = Vector{T}(undef, n)
+    costs = Vector{T}(undef, n)
     counts = zeros(T, k)
     assignments = Vector{Int}(undef, n)
 
     groups = [Int[] for i=1:k]
 
     # initialize assignments
-    tcost, _ = _kmed_update_assignments!(costs, medoids, assignments, groups, acosts, true)
+    tcost, _ = _kmed_update_assignments!(dist, medoids, assignments, groups, costs, true)
 
     # main loop
     t = 0
@@ -158,12 +158,12 @@ function _kmedoids!(medoids::Vector{Int},      # initialized medoids
 
         # update medoids
         for i = 1:k
-            medoids[i] = _find_medoid(costs, groups[i])
+            medoids[i] = _find_medoid(dist, groups[i])
         end
 
         # update assignments
         tcost_pre = tcost
-        tcost, ch = _kmed_update_assignments!(costs, medoids, assignments, groups, acosts, false)
+        tcost, ch = _kmed_update_assignments!(dist, medoids, assignments, groups, costs, false)
 
         # check convergence
         converged = (ch == 0 || abs(tcost - tcost_pre) < tol)
@@ -187,7 +187,7 @@ function _kmedoids!(medoids::Vector{Int},      # initialized medoids
     KmedoidsResult{T}(
         medoids,
         assignments,
-        acosts,
+        costs,
         counts,
         tcost,
         t, converged)
@@ -195,13 +195,13 @@ end
 
 
 # update assignments and related quantities
-function _kmed_update_assignments!(costs::DenseMatrix{T},        # in: (n, n)
+function _kmed_update_assignments!(dist::DenseMatrix{T},         # in: (n, n)
                                    medoids::AbstractVector{Int}, # in: (k,)
                                    assignments::Vector{Int},     # out: (n,)
                                    groups::Vector{Vector{Int}},  # out: (k,)
-                                   acosts::Vector{T},            # out: (n,)
+                                   costs::Vector{T},             # out: (n,)
                                    isinit::Bool) where T                 # in
-    n = size(costs, 1)
+    n = size(dist, 1)
     k = length(medoids)
     ch = 0
 
@@ -214,10 +214,10 @@ function _kmed_update_assignments!(costs::DenseMatrix{T},        # in: (n, n)
     tcost = 0.0
     for j = 1:n
         p = 1
-        mv = costs[medoids[1], j]
+        mv = dist[medoids[1], j]
 
         for i = 2:k
-            v = costs[medoids[i], j]
+            v = dist[medoids[i], j]
             if v < mv
                 p = i
                 mv = v
@@ -234,7 +234,7 @@ function _kmed_update_assignments!(costs::DenseMatrix{T},        # in: (n, n)
             assignments[j] = p
         end
 
-        acosts[j] = mv
+        costs[j] = mv
         tcost += mv
         push!(groups[p], j)
     end
@@ -246,8 +246,8 @@ end
 # find medoid for a given group
 #
 # TODO: faster way without creating temporary arrays
-function _find_medoid(costs::DenseMatrix, grp::Vector{Int})
+function _find_medoid(dist::DenseMatrix, grp::Vector{Int})
     @assert !isempty(grp)
-    p = argmin(sum(costs[grp, grp], dims=2))
+    p = argmin(sum(dist[grp, grp], dims=2))
     return grp[p]::Int
 end
