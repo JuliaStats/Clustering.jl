@@ -41,8 +41,8 @@ R = kmedoids(costs, k)
 
 # k=1 and k=n cases
 x = pairwise(SqEuclidean(), [[ 1 2 3]; [.1 .2 .3]; [4 5.6 7]], dims=2)
-@test kmedoids(x, 1).medoids == [2]
-@test kmedoids(x, 3).medoids ==  [1; 2; 3]
+@test nclusters(kmedoids(x, 1)) == 1
+@test nclusters(kmedoids(x, 3)) ==  3
 
 
 # this data set has three obvious groups:
