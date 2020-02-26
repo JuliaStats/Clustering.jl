@@ -40,8 +40,9 @@ R = kmedoids(costs, k)
 @test R.converged
 
 # k=1 and k=n cases
-@test kmedoids(costs, 1).medoids == [94]
-@test sum(kmedoids(costs, n).medoids) == 20100
+x = pairwise(SqEuclidean(), [[ 1 2 3]; [.1 .2 .3]; [4 5.6 7]], dims=2)
+@test kmedoids(x, 1).medoids == [2]
+@test kmedoids(x, 3).medoids ==  [1; 2; 3]
 
 
 # this data set has three obvious groups:
