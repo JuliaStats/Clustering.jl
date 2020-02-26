@@ -33,12 +33,18 @@ end
 end
 
 @testset "k=1 and k=n corner cases" begin
-    Random.seed!(34568)
-    @test length(kmeans(randn(2,3), 1).centers) == 2
-    @test length(kmeans(randn(2,3), 3).centers) == 6
-    x = [[ 0.5 1 ]; [ 1 0.5 ]]
-    @test dropdims(kmeans(x,1).centers, dims=2) == [0.75, 0.75]
-    @test kmeans(x,2).centers == x
+    x = [0.5 1 2; 1 0.5 0; 3 2 1]
+    km1 = kmeans(x,1)
+    @test km1.centers == reshape([7. /6,0.5, 2.0], (3,1))
+    @test km1.counts == fill(3, (1))
+    @test km1.assignments == fill(1, (3))
+    km3 = kmeans(x,3)
+    @test km3.centers == x
+    @test km3.counts == fill(1, (3))
+    @test km3.assignments == collect(1:3)
+    w = Vector{Int}([1,2,3])
+    @test == kmeans(x,1,weights=w).wcounts == [6]
+    @test == kmeans(x,3,weights=w).wcounts == w
 end
 
 Random.seed!(34568)

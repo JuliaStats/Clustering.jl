@@ -40,9 +40,15 @@ R = kmedoids(costs, k)
 @test R.converged
 
 # k=1 and k=n cases
-x = pairwise(SqEuclidean(), [[ 1 2 3]; [.1 .2 .3]; [4 5.6 7]], dims=2)
-@test nclusters(kmedoids(x, 1)) == 1
-@test nclusters(kmedoids(x, 3)) ==  3
+x = pairwise(SqEuclidean(), [1 2 3; .1 .2 .3; 4 5.6 7], dims=2)
+kmed1 = kmedoids(x, 1)
+@test nclusters(kmed1) == 1
+@test assignments(kmed1) == [1, 1, 1]
+@test kmed1.medoids == [1]
+kmed3 = kmedoids(x, 3)
+@test nclusters(kmed3) ==  3
+@test Set(assignments(kmed3)) == Set([1, 2, 3])
+@test Set(kmed3.medoids) == Set([1,2,3])
 
 
 # this data set has three obvious groups:

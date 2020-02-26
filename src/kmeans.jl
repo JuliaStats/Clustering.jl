@@ -56,18 +56,17 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
     D = typeof(one(eltype(centers)) * one(WC))
 
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
+    if weights !== nothing
+      length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
+    end
     (1 <= k <= n) || throw(ArgumentError("k must be from 1:n (n=$n), k=$k given."))
-    if k == 1 # all points belong to the single cluster
-      return KmeansResult(mean!(centers, X), fill(1, n), zeros(D, n), fill(n, 1),
-                          fill(n, 1), D(1), 0, true)
-    elseif k == n # each point in its own cluster
+    if k == n # each point in its own cluster
       return KmeansResult(copyto!(centers, X), collect(1:k), zeros(D, k), fill(1, k),
-                          Base.ones(Int, k), D(1), 0, true)
+                          weights !== nothing ? copy(weights) : fill(1, k), D(0), 0, true)
     else
-      if weights !== nothing
-          length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
+      if k == 1 # all points belong to the single cluster
+        mean!(centers, X)
       end
-
       return _kmeans!(X, weights, centers, Int(maxiter), Float64(tol),
                       display_level(display), distance)
     end
@@ -187,7 +186,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
 
         if objv_change > tol
             @warn("The clustering cost increased at iteration #$t")
-        elseif abs(objv_change) < tol
+        elseif (k == 1) || (abs(objv_change) < tol)
             converged = true
         end
 
