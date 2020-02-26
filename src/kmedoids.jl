@@ -30,6 +30,21 @@ mutable struct KmedoidsResult{T} <: ClusteringResult
     converged::Bool             # whether the procedure converged
 end
 
+# FIXME remove after deprecation period for acosts
+Base.propertynames(kmed::KmedoidsResult, private::Bool = false) =
+    (:medoids, :assignments, :costs, :counts, :totalcost, :iterations, :converged,
+     #= deprecated =# :acosts)
+
+# FIXME remove after deprecation period for acosts
+function Base.getproperty(kmed::KmedoidsResult, prop::Symbol)
+    if prop == :acosts
+        Base.depwarn("KmedoidsResult::acosts is deprecated, use KmedoidsResult::costs", Symbol("KmedoidsResult::costs"))
+        return getfield(kmed, :costs)
+    else
+        return getfield(kmed, prop)
+    end
+end
+
 
 #### interface functions
 
