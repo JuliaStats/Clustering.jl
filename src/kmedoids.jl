@@ -56,8 +56,8 @@ const _kmed_default_display = :none
     kmedoids(dist::DenseMatrix, k::Integer; ...) -> KmedoidsResult
 
 Perform K-medoids clustering of ``n`` points into `k` clusters,
-given the `distance` matrix (``n×n``, `dist[i, j]` is the cost of
-assigning `j`-th point to the medoid represented by the `i`-th point).
+given the `dist` matrix (``n×n``, `dist[i, j]` is the distance
+between the `j`-th and `i`-th points).
 
 # Note
 This package implements a K-means style algorithm instead of PAM, which
