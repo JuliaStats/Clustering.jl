@@ -30,21 +30,6 @@ mutable struct KmedoidsResult{T} <: ClusteringResult
     converged::Bool             # whether the procedure converged
 end
 
-# FIXME remove after deprecation period for acosts
-Base.propertynames(kmed::KmedoidsResult, private::Bool = false) =
-    (fieldnames(kmed)..., #= deprecated since v0.13.4=# :acosts)
-
-# FIXME remove after deprecation period for acosts
-function Base.getproperty(kmed::KmedoidsResult, prop::Symbol)
-    if prop == :acosts # deprecated since v0.13.4
-        Base.depwarn("KmedoidsResult::acosts is deprecated, use KmedoidsResult::costs", Symbol("KmedoidsResult::costs"))
-        return getfield(kmed, :costs)
-    else
-        return getfield(kmed, prop)
-    end
-end
-
-
 #### interface functions
 
 const _kmed_default_init = :kmpp
