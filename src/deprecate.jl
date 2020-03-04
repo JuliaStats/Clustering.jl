@@ -50,3 +50,18 @@ Base.propertynames(clu::KmeansResult, private::Bool = false) =
         return getfield(clu, prop)
     end
 end
+
+# FIXME remove after deprecation period for acosts
+Base.propertynames(kmed::KmedoidsResult, private::Bool = false) =
+    (fieldnames(kmed)..., #= deprecated since v0.13.4=# :acosts)
+
+# FIXME remove after deprecation period for acosts
+function Base.getproperty(kmed::KmedoidsResult, prop::Symbol)
+    if prop == :acosts # deprecated since v0.13.4
+        Base.depwarn("KmedoidsResult::acosts is deprecated, use KmedoidsResult::costs",
+                     Symbol("KmedoidsResult::costs"))
+        return getfield(kmed, :costs)
+    else
+        return getfield(kmed, prop)
+    end
+end
