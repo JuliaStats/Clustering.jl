@@ -52,15 +52,24 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
                  distance::SemiMetric=SqEuclidean())       # in: function to compute distances
     d, n = size(X)
     dc, k = size(centers)
+    WC = (weights === nothing) ? Int : eltype(weights)
+    D = typeof(one(eltype(centers)) * one(WC))
 
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
-    (2 <= k < n) || throw(ArgumentError("k must have 2 <= k < n=$n ($k given)."))
+    (1 <= k <= n) || throw(ArgumentError("k must be from 1:n (n=$n), k=$k given."))
     if weights !== nothing
-        length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
+      length(weights) == n || throw(DimensionMismatch("Incorrect length of weights."))
     end
-
-    _kmeans!(X, weights, centers, Int(maxiter), Float64(tol),
-             display_level(display), distance)
+    if k == n # each point in its own cluster
+      return KmeansResult(copyto!(centers, X), collect(1:k), zeros(D, k), fill(1, k),
+                          weights !== nothing ? copy(weights) : fill(1, k), D(0), 0, true)
+    else
+      if k == 1 # all points belong to the single cluster
+        mean!(centers, X)
+      end
+      return _kmeans!(X, weights, centers, Int(maxiter), Float64(tol),
+                      display_level(display), distance)
+    end
 end
 
 
@@ -92,7 +101,7 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: data matrix (d x
                 display::Symbol=_kmeans_default_display,  # in: level of display
                 distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
     d, n = size(X)
-    (2 <= k < n) || throw(ArgumentError("k must be 2 <= k < n, k=$k given."))
+    (1 <= k <= n) || throw(ArgumentError("k must be from 1:n (n=$n), k=$k given."))
 
     # initialize the centers using a type wide enough so that the updates
     # centers[i, cj] += X[i, j] * wj will occur without loss of precision through rounding
@@ -177,7 +186,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
 
         if objv_change > tol
             @warn("The clustering cost increased at iteration #$t")
-        elseif abs(objv_change) < tol
+        elseif (k == 1) || (abs(objv_change) < tol)
             converged = true
         end
 

@@ -23,13 +23,28 @@ end
 
 @testset "Argument checks" begin
     Random.seed!(34568)
-    @test_throws ArgumentError kmeans(randn(2, 3), 1)
+    @test_throws ArgumentError kmeans(randn(2, 3), 0)
     @test_throws ArgumentError kmeans(randn(2, 3), 4)
     @test kmeans(randn(2, 3), 2) isa KmeansResult
     @test_throws ArgumentError kmeans(randn(2, 3), 2, display=:mylog)
     for disp in keys(Clustering.DisplayLevels)
         @test kmeans(randn(2, 3), 2, display=disp) isa KmeansResult
     end
+end
+
+@testset "k=1 and k=n corner cases" begin
+    x = [0.5 1 2; 1 0.5 0; 3 2 1]
+    km1 = kmeans(x,1)
+    @test km1.centers == reshape([7/6, 0.5, 2.0], (3, 1))
+    @test km1.counts == [3]
+    @test km1.assignments == [1, 1, 1]
+    km3 = kmeans(x, 3)
+    @test km3.centers == x
+    @test km3.counts == fill(1, (3))
+    @test km3.assignments == 1:3
+    w = [0.5, 2.0, 1.0]
+    @test kmeans(x,1,weights=w).wcounts == [3.5]
+    @test kmeans(x,3,weights=w).wcounts == w
 end
 
 Random.seed!(34568)

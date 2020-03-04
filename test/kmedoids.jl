@@ -39,6 +39,17 @@ R = kmedoids(costs, k)
 @test isapprox(sum(R.acosts), R.totalcost)
 @test R.converged
 
+# k=1 and k=n cases
+x = pairwise(SqEuclidean(), [1 2 3; .1 .2 .3; 4 5.6 7], dims=2)
+kmed1 = kmedoids(x, 1)
+@test nclusters(kmed1) == 1
+@test assignments(kmed1) == [1, 1, 1]
+@test kmed1.medoids == [2]
+kmed3 = kmedoids(x, 3)
+@test nclusters(kmed3) == 3
+@test sort(assignments(kmed3)) == [1, 2, 3]
+@test sort(kmed3.medoids) == [1, 2, 3]
+
 
 # this data set has three obvious groups:
 # group 1: [1, 3, 4], values: [1, 2, 3]
