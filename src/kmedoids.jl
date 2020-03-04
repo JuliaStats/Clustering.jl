@@ -59,10 +59,6 @@ Perform K-medoids clustering of ``n`` points into `k` clusters,
 given the `dist` matrix (``n×n``, `dist[i, j]` is the distance
 between the `j`-th and `i`-th points).
 
-# Note
-This package implements a K-means style algorithm instead of PAM, which
-is considered much more efficient and reliable.
-
 # Arguments
  - `init` (defaults to `:kmpp`): how medoids should be initialized, could
    be one of the following:
@@ -71,6 +67,12 @@ is considered much more efficient and reliable.
    * an integer vector of length `k` that provides the indices of points to
      use as initial medoids.
  - `maxiter`, `tol`, `display`: see [common options](@ref common_options)
+
+# Note
+The function implements a *K-means style* algorithm instead of *PAM*
+(Partitioning Around Medoids). K-means style algorithm converges in fewer
+iterations, but was shown to produce worse (10-20% higher total costs) results
+(see e.g. [Schubert & Rousseeuw (2019)](@ref kmedoid_refs)).
 """
 function kmedoids(dist::DenseMatrix{T}, k::Integer;
                   init=_kmed_default_init,
