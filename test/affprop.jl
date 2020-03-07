@@ -46,9 +46,12 @@ using Statistics
         @test R.counts[i] == count(==(i), R.assignments)
     end
 
-    @testset "Ensure works on nonbasic array type (SubArray)" begin
-        RR = affinityprop(@view S[:,:])  # run on complete subarray
-        @test RR.assignments == R.assignments
+    @testset "Ensure works on nonbasic array type" begin
+        R2 = affinityprop(@view S[:,:])  # run on complete subarray
+        @test R2.assignments == R.assignments
+
+        R3 = affinityprop(Symmetric(S))  # run on complete subarray
+        @test R3.assignments == R.assignments
     end
 
     #= compare with python result

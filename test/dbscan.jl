@@ -36,9 +36,12 @@ for c = 1:k
 end
 @test all(R.counts .>= 180)
 
-@testset "Ensure works on nonbasic array type (SubArray)" begin
-    RR = dbscan(@view(D[:,:]), 1.0, 10)  # run on complete subarray
-    @test RR.assignments == R.assignments
+@testset "Ensure works on nonbasic array type" begin
+    R2 = dbscan(@view(D[:,:]), 1.0, 10)  # run on complete subarray
+    @test R2.assignments == R.assignments
+
+    R3 = dbscan(Symmetric(D), 1.0, 10)  # run on complete subarray
+    @test R3.assignments == R.assignments
 end
 
 @testset "normal points" begin

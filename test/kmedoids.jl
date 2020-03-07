@@ -40,10 +40,14 @@ R = kmedoids(dist, k)
 @test isapprox(sum(R.costs), R.totalcost)
 @test R.converged
 
-@testset "Ensure works on nonbasic array type (SubArray)" begin
+@testset "Ensure works on nonbasic array type" begin
     Random.seed!(34568)  # restore seed as kmedoids is not determantistic
-    RR = kmedoids(@view(dist[:,:]), k)  # run on complete subarray
-    @test RR.assignments == R.assignments
+    R2 = kmedoids(@view(dist[:,:]), k)  # run on complete subarray
+    @test R2.assignments == R.assignments
+
+    Random.seed!(34568)  # restore seed as kmedoids is not determantistic
+    R3 = kmedoids(Symmetric(dist), k)  # run on complete subarray
+    @test R3.assignments == R.assignments
 end
 
 # k=1 and k=n cases
