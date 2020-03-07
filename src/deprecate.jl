@@ -14,7 +14,7 @@
 
 # FIXME remove after deprecation period for merge/labels/height/method
 Base.propertynames(hclu::Hclust, private::Bool = false) =
-    (fieldnames(hclu)...,
+    (fieldnames(typeof(hclu))...,
      #= deprecated as of 0.12 =# :height, :labels, :merge, :method)
 
 # FIXME remove after deprecation period for merge/labels/height/method
@@ -38,7 +38,7 @@ end
 
 # FIXME remove after deprecation period for cweights
 Base.propertynames(clu::KmeansResult, private::Bool = false) =
-    (fieldnames(clu)..., #= deprecated as of 0.13.2 =# :cweights)
+    (fieldnames(typeof(clu))..., #= deprecated as of 0.13.2 =# :cweights)
 
 # FIXME remove after deprecation period for cweights
 @inline function Base.getproperty(clu::KmeansResult, prop::Symbol)
@@ -53,7 +53,7 @@ end
 
 # FIXME remove after deprecation period for acosts
 Base.propertynames(kmed::KmedoidsResult, private::Bool = false) =
-    (fieldnames(kmed)..., #= deprecated since v0.13.4=# :acosts)
+    (fieldnames(typeof(kmed))..., #= deprecated since v0.13.4=# :acosts)
 
 # FIXME remove after deprecation period for acosts
 function Base.getproperty(kmed::KmedoidsResult, prop::Symbol)
