@@ -46,6 +46,11 @@ using Statistics
         @test R.counts[i] == count(==(i), R.assignments)
     end
 
+    @testset "Ensure works on nonbasic array type (SubArray)" begin
+        RR = affinityprop(@view S[:,:])  # run on complete subarray
+        @test RR.assignments == R.assignments
+    end
+
     #= compare with python result
     the reference assignments were computed using python sklearn:
     ```julia

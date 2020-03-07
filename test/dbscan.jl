@@ -36,6 +36,11 @@ for c = 1:k
 end
 @test all(R.counts .>= 180)
 
+@testset "Ensure works on nonbasic array type (SubArray)" begin
+    RR = dbscan(@view(D[:,:]), 1.0, 10)  # run on complete subarray
+    @test RR.assignments == R.assignments
+end
+
 @testset "normal points" begin
     Random.seed!(0)
     p0 = randn(3, 1000)
@@ -64,6 +69,5 @@ end
         @test length(clusters) == 3
     end
 end
-
 
 end

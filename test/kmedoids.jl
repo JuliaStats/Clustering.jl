@@ -27,6 +27,7 @@ X = rand(d, n)
 dist = pairwise(SqEuclidean(), X, dims=2)
 @assert size(dist) == (n, n)
 
+Random.seed!(34568)  # reset seed again to known state
 R = kmedoids(dist, k)
 @test isa(R, KmedoidsResult)
 @test nclusters(R) == k
@@ -38,6 +39,12 @@ R = kmedoids(dist, k)
 @test R.costs == dist[LinearIndices((n, n))[CartesianIndex.(R.medoids[R.assignments], 1:n)]]
 @test isapprox(sum(R.costs), R.totalcost)
 @test R.converged
+
+@testset "Ensure works on nonbasic array type (SubArray)" begin
+    Random.seed!(34568)  # restore seed as kmedoids is not determantistic
+    RR = kmedoids(@view(dist[:,:]), k)  # run on complete subarray
+    @test RR.assignments == R.assignments
+end
 
 # k=1 and k=n cases
 x = pairwise(SqEuclidean(), [1 2 3; .1 .2 .3; 4 5.6 7], dims=2)

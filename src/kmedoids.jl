@@ -38,7 +38,7 @@ const _kmed_default_tol = 1.0e-8
 const _kmed_default_display = :none
 
 """
-    kmedoids(dist::DenseMatrix, k::Integer; ...) -> KmedoidsResult
+    kmedoids(dist::AbstractMatrix, k::Integer; ...) -> KmedoidsResult
 
 Perform K-medoids clustering of ``n`` points into `k` clusters,
 given the `dist` matrix (``n×n``, `dist[i, j]` is the distance
@@ -59,7 +59,7 @@ The function implements a *K-means style* algorithm instead of *PAM*
 iterations, but was shown to produce worse (10-20% higher total costs) results
 (see e.g. [Schubert & Rousseeuw (2019)](@ref kmedoid_refs)).
 """
-function kmedoids(dist::DenseMatrix{T}, k::Integer;
+function kmedoids(dist::AbstractMatrix{T}, k::Integer;
                   init=_kmed_default_init,
                   maxiter::Integer=_kmed_default_maxiter,
                   tol::Real=_kmed_default_tol,
@@ -79,7 +79,7 @@ function kmedoids(dist::DenseMatrix{T}, k::Integer;
 end
 
 """
-    kmedoids!(dist::DenseMatrix, medoids::Vector{Int};
+    kmedoids!(dist::AbstractMatrix, medoids::Vector{Int};
               [kwargs...]) -> KmedoidsResult
 
 Update the current cluster `medoids` using the `dist` matrix.
@@ -89,7 +89,7 @@ as `medoids` argument.
 
 See [`kmedoids`](@ref) for the description of optional `kwargs`.
 """
-function kmedoids!(dist::DenseMatrix{T}, medoids::Vector{Int};
+function kmedoids!(dist::AbstractMatrix{T}, medoids::Vector{Int};
                    maxiter::Integer=_kmed_default_maxiter,
                    tol::Real=_kmed_default_tol,
                    display::Symbol=_kmed_default_display) where T<:Real
@@ -110,7 +110,7 @@ end
 #### core algorithm
 
 function _kmedoids!(medoids::Vector{Int},      # initialized medoids
-                    dist::DenseMatrix{T},      # distance matrix
+                    dist::AbstractMatrix{T},      # distance matrix
                     maxiter::Int,              # maximum number of iterations
                     tol::Real,                 # tolerable change of objective
                     displevel::Int) where T<:Real            # level of display
@@ -182,7 +182,7 @@ end
 
 
 # update assignments and related quantities
-function _kmed_update_assignments!(dist::DenseMatrix{T},         # in: (n, n)
+function _kmed_update_assignments!(dist::AbstractMatrix{T},         # in: (n, n)
                                    medoids::AbstractVector{Int}, # in: (k,)
                                    assignments::Vector{Int},     # out: (n,)
                                    groups::Vector{Vector{Int}},  # out: (k,)
@@ -233,7 +233,7 @@ end
 # find medoid for a given group
 #
 # TODO: faster way without creating temporary arrays
-function _find_medoid(dist::DenseMatrix, grp::Vector{Int})
+function _find_medoid(dist::AbstractMatrix, grp::Vector{Int})
     @assert !isempty(grp)
     p = argmin(sum(dist[grp, grp], dims=2))
     return grp[p]::Int
