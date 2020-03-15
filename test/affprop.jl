@@ -6,6 +6,7 @@ using Clustering
 using LinearAlgebra
 using Random
 using Statistics
+include("test_helpers.jl")
 
 @testset "affinityprop() (affinity propagation)" begin
     @testset "Argument checks" begin
@@ -47,11 +48,10 @@ using Statistics
     end
 
     @testset "Support for arrays other than Matrix{T}" begin
-        R2 = affinityprop(@view S[:,:])  # run on complete subarray
-        @test R2.assignments == R.assignments
-
-        R3 = affinityprop(Symmetric(S))  # run on complete subarray
-        @test R3.assignments == R.assignments
+        @testset "$(typeof(M))" for M in equivalent_matrices(S)
+            R2 = affinityprop(M)
+            @test R2.assignments == R.assignments
+        end
     end
 
     #= compare with python result

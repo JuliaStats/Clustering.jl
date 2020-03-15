@@ -1,6 +1,7 @@
 using Test
 using Clustering
 using Distances
+include("test_helpers.jl")
 
 @testset "dbscan() (DBSCAN clustering)" begin
 
@@ -37,11 +38,10 @@ end
 @test all(R.counts .>= 180)
 
 @testset "Support for arrays other than Matrix{T}" begin
-    R2 = dbscan(@view(D[:,:]), 1.0, 10)  # run on complete subarray
-    @test R2.assignments == R.assignments
-
-    R3 = dbscan(Symmetric(D), 1.0, 10)  # run on complete subarray
-    @test R3.assignments == R.assignments
+    @testset "$(typeof(M))" for M in equivalent_matrices(D)
+        R2 = dbscan(M, 1.0, 10)  # run on complete subarray
+        @test R2.assignments == R.assignments
+    end
 end
 
 @testset "normal points" begin

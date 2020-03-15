@@ -1,7 +1,7 @@
 using Test
-
 using Distances
 using Clustering
+include("test_helpers.jl")
 
 @testset "kmedoids() (k-medoids)" begin
 
@@ -41,13 +41,11 @@ R = kmedoids(dist, k)
 @test R.converged
 
 @testset "Support for arrays other than Matrix{T}" begin
-    Random.seed!(34568)  # restore seed as kmedoids is not determantistic
-    R2 = kmedoids(@view(dist[:,:]), k)  # run on complete subarray
-    @test R2.assignments == R.assignments
-
-    Random.seed!(34568)  # restore seed as kmedoids is not determantistic
-    R3 = kmedoids(Symmetric(dist), k)  # run on complete subarray
-    @test R3.assignments == R.assignments
+    @testset "$(typeof(M))" for M in equivalent_matrices(dist)
+        Random.seed!(34568)  # restore seed as kmedoids is not determantistic
+        R2 = kmedoids(M, k)
+        @test R2.assignments == R.assignments
+    end
 end
 
 # k=1 and k=n cases
