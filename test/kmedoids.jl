@@ -40,7 +40,7 @@ R = kmedoids(dist, k)
 @test isapprox(sum(R.costs), R.totalcost)
 @test R.converged
 
-@testset "Ensure works on nonbasic array type" begin
+@testset "Support for arrays other than Matrix{T}" begin
     Random.seed!(34568)  # restore seed as kmedoids is not determantistic
     R2 = kmedoids(@view(dist[:,:]), k)  # run on complete subarray
     @test R2.assignments == R.assignments

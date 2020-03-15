@@ -36,7 +36,7 @@ for c = 1:k
 end
 @test all(R.counts .>= 180)
 
-@testset "Ensure works on nonbasic array type" begin
+@testset "Support for arrays other than Matrix{T}" begin
     R2 = dbscan(@view(D[:,:]), 1.0, 10)  # run on complete subarray
     @test R2.assignments == R.assignments
 

@@ -46,7 +46,7 @@ using Statistics
         @test R.counts[i] == count(==(i), R.assignments)
     end
 
-    @testset "Ensure works on nonbasic array type" begin
+    @testset "Support for arrays other than Matrix{T}" begin
         R2 = affinityprop(@view S[:,:])  # run on complete subarray
         @test R2.assignments == R.assignments
 
