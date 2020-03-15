@@ -108,7 +108,7 @@ function _dbs_region_query(D::AbstractMatrix{T}, p::Int, eps::T) where T<:Real
     return nbs::Vector{Int}
 end
 
-function _dbs_expand_cluster!(D::AbstractMatrix{T},           # distance matrix
+function _dbs_expand_cluster!(D::AbstractMatrix{T},        # distance matrix
                               k::Int,                      # the index of current cluster
                               p::Int,                      # the index of seeding point
                               nbs::Vector{Int},            # eps-neighborhood of p

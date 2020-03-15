@@ -110,7 +110,7 @@ end
 #### core algorithm
 
 function _kmedoids!(medoids::Vector{Int},      # initialized medoids
-                    dist::AbstractMatrix{T},      # distance matrix
+                    dist::AbstractMatrix{T},   # distance matrix
                     maxiter::Int,              # maximum number of iterations
                     tol::Real,                 # tolerable change of objective
                     displevel::Int) where T<:Real            # level of display
@@ -182,7 +182,7 @@ end
 
 
 # update assignments and related quantities
-function _kmed_update_assignments!(dist::AbstractMatrix{T},         # in: (n, n)
+function _kmed_update_assignments!(dist::AbstractMatrix{T},      # in: (n, n)
                                    medoids::AbstractVector{Int}, # in: (k,)
                                    assignments::Vector{Int},     # out: (n,)
                                    groups::Vector{Vector{Int}},  # out: (k,)
