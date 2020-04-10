@@ -1,7 +1,7 @@
 using Test
-
 using Distances
 using Clustering
+include("test_helpers.jl")
 
 @testset "kmedoids() (k-medoids)" begin
 
@@ -27,6 +27,7 @@ X = rand(d, n)
 dist = pairwise(SqEuclidean(), X, dims=2)
 @assert size(dist) == (n, n)
 
+Random.seed!(34568)  # reset seed again to known state
 R = kmedoids(dist, k)
 @test isa(R, KmedoidsResult)
 @test nclusters(R) == k
@@ -38,6 +39,14 @@ R = kmedoids(dist, k)
 @test R.costs == dist[LinearIndices((n, n))[CartesianIndex.(R.medoids[R.assignments], 1:n)]]
 @test isapprox(sum(R.costs), R.totalcost)
 @test R.converged
+
+@testset "Support for arrays other than Matrix{T}" begin
+    @testset "$(typeof(M))" for M in equivalent_matrices(dist)
+        Random.seed!(34568)  # restore seed as kmedoids is not determantistic
+        R2 = kmedoids(M, k)
+        @test R2.assignments == R.assignments
+    end
+end
 
 # k=1 and k=n cases
 x = pairwise(SqEuclidean(), [1 2 3; .1 .2 .3; 4 5.6 7], dims=2)

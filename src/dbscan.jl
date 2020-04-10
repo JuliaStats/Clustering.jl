@@ -43,7 +43,7 @@ end
 ## main algorithm
 
 """
-    dbscan(D::DenseMatrix, eps::Real, minpts::Int) -> DbscanResult
+    dbscan(D::AbstractMatrix, eps::Real, minpts::Int) -> DbscanResult
 
 Perform DBSCAN algorithm using the distance matrix `D`.
 
@@ -54,7 +54,7 @@ The following options control which points would be considered
   - `minpts::Int`: the minimum number of neighboring points (including itself)
      to qualify a point as a density point.
 """
-function dbscan(D::DenseMatrix{T}, eps::Real, minpts::Int) where T<:Real
+function dbscan(D::AbstractMatrix{T}, eps::Real, minpts::Int) where T<:Real
     # check arguments
     n = size(D, 1)
     size(D, 2) == n || throw(ArgumentError("D must be a square matrix ($(size(D)) given)."))
@@ -66,7 +66,7 @@ function dbscan(D::DenseMatrix{T}, eps::Real, minpts::Int) where T<:Real
     _dbscan(D, convert(T, eps), minpts, 1:n)
 end
 
-function _dbscan(D::DenseMatrix{T}, eps::T, minpts::Int, visitseq::AbstractVector{Int}) where T<:Real
+function _dbscan(D::AbstractMatrix{T}, eps::T, minpts::Int, visitseq::AbstractVector{Int}) where T<:Real
     n = size(D, 1)
 
     # prepare
@@ -96,7 +96,7 @@ end
 
 ## key steps
 
-function _dbs_region_query(D::DenseMatrix{T}, p::Int, eps::T) where T<:Real
+function _dbs_region_query(D::AbstractMatrix{T}, p::Int, eps::T) where T<:Real
     n = size(D,1)
     nbs = Int[]
     dists = view(D,:,p)
@@ -108,7 +108,7 @@ function _dbs_region_query(D::DenseMatrix{T}, p::Int, eps::T) where T<:Real
     return nbs::Vector{Int}
 end
 
-function _dbs_expand_cluster!(D::DenseMatrix{T},           # distance matrix
+function _dbs_expand_cluster!(D::AbstractMatrix{T},        # distance matrix
                               k::Int,                      # the index of current cluster
                               p::Int,                      # the index of seeding point
                               nbs::Vector{Int},            # eps-neighborhood of p

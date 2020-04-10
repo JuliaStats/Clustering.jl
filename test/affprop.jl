@@ -6,6 +6,7 @@ using Clustering
 using LinearAlgebra
 using Random
 using Statistics
+include("test_helpers.jl")
 
 @testset "affinityprop() (affinity propagation)" begin
     @testset "Argument checks" begin
@@ -44,6 +45,13 @@ using Statistics
     @test sum(R.counts) == n
     for i = 1:k
         @test R.counts[i] == count(==(i), R.assignments)
+    end
+
+    @testset "Support for arrays other than Matrix{T}" begin
+        @testset "$(typeof(M))" for M in equivalent_matrices(S)
+            R2 = affinityprop(M)
+            @test R2.assignments == R.assignments
+        end
     end
 
     #= compare with python result

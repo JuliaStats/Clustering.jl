@@ -33,7 +33,7 @@ const _afp_default_tol = 1.0e-6
 const _afp_default_display = :none
 
 """
-    affinityprop(S::DenseMatrix; [maxiter=200], [tol=1e-6], [damp=0.5],
+    affinityprop(S::AbstractMatrix; [maxiter=200], [tol=1e-6], [damp=0.5],
                  [display=:none]) -> AffinityPropResult
 
 Perform affinity propagation clustering based on a similarity matrix `S`.
@@ -52,7 +52,7 @@ of the ``i``-th point as an *exemplar*.
 > Brendan J. Frey and Delbert Dueck. *Clustering by Passing Messages
 > Between Data Points.* Science, vol 315, pages 972-976, 2007.
 """
-function affinityprop(S::DenseMatrix{T};
+function affinityprop(S::AbstractMatrix{T};
                       maxiter::Integer=_afp_default_maxiter,
                       tol::Real=_afp_default_tol,
                       damp::Real=_afp_default_damp,
@@ -72,7 +72,7 @@ end
 
 #### Implementation
 
-function _affinityprop(S::DenseMatrix{T},
+function _affinityprop(S::AbstractMatrix{T},
                        maxiter::Int,
                        tol::Real,
                        damp::T,
@@ -134,7 +134,7 @@ end
 
 
 # compute responsibilities
-function _afp_compute_r!(R::Matrix{T}, S::DenseMatrix{T}, A::Matrix{T}) where T
+function _afp_compute_r!(R::Matrix{T}, S::AbstractMatrix{T}, A::Matrix{T}) where T
     n = size(S, 1)
 
     I1 = Vector{Int}(undef, n)  # I1[i] is the column index of the maximum element in (A+S)[i,:]
@@ -245,7 +245,7 @@ function _afp_extract_exemplars(A::Matrix, R::Matrix)
 end
 
 # get assignments
-function _afp_get_assignments(S::DenseMatrix, exemplars::Vector{Int})
+function _afp_get_assignments(S::AbstractMatrix, exemplars::Vector{Int})
     n = size(S, 1)
     k = length(exemplars)
     Se = S[:, exemplars]
