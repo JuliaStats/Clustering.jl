@@ -45,3 +45,35 @@ M = R.centers
 # memberships is a 20x3 matrix
 memberships = R.weights
 ```
+
+```@example julia Example of fcm on 2D images.
+using TestImages, Clustering, ImageView
+
+# Loads a gray scale image. 
+img = testimage("camera")
+# Convert into a normal Array
+img = Array{Float64,2}(img)
+
+# Reshape that image into a vector.
+Nx, Ny = size(img)
+dat = reshape(img, 1, Nx*Ny)
+
+#=
+Feed in the image, # segments, show iteration info 
+and set max iterations
+=#
+result = fuzzy_cmeans(dat, 5, 2, display=:iter, maxiter=200)
+
+#=
+Take a look at one of the segments and reshape
+the data back into its orginal form. 
+
+This image represents how much each pixel 
+belongs to a given segment. For example here we 
+are looking at segment 1. 
+=#
+img_result = reshape(result.weights[:,1],Nx,Ny)
+
+# View the newly segmented image. 
+imshow(img_result)
+
