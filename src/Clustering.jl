@@ -28,7 +28,7 @@ module Clustering
     kmpp, kmpp_by_costs,
 
     # kmeans
-    kmeans, kmeans!, KmeansResult, kmeans_opts,
+    kmeans, kmeans!, KmeansResult,
 
     # kmedoids
     kmedoids, kmedoids!, KmedoidsResult,
