@@ -32,7 +32,7 @@ using Clustering
     end
 
     @testset "comparing 2 k-means clusterings" begin
-        Random.seed!(34568)
+        rng = StableRNG(34568)
         m = 3
         n = 1000
         k = 10
@@ -47,12 +47,12 @@ using Clustering
     end
 
     @testset "comparing 2 random label assignments" begin
-        Random.seed!(34568)
+        rng = StableRNG(34568)
         k = 10
         n = 10000
 
-        a1 = rand(1:k, n)
-        a2 = rand(1:k, n)
+        a1 = rand(rng, 1:k, n)
+        a2 = rand(rng, 1:k, n)
         v = vmeasure(a1, a2)
         @test v ≈ 0.0 atol=1e-2 # should be close to zero
     end
