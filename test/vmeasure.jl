@@ -32,6 +32,7 @@ using Clustering
     end
 
     @testset "comparing 2 k-means clusterings" begin
+        Random.seed!(34568) # set random seed for RNG used by kmeans()
         rng = StableRNG(34568)
         m = 3
         n = 1000
@@ -42,7 +43,7 @@ using Clustering
             x = rand(rng, m, n)
             vmeasure(kmeans(x, k; maxiter=50),
                      kmeans(x, k; maxiter=50))
-        end for _ in 1:100])
+        end for _ in 1:200])
         @test 0.5 < v < 1.0
         @test v ≈ 0.75 atol=1e-2 # FIXME why 0.75?
     end
