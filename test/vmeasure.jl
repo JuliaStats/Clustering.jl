@@ -43,7 +43,7 @@ using Clustering
         r2 = kmeans(x, k; maxiter=50)
         v = vmeasure(r1, r2)
         @test 0.5 < v < 1.0
-        @test_broken v ≈ 0.75 atol=1e-2 # FIXME why 0.75?
+        @test_skip v ≈ 0.75 atol=1e-2 # FIXME why 0.75?
     end
 
     @testset "comparing 2 random label assignments" begin
