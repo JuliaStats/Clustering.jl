@@ -2,8 +2,8 @@
 
 Methods for data clustering and evaluation of clustering quality.
 
-[![Travis](https://travis-ci.org/JuliaStats/Clustering.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/Clustering.jl)
-[![Coveralls](https://coveralls.io/repos/github/JuliaStats/Clustering.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaStats/Clustering.jl?branch=master)
+[![Build Status](https://github.com/JuliaStats/Clustering.jl/workflows/CI/badge.svg)](https://github.com/JuliaStats/Clustering.jl/actions?query=workflow%3ACI+branch%3Amaster)
+[![codecov](https://codecov.io/gh/JuliaStats/Clustering.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaStats/Clustering.jl)
 
 **Documentation**: [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url]
 
