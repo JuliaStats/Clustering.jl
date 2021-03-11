@@ -36,14 +36,15 @@ using Clustering
         m = 3
         n = 1000
         k = 10
-        x = rand(m, n)
 
         # non-weighted
-        r1 = kmeans(x, k; maxiter=50)
-        r2 = kmeans(x, k; maxiter=50)
-        v = vmeasure(r1, r2)
+        v = mean([begin
+            x = rand(rng, m, n)
+            vmeasure(kmeans(x, k; maxiter=50),
+                     kmeans(x, k; maxiter=50))
+        end for _ in 1:100])
         @test 0.5 < v < 1.0
-        @test_skip v ≈ 0.75 atol=1e-2 # FIXME why 0.75?
+        @test v ≈ 0.75 atol=1e-2 # FIXME why 0.75?
     end
 
     @testset "comparing 2 random label assignments" begin
