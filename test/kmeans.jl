@@ -4,20 +4,23 @@ using Distances
 using Random
 using LinearAlgebra
 
-import Distances.pairwise!
-
 # custom distance metric
 struct MySqEuclidean <: SemiMetric end
 
 # redefinition of Distances.pairwise! for MySqEuclidean type
-function pairwise!(r::AbstractMatrix, dist::MySqEuclidean,
-                   a::AbstractMatrix, b::AbstractMatrix; dims::Integer=2)
+function Distances.pairwise!(r::AbstractMatrix, dist::MySqEuclidean,
+                             a::AbstractMatrix, b::AbstractMatrix; dims::Integer=2)
     dims == 2 || throw(ArgumentError("only dims=2 supported for MySqEuclidean distance"))
     mul!(r, transpose(a), b)
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
     @inbounds r .= sa2' .+ sb2 .- 2r
 end
+
+Distances.result_type(::MySqEuclidean, ::Type{T}, ::Type{T}) where T <: Number = T
+
+(dist::MySqEuclidean)(a::AbstractMatrix, b::AbstractMatrix) =
+    pairwise!(similar(a, size(a, 2), size(b, 2)))
 
 @testset "kmeans() (k-means)" begin
 
