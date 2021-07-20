@@ -67,7 +67,9 @@ module Clustering
     mcl, MCLResult
 
     ## source files
-
+    pairwise = Distances.pairwise
+    pairwise! = Distances.pairwise!
+    
     include("utils.jl")
     include("seeding.jl")
 
