@@ -256,4 +256,4 @@ end
 
 initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::AbstractMatrix{<:Real},
            metric::PreMetric = SqEuclidean()) =
-    initseeds_by_costs!(iseeds, alg, pairwise(metric, X, dims=2))
+    initseeds_by_costs!(iseeds, alg, Distances.pairwise(metric, X, dims=2))

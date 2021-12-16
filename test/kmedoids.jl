@@ -9,7 +9,7 @@ include("test_helpers.jl")
     Random.seed!(34568)
     @test_throws ArgumentError kmedoids(randn(2, 3), 1)
     @test_throws ArgumentError kmedoids(randn(2, 3), 4)
-    dist = inv.(max.(pairwise(Euclidean(), randn(2, 3), dims=2), 0.1))
+    dist = inv.(max.(Distances.pairwise(Euclidean(), randn(2, 3), dims=2), 0.1))
     @test kmedoids(dist, 2) isa KmedoidsResult
     @test_throws ArgumentError kmedoids(dist, 2, display=:mylog)
     for disp in keys(Clustering.DisplayLevels)
@@ -24,7 +24,7 @@ n = 200
 k = 10
 
 X = rand(d, n)
-dist = pairwise(SqEuclidean(), X, dims=2)
+dist = Distances.pairwise(SqEuclidean(), X, dims=2)
 @assert size(dist) == (n, n)
 
 Random.seed!(34568)  # reset seed again to known state
@@ -49,7 +49,7 @@ R = kmedoids(dist, k)
 end
 
 # k=1 and k=n cases
-x = pairwise(SqEuclidean(), [1 2 3; .1 .2 .3; 4 5.6 7], dims=2)
+x = Distances.pairwise(SqEuclidean(), [1 2 3; .1 .2 .3; 4 5.6 7], dims=2)
 kmed1 = kmedoids(x, 1)
 @test nclusters(kmed1) == 1
 @test assignments(kmed1) == [1, 1, 1]
@@ -67,7 +67,7 @@ kmed3 = kmedoids(x, 3)
 #
 
 X = reshape(map(Float64, [1, 6, 2, 3, 7, 21, 8, 20, 22]), 1, 9)
-dist = pairwise(SqEuclidean(), X, dims=2)
+dist = Distances.pairwise(SqEuclidean(), X, dims=2)
 
 R = kmedoids!(dist, [1, 2, 6])
 @test isa(R, KmedoidsResult)

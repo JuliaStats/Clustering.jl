@@ -155,7 +155,7 @@ end
         end
     end
 
-    dm = pairwise(Euclidean(), mat, dims=2)
+    dm = Distances.pairwise(Euclidean(), mat, dims=2)
 
     hcl_r = hclust(dm, linkage=:average)
     hcl_barjoseph = hclust(dm, linkage=:average, branchorder=:barjoseph)

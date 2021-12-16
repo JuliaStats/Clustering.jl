@@ -27,7 +27,7 @@ include("test_helpers.jl")
     d = 10
     n = 500
     x = rand(d, n)
-    S = -pairwise(Euclidean(), x, x, dims=2)
+    S = -Distances.pairwise(Euclidean(), x, x, dims=2)
 
     # set diagonal value to median value
     S = S - diagm(0 => diag(S)) + median(S)*I

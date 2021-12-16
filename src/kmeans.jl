@@ -135,7 +135,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
     counts = Vector{Int}(undef, k)
 
     # compute pairwise distances, preassign costs and cluster weights
-    dmat = pairwise(distance, centers, X, dims=2)
+    dmat = Distances.pairwise(distance, centers, X, dims=2)
     WC = (weights === nothing) ? Int : eltype(weights)
     wcounts = Vector{WC}(undef, k)
     D = typeof(one(eltype(dmat)) * one(WC))

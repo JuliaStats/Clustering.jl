@@ -9,7 +9,7 @@ SUITE["hclust"] = BenchmarkGroup()
 
 function random_distance_matrix(n::Integer, m::Integer=10, dist::PreMetric=Euclidean())
     pts = rand(m, n)
-    return pairwise(dist, pts, dims=2)
+    return Distances.pairwise(dist, pts, dims=2)
 end
 
 function hclust_benchmark(n::Integer, m::Integer=10, dist::PreMetric=Euclidean())
