@@ -13,7 +13,7 @@ Random.seed!(34568)
 alldistinct(x::Vector{Int}) = (length(Set(x)) == length(x))
 
 function min_interdist(X::AbstractMatrix)
-    dists = Distances.pairwise(SqEuclidean(), X, dims=2)
+    dists = pairwise(SqEuclidean(), X, dims=2)
     n = size(X, 2)
     r = Inf
     for i = 1:n, j = 1:n
@@ -29,7 +29,7 @@ d = 3
 n = 100
 k = 5
 X = rand(d, n)
-C = Distances.pairwise(SqEuclidean(), X, dims=2)
+C = pairwise(SqEuclidean(), X, dims=2)
 
 Xt = copy(transpose(X))
 Ct = copy(transpose(C))
