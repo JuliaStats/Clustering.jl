@@ -166,11 +166,11 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
         end
 
         if t == 1 || num_affected > 0.75 * k
-            pairwise!(dmat, distance, centers, X, dims=2)
+            Distances.pairwise!(dmat, distance, centers, X, dims=2)
         else
             # if only a small subset is affected, only compute for that subset
             affected_inds = findall(to_update)
-            pairwise!(view(dmat, affected_inds, :), distance,
+            Distances.pairwise!(view(dmat, affected_inds, :), distance,
                       view(centers, :, affected_inds), X, dims=2)
         end
 

@@ -20,7 +20,7 @@ end
 Distances.result_type(::MySqEuclidean, ::Type{T}, ::Type{T}) where T <: Number = T
 
 (dist::MySqEuclidean)(a::AbstractMatrix, b::AbstractMatrix) =
-    pairwise!(similar(a, size(a, 2), size(b, 2)))
+    Distances.pairwise!(similar(a, size(a, 2), size(b, 2)))
 
 @testset "kmeans() (k-means)" begin
 
