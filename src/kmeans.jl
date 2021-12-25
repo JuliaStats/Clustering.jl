@@ -49,7 +49,8 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
                  maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
                  tol::Real=_kmeans_default_tol,            # in: tolerance of change at convergence
                  display::Symbol=_kmeans_default_display,  # in: level of display
-                 distance::SemiMetric=SqEuclidean())       # in: function to compute distances
+                 distance::SemiMetric=SqEuclidean(),       # in: function to compute distances
+                 rng::AbstractRNG=Random.GLOBAL_RNG)       # in: RNG object
     d, n = size(X)
     dc, k = size(centers)
     WC = (weights === nothing) ? Int : eltype(weights)
@@ -68,7 +69,7 @@ function kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d 
         mean!(centers, X)
       end
       return _kmeans!(X, weights, centers, Int(maxiter), Float64(tol),
-                      display_level(display), distance)
+                      display_level(display), distance, rng)
     end
 end
 
@@ -99,19 +100,20 @@ function kmeans(X::AbstractMatrix{<:Real},                # in: data matrix (d x
                 maxiter::Integer=_kmeans_default_maxiter, # in: maximum number of iterations
                 tol::Real=_kmeans_default_tol,            # in: tolerance  of change at convergence
                 display::Symbol=_kmeans_default_display,  # in: level of display
-                distance::SemiMetric=SqEuclidean())       # in: function to calculate distance with
+                distance::SemiMetric=SqEuclidean(),       # in: function to calculate distance with
+                rng::AbstractRNG=Random.GLOBAL_RNG)       # in: RNG object
     d, n = size(X)
     (1 <= k <= n) || throw(ArgumentError("k must be from 1:n (n=$n), k=$k given."))
 
     # initialize the centers using a type wide enough so that the updates
     # centers[i, cj] += X[i, j] * wj will occur without loss of precision through rounding
     T = float(weights === nothing ? eltype(X) : promote_type(eltype(X), eltype(weights)))
-    iseeds = initseeds(init, X, k)
+    iseeds = initseeds(init, X, k, rng=rng)
     centers = copyseeds!(Matrix{T}(undef, d, k), X, iseeds)
 
     kmeans!(X, centers;
             weights=weights, maxiter=Int(maxiter), tol=Float64(tol),
-            display=display, distance=distance)
+            display=display, distance=distance, rng=rng)
 end
 
 #### Core implementation
@@ -123,7 +125,8 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
                   maxiter::Int,                             # in: maximum number of iterations
                   tol::Float64,                             # in: tolerance of change at convergence
                   displevel::Int,                           # in: the level of display
-                  distance::SemiMetric)                     # in: function to calculate distance
+                  distance::SemiMetric,                     # in: function to calculate distance
+                  rng::AbstractRNG)                         # in: RNG object
     d, n = size(X)
     k = size(centers, 2)
     to_update = Vector{Bool}(undef, k) # whether a center needs to be updated
@@ -161,7 +164,7 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
         update_centers!(X, weights, assignments, to_update, centers, wcounts)
 
         if !isempty(unused)
-            repick_unused_centers(X, costs, centers, unused, distance)
+            repick_unused_centers(X, costs, centers, unused, distance, rng)
             to_update[unused] .= true
         end
 
@@ -372,14 +375,15 @@ function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix 
                                costs::Vector{<:Real},     # in: the current assignment costs (n)
                                centers::AbstractMatrix{<:AbstractFloat}, # out: the centers (d x k)
                                unused::Vector{Int},       # in: indices of centers to be updated
-                               distance::SemiMetric)      # in: function to calculate the distance with
+                               distance::SemiMetric,      # in: function to calculate the distance with
+                               rng::AbstractRNG)          # in: RNG object
     # pick new centers using a scheme like kmeans++
     ds = similar(costs)
     tcosts = copy(costs)
     n = size(X, 2)
 
     for i in unused
-        j = wsample(1:n, tcosts)
+        j = wsample(rng, 1:n, tcosts)
         tcosts[j] = 0
         v = view(X, :, j)
         centers[:, i] = v
