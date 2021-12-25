@@ -7,6 +7,7 @@ module Clustering
     using LinearAlgebra
     using SparseArrays
     using Statistics
+    using Random
 
     import Base: show
     import StatsBase: IntegerVector, RealVector, RealMatrix, counts
