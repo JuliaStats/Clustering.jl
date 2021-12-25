@@ -79,7 +79,7 @@ equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
     @test sum(r.costs) ≈ r.totalcost
 
     Random.seed!(rng, 34568)
-    r_t = kmeans(xt', k; maxiter=50, rng)
+    r_t = kmeans(xt', k; maxiter=50, rng=rng)
     equal_kmresults(r, r_t)
 end
 
