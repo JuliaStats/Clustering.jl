@@ -65,7 +65,10 @@ module Clustering
     Hclust, hclust, cutree,
 
     # MCL
-    mcl, MCLResult
+    mcl, MCLResult,
+
+    # pair confusion matrix
+    confusion
 
     ## source files
 
@@ -85,6 +88,7 @@ module Clustering
     include("varinfo.jl")
     include("vmeasure.jl")
     include("mutualinfo.jl")
+    include("confusion.jl")
 
     include("hclust.jl")
 
