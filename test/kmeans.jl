@@ -61,8 +61,16 @@ k = 10
 x = rand(rng, m, n)
 xt = copy(transpose(x))
 
-equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
-    all(getfield(km1, η) == getfield(km2, η) for η ∈ fieldnames(KmeansResult))
+function equal_kmresults(km1::KmeansResult, km2::KmeansResult)
+    @test km1.centers ≈ km2.centers
+    @test km1.assignments == km2.assignments
+    @test km1.costs ≈ km2.costs
+    @test km1.counts == km2.counts
+    @test km1.wcounts == km2.wcounts
+    @test km1.totalcost ≈ km2.totalcost
+    @test km1.iterations == km2.iterations
+    @test km1.converged == km2.converged
+end
 
 @testset "non-weighted" begin
     Random.seed!(rng, 34568)
@@ -101,7 +109,7 @@ end
 
     Random.seed!(rng, 34568)
     r_t = kmeans(x32t', k; maxiter=50, rng=rng)
-    @test equal_kmresults(r, r_t)
+    equal_kmresults(r, r_t)
 end
 
 @testset "weighted" begin
@@ -126,7 +134,7 @@ end
 
     Random.seed!(rng, 34568)
     r_t = kmeans(xt', k; maxiter=50, weights=w, rng=rng)
-    @test equal_kmresults(r, r_t)
+    equal_kmresults(r, r_t)
 end
 
 @testset "custom distance" begin
@@ -145,7 +153,7 @@ end
     equal_kmresults(r, r2)
 
     r_t = kmeans(xt', k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
-    @test equal_kmresults(r, r_t)
+    equal_kmresults(r, r_t)
 end
 
 @testset "Argument checks" begin
