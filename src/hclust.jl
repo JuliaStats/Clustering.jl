@@ -504,9 +504,9 @@ function orderbranches_r!(hmer::HclustMerges)
             ml[i], mr[i] = mr[i], ml[i]
         end
     end
-    permute!(ml, o)
-    permute!(mr, o)
-    Base.permute!!(hmer.heights, o)
+    copyto!(ml, ml[o])
+    copyto!(mr, mr[o])
+    copyto!(hmer.heights, hmer.heights[o])
     return hmer
 end
 
