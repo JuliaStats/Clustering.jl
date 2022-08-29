@@ -23,7 +23,7 @@ A cluster, which is a subset of the given set of points, satisfies two
 properties:
  1. All points within the cluster are mutually *density-connected*,
     meaning that for any two distinct points ``p`` and ``q`` in a
-    cluster, there exists a point ``o`` sucht that both ``p`` and ``q``
+    cluster, there exists a point ``o`` such that both ``p`` and ``q``
     are density reachable from ``o``.
  2. If a point is density-connected to any point of a cluster, it is
     also part of that cluster.
