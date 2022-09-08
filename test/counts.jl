@@ -13,8 +13,6 @@ end
 
 @testset "counts() (contingency matrix)" begin
 
-# StatsBase's counts() doesn't allow empty inputs
-@test_throws ArgumentError counts(Int[], Int[])
 # Clustering's counts()
 @test counts(SimpleCluRes(Int[]), Int[]) == Matrix{Int}(undef, 0, 0)
 @test_throws DimensionMismatch counts(SimpleCluRes([1]), Int[])
