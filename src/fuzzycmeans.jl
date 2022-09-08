@@ -19,7 +19,7 @@ The output of [`fuzzy_cmeans`](@ref) function.
 struct FuzzyCMeansResult{T<:AbstractFloat}
     centers::Matrix{T}          # cluster centers (d x C)
     weights::Matrix{Float64}    # assigned weights (n x C)
-    iterations::Int             # number of elasped iterations
+    iterations::Int             # number of elapsed iterations
     converged::Bool             # whether the procedure converged
 end
 
@@ -88,14 +88,15 @@ function fuzzy_cmeans(
     maxiter::Int = _fcmeans_default_maxiter,
     tol::Real = _fcmeans_default_tol,
     dist_metric::Metric = Euclidean(),
-    display::Symbol = _fcmeans_default_display
+    display::Symbol = _fcmeans_default_display,
+    rng::AbstractRNG = Random.GLOBAL_RNG
     ) where T<:Real
 
     nrows, ncols = size(data)
     2 <= C < ncols || throw(ArgumentError("C must have 2 <= C < n=$ncols ($C given)"))
     1 < fuzziness || throw(ArgumentError("fuzziness must be greater than 1 ($fuzziness given)"))
 
-    _fuzzy_cmeans(data, C, fuzziness, maxiter, tol, dist_metric, display_level(display))
+    _fuzzy_cmeans(data, C, fuzziness, maxiter, tol, dist_metric, display_level(display),rng)
 
 end
 
@@ -108,13 +109,14 @@ function _fuzzy_cmeans(
     maxiter::Int,                                   # maximum number of iterations
     tol::Real,                                      # tolerance
     dist_metric::Metric,                            # metric to calculate distance
-    displevel::Int                                  # the level of display
+    displevel::Int,                                 # the level of display
+    rng::AbstractRNG                                # RNG object
     ) where T<:Real
 
     nrows, ncols = size(data)
 
     # Initialize weights randomly
-    weights = rand(Float64, ncols, C)
+    weights = rand(rng, Float64, ncols, C)
     weights ./= sum(weights, dims=2)
 
     centers = zeros(T, (nrows, C))

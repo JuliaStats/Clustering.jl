@@ -1,10 +1,12 @@
 using Test
 using Clustering
+using Random, StableRNGs
 
 @testset "fuzzy_cmeans()" begin
 
+rng = StableRNG(42)
+
 @testset "Argument checks" begin
-    Random.seed!(34568)
     @test_throws ArgumentError fuzzy_cmeans(randn(2, 3), 1, 2.0)
     @test_throws ArgumentError fuzzy_cmeans(randn(2, 3), 4, 2.0)
     @test_throws ArgumentError fuzzy_cmeans(randn(2, 3), 2, 1.0)
@@ -13,18 +15,18 @@ using Clustering
     end
 end
 
-Random.seed!(34568)
+Random.seed!(rng, 34568)
 
 d = 3
 n = 1000
 k = 5
 
-x = rand(d, n)
+x = rand(rng, d, n)
 
 @testset "fuzziness = 2.0" begin
     fuzziness = 2.0
-    Random.seed!(34568)
-    r = fuzzy_cmeans(x, k, fuzziness)
+    Random.seed!(rng, 34568)
+    r = fuzzy_cmeans(x, k, fuzziness; rng=rng)
     @test isa(r, FuzzyCMeansResult{Float64})
     @test nclusters(r) == k
     @test size(r.centers) == (d, k)
@@ -40,8 +42,8 @@ end
 
 @testset "fuzziness = 3.0" begin
     fuzziness = 3.0
-    Random.seed!(34568)
-    r = fuzzy_cmeans(x, k, fuzziness)
+    Random.seed!(rng, 34568)
+    r = fuzzy_cmeans(x, k, fuzziness, rng=rng)
     @test isa(r, FuzzyCMeansResult{Float64})
     @test nclusters(r) == k
     @test size(r.centers) == (d, k)
@@ -57,8 +59,8 @@ end
 
 @testset "Abstract data matrix" begin
     fuzziness = 2.0
-    Random.seed!(34568)
-    r = fuzzy_cmeans(view(x, :, :), k, fuzziness)
+    Random.seed!(rng, 34568)
+    r = fuzzy_cmeans(view(x, :, :), k, fuzziness, rng=rng)
     @test isa(r, FuzzyCMeansResult{Float64})
     @test nclusters(r) == k
     @test size(r.centers) == (d, k)
@@ -71,5 +73,16 @@ end
     @test all(0 .<= wcounts(r) .<= n)
     @test sum(wcounts(r)) ≈ n
 end
+
+@testset "Float32" begin
+    fuzziness = 2.0
+    xf32 = convert(Matrix{Float32},x)
+    Random.seed!(rng, 34568)
+    r = fuzzy_cmeans(xf32, k, fuzziness, rng=rng)
+    @test isa(r, FuzzyCMeansResult{Float32})
+    @test eltype(r.centers) == Float32
+    @test wcounts(r) isa Vector{Float64}
+end
+
 
 end

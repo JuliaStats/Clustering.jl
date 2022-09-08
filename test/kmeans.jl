@@ -3,6 +3,9 @@ using Clustering
 using Distances
 using Random
 using LinearAlgebra
+using StableRNGs
+
+rng = StableRNG(42)
 
 # custom distance metric
 struct MySqEuclidean <: SemiMetric end
@@ -25,7 +28,6 @@ Distances.result_type(::MySqEuclidean, ::Type{T}, ::Type{T}) where T <: Number =
 @testset "kmeans() (k-means)" begin
 
 @testset "Argument checks" begin
-    Random.seed!(34568)
     @test_throws ArgumentError kmeans(randn(2, 3), 0)
     @test_throws ArgumentError kmeans(randn(2, 3), 4)
     @test kmeans(randn(2, 3), 2) isa KmeansResult
@@ -50,21 +52,29 @@ end
     @test kmeans(x,3,weights=w).wcounts == w
 end
 
-Random.seed!(34568)
+Random.seed!(rng, 34568)
 
 m = 3
 n = 1000
 k = 10
 
-x = rand(m, n)
+x = rand(rng, m, n)
 xt = copy(transpose(x))
 
-equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
-    all(getfield(km1, η) == getfield(km2, η) for η ∈ fieldnames(KmeansResult))
+function equal_kmresults(km1::KmeansResult, km2::KmeansResult)
+    @test km1.centers ≈ km2.centers
+    @test km1.assignments == km2.assignments
+    @test km1.costs ≈ km2.costs
+    @test km1.counts == km2.counts
+    @test km1.wcounts == km2.wcounts
+    @test km1.totalcost ≈ km2.totalcost
+    @test km1.iterations == km2.iterations
+    @test km1.converged == km2.converged
+end
 
 @testset "non-weighted" begin
-    Random.seed!(34568)
-    r = kmeans(x, k; maxiter=50)
+    Random.seed!(rng, 34568)
+    r = kmeans(x, k; maxiter=50, rng=rng)
     @test isa(r, KmeansResult{Matrix{Float64}, Float64, Int})
     @test nclusters(r) == k
     @test size(r.centers) == (m, k)
@@ -76,16 +86,16 @@ equal_kmresults(km1::KmeansResult, km2::KmeansResult) =
     @test wcounts(r) == counts(r)
     @test sum(r.costs) ≈ r.totalcost
 
-    Random.seed!(34568)
-    r_t = kmeans(xt', k; maxiter=50)
-    @test equal_kmresults(r, r_t)
+    Random.seed!(rng, 34568)
+    r_t = kmeans(xt', k; maxiter=50, rng=rng)
+    equal_kmresults(r, r_t)
 end
 
 @testset "non-weighted (float32)" begin
-    Random.seed!(34568)
+    Random.seed!(rng, 34568)
     x32 = map(Float32, x)
     x32t = copy(x32')
-    r = kmeans(x32, k; maxiter=50)
+    r = kmeans(x32, k; maxiter=50, rng=rng)
     @test isa(r, KmeansResult{Matrix{Float32}, Float32, Int})
     @test nclusters(r) == k
     @test size(r.centers) == (m, k)
@@ -97,15 +107,15 @@ end
     @test wcounts(r) == counts(r)
     @test sum(r.costs) ≈ r.totalcost
 
-    Random.seed!(34568)
-    r_t = kmeans(x32t', k; maxiter=50)
-    @test equal_kmresults(r, r_t)
+    Random.seed!(rng, 34568)
+    r_t = kmeans(x32t', k; maxiter=50, rng=rng)
+    equal_kmresults(r, r_t)
 end
 
 @testset "weighted" begin
-    w = rand(n)
-    Random.seed!(34568)
-    r = kmeans(x, k; maxiter=50, weights=w)
+    w = rand(rng, n)
+    Random.seed!(rng, 34568)
+    r = kmeans(x, k; maxiter=50, weights=w, rng=rng)
     @test isa(r, KmeansResult{Matrix{Float64}, Float64, Float64})
     @test nclusters(r) == k
     @test size(r.centers) == (m, k)
@@ -122,13 +132,12 @@ end
     @test wcounts(r) ≈ cw
     @test dot(r.costs, w) ≈ r.totalcost
 
-    Random.seed!(34568)
-    r_t = kmeans(xt', k; maxiter=50, weights=w)
-    @test equal_kmresults(r, r_t)
+    Random.seed!(rng, 34568)
+    r_t = kmeans(xt', k; maxiter=50, weights=w, rng=rng)
+    equal_kmresults(r, r_t)
 end
 
 @testset "custom distance" begin
-    Random.seed!(34568)
     r = kmeans(x, k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
     r2 = kmeans(x, k; maxiter=50, init=:kmcen)
     @test isa(r, KmeansResult{Matrix{Float64}, Float64, Int})
@@ -141,18 +150,17 @@ end
     @test sum(counts(r)) == n
     @test wcounts(r) == r.counts
     @test sum(r.costs) ≈ r.totalcost
-    @test equal_kmresults(r, r2)
+    equal_kmresults(r, r2)
 
-    Random.seed!(34568)
     r_t = kmeans(xt', k; maxiter=50, init=:kmcen, distance=MySqEuclidean())
-    @test equal_kmresults(r, r_t)
+    equal_kmresults(r, r_t)
 end
 
 @testset "Argument checks" begin
-    Random.seed!(34568)
+    Random.seed!(rng, 34568)
     n = 50
     k = 10
-    x = randn(m, n)
+    x = randn(rng, m, n)
 
     @testset "init=" begin
         @test_throws ArgumentError kmeans(x, k, init=1:(k-2))
@@ -169,25 +177,25 @@ end
 end
 
 @testset "Integer data" begin
-    x = rand(Int16, m, n)
-    Random.seed!(654)
-    r = kmeans(x, k; maxiter=50)
+    x = rand(rng, Int16, m, n)
+    Random.seed!(rng, 654)
+    r = kmeans(x, k; maxiter=50, rng=rng)
 
     @test isa(r, KmeansResult{Matrix{Float64}, Float64, Int})
 end
 
 @testset "kmeans! data types" begin
-    Random.seed!(1101)
+    Random.seed!(rng, 1101)
     for TX in (Int, Float32, Float64)
         for TC in (Float32, Float64)
             for TW in (Nothing, Int, Float32, Float64)
-                x = rand(TX, m, n)
-                c = rand(TC, m, k)
+                x = rand(rng, TX, m, n)
+                c = rand(rng, TC, m, k)
                 if TW == Nothing
                     r = kmeans!(x, c; maxiter=1)
                     @test isa(r, KmeansResult{Matrix{TC},<:Real,Int})
                 else
-                    w = rand(TW, n)
+                    w = rand(rng, TW, n)
                     r = kmeans!(x, c; weights=w, maxiter=1)
                     @test isa(r, KmeansResult{Matrix{TC},<:Real,TW})
                 end

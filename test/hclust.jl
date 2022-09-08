@@ -3,11 +3,15 @@ using Test
 using CodecZlib
 using Distances
 using DelimitedFiles
+using Random, StableRNGs
 
 @testset "hclust() (hierarchical clustering)" begin
 
+rng = StableRNG(42)
+
 @testset "param checks" begin
-    D = rand(5, 5)
+    Random.seed!(rng, 42)
+    D = rand(rng, 5, 5)
     Dsym = D + D'
     Dnan = copy(Dsym)
     Dnan[1, 3] = Dnan[3, 1] = NaN
@@ -179,23 +183,23 @@ end
     @test Clustering.nnodes(hcl_one) == 1
 
     # Larger matrix to make sure all swaps are tested
-    Random.seed!(1)
-    D = rand(50,50)
+    Random.seed!(rng, 42)
+    D = rand(rng, 50,50)
     Dm = D + D'
     hcl_rand = hclust(Dm, linkage=:average, branchorder=:optimal)
 
-    @test hcl_rand.merges == [-29 -1; -32 -24; -46 -44; -10 -41; -17 -12; -40 5;
-                              -8 -28; -13 -35; -19 -20; -43 -42; -34 -18; -15 -39;
-                              -30 -49; -26 -22; -36 -31; -38 -4; -5 -9; 1 16; -6 13;
-                              17 10; -33 -45; -7 -2; -23 -21; -48 -27; -37 -16; -14 8;
-                              2 -50; 19 20; -47 -11; 9 -3; 6 15; 14 22; 31 18; 23 25;
-                              11 3; 32 29; 33 30; 7 12; 35 38; -25 4; 21 28; 26 34;
-                              41 27; 24 40; 39 42; 37 43; 45 46; 47 36; 48 44]
+    merges = [-1 -36; -35 -34; 1 -16; -12 -41; -13 -30; -43 -24; -21 -32; -5 -18;
+              -47 -22; -33 -38; -11 -2; -44 -49; -42 -10; 2 -37; -46 -25; -9 -15;
+              -27 -8; -40 -39; -28 -19; -31 -6; 4 -14; 11 -50; -48 -4; 15 3; -23 -7;
+              -20 -3; 18 -45; 5 -29; 9 6; 25 22; 21 7; -26 27; 8 10; 31 19; 13 14;
+              34 24; 12 20; 30 33; 17 -17; 23 26; 16 37; 32 39; 29 35; 38 36; 41 28;
+              45 43; 46 44; 42 47; 48 40]
+    @test hcl_rand.merges == merges
 
-    @test hcl_rand.order == [34, 18, 46, 44, 8, 28, 15, 39, 14, 13, 35, 23, 21, 37,
-                             16, 40, 17, 12, 36, 31, 29, 1, 38, 4, 19, 20, 3, 33, 45,
-                             6, 30, 49, 5, 9, 43, 42, 32, 24, 50, 26, 22, 7, 2, 47,
-                             11, 48, 27, 25, 10, 41]
+    order = [26, 40, 39, 45, 27, 8, 17, 9, 15, 44, 49, 31, 6, 13, 30, 29, 47, 22,
+             43, 24, 42, 10, 35, 34, 37, 23, 7, 11, 2, 50, 5, 18, 33, 38, 12, 41,
+             14, 21, 32, 28, 19, 46, 25, 1, 36, 16, 48, 4, 20, 3]
+    @test hcl_rand.order == order
 
     @test Clustering.nnodes(hcl_rand) == 50
 end
