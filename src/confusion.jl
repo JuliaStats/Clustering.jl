@@ -28,9 +28,7 @@ function confusion(a::AbstractVector{<:Integer}, b::AbstractVector{<:Integer})
 
     t2 = sum(abs2, c)                      # sum over rows & columns of nij^2
     t3 = nis+njs
-    #println("n: $n")
     C = Int[(t2-n)/2 (nis-t2)/2; (njs-t2)/2 (t2+n^2-t3)/2]
-    #println("C: $C")
     return C
 end
 confusion(a::ClusteringResult, b::ClusteringResult) =
