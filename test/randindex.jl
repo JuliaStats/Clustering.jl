@@ -36,7 +36,7 @@ a3 = [3, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 @test randindex(ones(Int, 3), ones(Int, 3)) == (1, 1, 0, 1)
 
-a,b = rand(1:5,10_000), rand(1:5,10_000)
-@test randindex(a,b)[1] < 1.0e-2
+a, b = rand(1:5, 10_000), rand(1:5, 10_000)
+@test randindex(a, b)[1] < 1.0e-2
 
 end
