@@ -70,7 +70,7 @@ function dbscan(D::Arrow.Table, ϵ::Real, minpts::Int; T = Base.Float64)
     # check arguments    
     eps > 0 || throw(ArgumentError("ϵ must be a positive value ($eps given)."))
     minpts >= 1 || throw(ArgumentError("minpts must be positive integer ($minpts given)."))
-
+    n = length(keys(D))
     # invoke core algorithm
     _dbscan(D, convert(T, eps), minpts, 1:n)
 end
