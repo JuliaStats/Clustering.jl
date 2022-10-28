@@ -392,7 +392,7 @@ function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix 
     end
 
 """
-get_cluster_assignments(X::Matrix{T}, R::KmeansResult; ...) -> Vector{Int}
+    assign_clusters(X::AbstractMatrix{<:Real}, R::ClusteringResult; ...) -> Vector{Int}
 
 Perform the clustering assigment of ``n`` points into `k` clusters,
 using the learned prototopyes from the input `KmeansResult`. 
