@@ -403,10 +403,10 @@ Note: This method is usefull when clustering new data leveraging a fitted model.
 - `X`: Input data to be clustered.
 - `R`: Fitted keamns result.
 """
-function get_cluster_assignments(
-    X::Matrix{T}, 
-    R::KmeansResult, 
-    distance::SemiMetric=SqEuclidean()) where {F<:Function, T}
+function assign_clusters(
+    samples::AbstractMatrix{T}, 
+    clusters::KmeansResult, 
+    distance::SemiMetric = SqEuclidean()) where {T}
 
     cluster_assignments = zeros(Int, size(X,2))
     
