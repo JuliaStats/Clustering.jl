@@ -390,14 +390,13 @@ function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix 
         colwise!(ds, distance, v, X)
         tcosts = min(tcosts, ds)
     end
+end
+
 
 """
     assign_clusters(X::AbstractMatrix{<:Real}, R::ClusteringResult; ...) -> Vector{Int}
 
-Perform the clustering assigment of ``n`` points into `k` clusters,
-using the learned prototopyes from the input `KmeansResult`. 
-
-Note: This method is usefull when clustering new data leveraging a fitted model.
+Assign the samples specified as the columns of `X` to the corresponding clusters from `R`.
 
 # Arguments
 - `X`: Input data to be clustered.
@@ -427,4 +426,3 @@ function assign_clusters(
     return cluster_assignments
 end
 
-end
