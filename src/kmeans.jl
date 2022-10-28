@@ -390,4 +390,41 @@ function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix 
         colwise!(ds, distance, v, X)
         tcosts = min(tcosts, ds)
     end
+
+"""
+get_cluster_assignments(X::Matrix{T}, R::KmeansResult; ...) -> Vector{Int}
+
+Perform the clustering assigment of ``n`` points into `k` clusters,
+using the learned prototopyes from the input `KmeansResult`. 
+
+Note: This method is usefull when clustering new data leveraging a fitted model.
+
+# Arguments
+- `X`: Input data to be clustered.
+- `R`: Fitted keamns result.
+"""
+function get_cluster_assignments(
+    X::Matrix{T}, 
+    R::KmeansResult, 
+    distance::SemiMetric=SqEuclidean()) where {F<:Function, T}
+
+    cluster_assignments = zeros(Int, size(X,2))
+    
+    Threads.@threads for n in axes(X,2)
+        min_dist = typemax(T)
+        cluster_assignment = 0
+        
+        for k in axes(R.centers, 2)
+            dist = distance(@view(X[:,n]),@view(R.centers[:,k]))
+            if dist < min_dist
+                min_dist = dist
+                cluster_assignment = k
+            end
+        end
+        cluster_assignments[n] = cluster_assignment
+    end
+    
+    return cluster_assignments
+end
+
 end
