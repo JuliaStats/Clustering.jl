@@ -29,7 +29,7 @@ module Clustering
     kmpp, kmpp_by_costs,
 
     # kmeans
-    kmeans, kmeans!, KmeansResult, get_cluster_assignments,
+    kmeans, kmeans!, KmeansResult,
 
     # kmedoids
     kmedoids, kmedoids!, KmedoidsResult,
@@ -65,7 +65,10 @@ module Clustering
     Hclust, hclust, cutree,
 
     # MCL
-    mcl, MCLResult
+    mcl, MCLResult,
+
+    # utils
+    assign_clusters
 
     ## source files
 
