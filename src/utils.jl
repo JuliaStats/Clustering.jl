@@ -72,18 +72,18 @@ function updatemin!(r::AbstractArray, x::AbstractArray)
 end
 
 
-"""
+"""gi
     assign_clusters(X::AbstractMatrix{<:Real}, R::ClusteringResult; ...) -> Vector{Int}
 
 Assign the samples specified as the columns of `X` to the corresponding clusters from `R`.
 
 # Arguments
 - `X`: Input data to be clustered.
-- `R`: Fitted keamns result.
+- `R`: Fitted clustering result.
 """
 function assign_clusters(
-    samples::AbstractMatrix{T}, 
-    clusters::ClusteringResult, 
+    X::AbstractMatrix{T}, 
+    R::ClusteringResult, 
     distance::SemiMetric = SqEuclidean()) where {T}
 
     cluster_assignments = zeros(Int, size(X, 2))
