@@ -391,6 +391,3 @@ function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix 
         tcosts = min(tcosts, ds)
     end
 end
-
-
-
