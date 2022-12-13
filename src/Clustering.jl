@@ -10,7 +10,7 @@ module Clustering
     using Random
 
     import Base: show
-    import StatsBase: IntegerVector, RealVector, RealMatrix, counts
+    import StatsBase: counts
 
     export
     # reexport from StatsBase

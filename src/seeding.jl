@@ -120,7 +120,7 @@ struct RandSeedAlg <: SeedingAlgorithm end
 Initialize `iseeds` with the indices of cluster seeds for the `X` data matrix
 using the `alg` seeding algorithm.
 """
-function initseeds!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real};
+function initseeds!(iseeds::AbstractVector{<:Integer}, alg::RandSeedAlg, X::AbstractMatrix{<:Real};
                     rng::AbstractRNG=Random.GLOBAL_RNG)
     check_seeding_args(X, iseeds)
     sample!(rng, 1:size(X, 2), iseeds; replace=false)
@@ -137,7 +137,7 @@ Here, `costs[i, j]` is the cost of assigning points ``i`` and ``j``
 to the same cluster. One may, for example, use the squared Euclidean distance
 between the points as the cost.
 """
-function initseeds_by_costs!(iseeds::IntegerVector, alg::RandSeedAlg, X::AbstractMatrix{<:Real}; rng::AbstractRNG=Random.GLOBAL_RNG)
+function initseeds_by_costs!(iseeds::AbstractVector{<:Integer}, alg::RandSeedAlg, X::AbstractMatrix{<:Real}; rng::AbstractRNG=Random.GLOBAL_RNG)
     check_seeding_args(X, iseeds)
     sample!(rng, 1:size(X,2), iseeds; replace=false)
 end
@@ -157,7 +157,7 @@ proportional to the minimum cost of assigning it to the existing seeds.
 """
 struct KmppAlg <: SeedingAlgorithm end
 
-function initseeds!(iseeds::IntegerVector, alg::KmppAlg,
+function initseeds!(iseeds::AbstractVector{<:Integer}, alg::KmppAlg,
                     X::AbstractMatrix{<:Real},
                     metric::PreMetric = SqEuclidean();
                     rng::AbstractRNG=Random.GLOBAL_RNG)
@@ -190,7 +190,7 @@ function initseeds!(iseeds::IntegerVector, alg::KmppAlg,
     return iseeds
 end
 
-function initseeds_by_costs!(iseeds::IntegerVector, alg::KmppAlg,
+function initseeds_by_costs!(iseeds::AbstractVector{<:Integer}, alg::KmppAlg,
                              costs::AbstractMatrix{<:Real};
                              rng::AbstractRNG=Random.GLOBAL_RNG)
     n = size(costs, 1)
@@ -233,7 +233,7 @@ Choose the ``k`` points with the highest *centrality* as seeds.
 """
 struct KmCentralityAlg <: SeedingAlgorithm end
 
-function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,
+function initseeds_by_costs!(iseeds::AbstractVector{<:Integer}, alg::KmCentralityAlg,
                              costs::AbstractMatrix{<:Real}; kwargs...)
 
     n = size(costs, 1)
@@ -258,6 +258,6 @@ function initseeds_by_costs!(iseeds::IntegerVector, alg::KmCentralityAlg,
     return iseeds
 end
 
-initseeds!(iseeds::IntegerVector, alg::KmCentralityAlg, X::AbstractMatrix{<:Real},
+initseeds!(iseeds::AbstractVector{<:Integer}, alg::KmCentralityAlg, X::AbstractMatrix{<:Real},
            metric::PreMetric = SqEuclidean(); kwargs...) =
     initseeds_by_costs!(iseeds, alg, pairwise(metric, X, dims=2); kwargs...)
