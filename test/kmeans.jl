@@ -204,4 +204,11 @@ end
     end
 end
 
+@testset "get cluster assigments" begin
+    X = rand(5, 100)
+    R = kmeans(X, 10; maxiter=200)
+    reassigned_clusters = assign_clusters(X, R);
+    @test R.assignments == reassigned_clusters
+end
+
 end

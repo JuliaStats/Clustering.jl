@@ -65,7 +65,10 @@ module Clustering
     Hclust, hclust, cutree,
 
     # MCL
-    mcl, MCLResult
+    mcl, MCLResult,
+
+    # utils
+    assign_clusters
 
     ## source files
 
