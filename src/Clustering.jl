@@ -65,7 +65,10 @@ module Clustering
     Hclust, hclust, cutree,
 
     # MCL
-    mcl, MCLResult
+    mcl, MCLResult,
+
+    #fmeasure
+    pair_precision, fmeasure, pair_recall
 
     ## source files
 
@@ -85,6 +88,7 @@ module Clustering
     include("varinfo.jl")
     include("vmeasure.jl")
     include("mutualinfo.jl")
+    include("fmeasure.jl")
 
     include("hclust.jl")
 
