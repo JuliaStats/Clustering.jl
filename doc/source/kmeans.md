@@ -54,3 +54,29 @@ result = kmeans(features, 3); # run K-means for the 3 clusters
 scatter(iris.PetalLength, iris.PetalWidth, marker_z=result.assignments,
         color=:lightrainbow, legend=false)
 ```
+
+```@example julia K-means clustering on images.
+using TestImages, Clustering, ImageView
+
+# Loads a gray scale image. 
+img = testimage("camera")
+# Convert into a normal Array
+img = Array{Float64,2}(img)
+
+# Reshape that image into a vector.
+Nx, Ny = size(img)
+dat = reshape(img, 1, Nx*Ny)
+
+#=
+Feed in the image vector, # segments, show iteration info 
+and set max iterations
+=#
+result = kmeans(dat, 3, display=:iter, maxiter=200)
+
+# Reshape the data back into its orginal form. 
+img_result = reshape(result.assignments,Nx,Ny)
+
+# View the newly segmented image. 
+imshow(img_result)
+
+```
