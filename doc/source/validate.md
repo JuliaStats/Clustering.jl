@@ -99,3 +99,13 @@ the similarity of two different clusterings of a dataset.
 ```@docs
 mutualinfo
 ```
+
+## Confusion matrix
+
+Pair [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix)
+arising from two clusterings is a 2×2 contingency table representation of
+the partition co-occurrence, see [`counts`](@ref).
+
+```@docs
+confusion
+```
