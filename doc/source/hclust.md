@@ -12,7 +12,8 @@ hclust
 Hclust
 ```
 
-```@example Single-linkage clustering using distance matrix
+Single-linkage clustering using distance matrix:
+```@example
 using Clustering
 D = rand(1000, 1000);
 D += D'; # symmetric distance matrix (optional)
