@@ -30,9 +30,10 @@ function randindex(a, b)
     D = c12 + c21
 
     # expected index
-    ERI = (c11+c12)*(c11+c21)+(c21+c22)*(c12+c22)
+    T = typeof(one(A)/one(t))
+    ERI = convert(T, c11+c12)*(c11+c21)+convert(T, c21+c22)*(c12+c22)
     # adjusted Rand - Hubert & Arabie 1985
-    ARI = D == 0 ? 1.0 : (t*A-ERI)/(t*t-ERI) # (9) from Steinley 2004
+    ARI = D == 0 ? 1.0 : (convert(T, t)*A - ERI)/(abs2(convert(T, t)) - ERI) # (9) from Steinley 2004
 
     RI = A/t            # Rand 1971      # Probability of agreement
     MI = D/t            # Mirkin 1970    # p(disagreement)
