@@ -199,7 +199,7 @@ function _dbscan(kdtree::KDTree, points::AbstractMatrix, radius::Real;
             append!(adj_list, inrange(kdtree, points[:, current_index], radius))
             cluster_selection[adj_list] .= true
             # if a point doesn't have enough neighbors it is not a 'core' point and its neighbors are not added to the to_explore list
-            if (length(adj_list) - 1) < min_neighbors
+            if length(adj_list) < min_neighbors
                 empty!(adj_list)
                 continue # query returns the query point as well as the neighbors
             end
