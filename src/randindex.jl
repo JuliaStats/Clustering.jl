@@ -23,7 +23,7 @@ Returns a tuple of indices:
 > Rand Index.* Psychological Methods, Vol. 9, No. 3: 386-396
 """
 function randindex(a, b)
-    c11, c21, c12, c22 = confusion(a, b) # Table 2 from Steinley 2004
+    c11, c21, c12, c22 = confusion(Float64, a, b) # Table 2 from Steinley 2004
 
     t = c11 + c12 + c21 + c22   # total number of pairs of entities
     A = c11 + c22
@@ -32,7 +32,7 @@ function randindex(a, b)
     # expected index
     ERI = (c11+c12)*(c11+c21)+(c21+c22)*(c12+c22)
     # adjusted Rand - Hubert & Arabie 1985
-    ARI = D == 0 ? 1.0 : (t*A-ERI)/(t*t-ERI) # (9) from Steinley 2004
+    ARI = D == 0 ? 1.0 : (t*A - ERI)/(abs2(t) - ERI) # (9) from Steinley 2004
 
     RI = A/t            # Rand 1971      # Probability of agreement
     MI = D/t            # Mirkin 1970    # p(disagreement)

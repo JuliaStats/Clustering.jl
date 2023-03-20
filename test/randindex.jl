@@ -36,7 +36,15 @@ a3 = [3, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 @test randindex(ones(Int, 3), ones(Int, 3)) == (1, 1, 0, 1)
 
-a, b = rand(1:5, 10_000), rand(1:5, 10_000)
-@test randindex(a, b)[1] < 1.0e-2
+@testset "large independent clusterings (#225)" begin
+    rng = MersenneTwister(123)
+
+    n = 10_000_000
+    k = 5 # number of clusters
+    a = rand(rng, 1:k, n)
+    b = rand(rng, 1:k, n)
+
+    @test collect(randindex(a, b)) ≈ [0.0, ((k-1)^2 + 1)/k^2, 2*(k-1)/k^2, ((k-2)/k)^2] atol=1e-5
+end
 
 end
