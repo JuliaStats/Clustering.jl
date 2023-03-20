@@ -1,5 +1,6 @@
 using Test
 using Clustering
+using Distances
 
 @testset "silhouettes()" begin
 
@@ -52,6 +53,12 @@ end
     for i in 1:10; d[i, i] = 0; end
 
     @test_throws ArgumentError silhouettes(a, d)
+end
+
+@testset "empty clusters handled correctly (#241)" begin
+    X = rand(MersenneTwister(123), 10, 5)
+    pd = pairwise(Euclidean(), X, dims=1)
+    @test all(>=(-0.5), silhouettes([5, 2, 2, 3, 2, 2, 3, 2, 3, 5], pd))
 end
 
 end
