@@ -1,11 +1,5 @@
 # DBSCAN Clustering
 #
-#   References:
-#
-#       Martin Ester, Hans-peter Kriegel, Jörg S, and Xiaowei Xu
-#       A density-based algorithm for discovering clusters
-#       in large spatial databases with noise. 1996.
-#
 
 """
     DbscanResult <: ClusteringResult
@@ -166,6 +160,16 @@ points = randn(3, 10000)
 # DBSCAN clustering, clusters with less than 20 points will be discarded:
 clusters = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20)
 ```
+
+## References:
+
+  * Martin Ester, Hans-Peter Kriegel, Jörg Sander, and Xiaowei Xu,
+    *"A density-based algorithm for discovering clusters
+    in large spatial databases with noise"*, KDD-1996, pp. 226--231.
+  * Erich Schubert, Jörg Sander, Martin Ester, Hans Peter Kriegel, and
+    Xiaowei Xu, *"DBSCAN Revisited, Revisited: Why and How You Should
+    (Still) Use DBSCAN"*, ACM Transactions on Database Systems,
+    Vol.42(3)3, pp. 1--21, https://doi.org/10.1145/3068335
 """
 function dbscan(points::AbstractMatrix, radius::Real; leafsize::Int = 20, kwargs ...)
     kdtree = KDTree(points; leafsize=leafsize)
