@@ -6,7 +6,7 @@
 #       A density-based algorithm for discovering clusters
 #       in large spatial databases with noise. 1996.
 #
-
+import Arrow
 """
     DbscanResult <: ClusteringResult
 
@@ -66,6 +66,15 @@ function dbscan(D::AbstractMatrix{T}, eps::Real, minpts::Int) where T<:Real
     _dbscan(D, convert(T, eps), minpts, 1:n)
 end
 
+function dbscan(D::Arrow.Table, ϵ::Real, minpts::Int; T = Base.Float64)
+    # check arguments    
+    eps > 0 || throw(ArgumentError("ϵ must be a positive value ($eps given)."))
+    minpts >= 1 || throw(ArgumentError("minpts must be positive integer ($minpts given)."))
+    n = length(keys(D))
+    # invoke core algorithm
+    _dbscan(D, convert(T, eps), minpts, 1:n)
+end
+
 function _dbscan(D::AbstractMatrix{T}, eps::T, minpts::Int, visitseq::AbstractVector{Int}) where T<:Real
     n = size(D, 1)
 
@@ -94,6 +103,36 @@ function _dbscan(D::AbstractMatrix{T}, eps::T, minpts::Int, visitseq::AbstractVe
     return DbscanResult(seeds, assignments, counts)
 end
 
+#Arrow.Table support
+function _dbscan(D::Arrow.Table, eps::T, minpts::Int, visitseq::AbstractVector{Int}) where T<:Real
+    n = length(keys(D))
+
+    # prepare
+    seeds = Int[]
+    counts = Int[]
+    assignments = zeros(Int, n)
+    visited = zeros(Bool, n)
+    k = 0
+
+    # main loop
+    for p in visitseq
+        if assignments[p] == 0 && !visited[p]
+            visited[p] = true
+            nbs = _dbs_region_query(D, p, eps)
+            if length(nbs) >= minpts
+                k += 1
+                cnt = _dbs_expand_cluster!(D, k, p, nbs, eps, minpts, assignments, visited)
+                push!(seeds, p)
+                push!(counts, cnt)
+            end
+        end
+    end
+
+    # make output
+    return DbscanResult(seeds, assignments, counts)
+end
+
+
 ## key steps
 
 function _dbs_region_query(D::AbstractMatrix{T}, p::Int, eps::T) where T<:Real
@@ -107,6 +146,20 @@ function _dbs_region_query(D::AbstractMatrix{T}, p::Int, eps::T) where T<:Real
     end
     return nbs::Vector{Int}
 end
+
+# Arrow.Table support
+function _dbs_region_query(D::Arrow.Table, p::Int, eps::T) where T<:Real
+    n = length(keys(D))
+    nbs = Int[]
+    dists = D[p]
+    for i = 1:n
+        @inbounds if dists[i] < eps
+            push!(nbs, i)
+        end
+    end
+    return nbs::Vector{Int}
+end
+
 
 function _dbs_expand_cluster!(D::AbstractMatrix{T},        # distance matrix
                               k::Int,                      # the index of current cluster
@@ -138,6 +191,40 @@ function _dbs_expand_cluster!(D::AbstractMatrix{T},        # distance matrix
     end
     return cnt
 end
+
+# Arrow.Table support
+function _dbs_expand_cluster!(D::Arrow.Table,              # distance matrix
+                              k::Int,                      # the index of current cluster
+                              p::Int,                      # the index of seeding point
+                              nbs::Vector{Int},            # eps-neighborhood of p
+                              eps::T,                        # radius of neighborhood
+                              minpts::Int,                 # minimum number of neighbors of a density point
+                              assignments::Vector{Int},    # assignment vector
+                              visited::Vector{Bool}) where T<:Real       # visited indicators
+    assignments[p] = k
+    cnt = 1
+    while !isempty(nbs)
+        q = popfirst!(nbs)
+        if !visited[q]
+            visited[q] = true
+            qnbs = _dbs_region_query(D, q, eps)
+            if length(qnbs) >= minpts
+                for x in qnbs
+                    if assignments[x] == 0
+                        push!(nbs, x)
+                    end
+                end
+            end
+        end
+        if assignments[q] == 0
+            assignments[q] = k
+            cnt += 1
+        end
+    end
+    return cnt
+end
+
+
 
 """
     dbscan(points::AbstractMatrix, radius::Real,
