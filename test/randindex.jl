@@ -39,7 +39,7 @@ a3 = [3, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 @testset "large independent clusterings (#225)" begin
     rng = MersenneTwister(123)
 
-    n = sizeof(Int) == 4 ? 100_000 : 10_000_000 # avoid overflow on x86
+    n = 10_000_000
     k = 5 # number of clusters
     a = rand(rng, 1:k, n)
     b = rand(rng, 1:k, n)
