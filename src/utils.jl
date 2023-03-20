@@ -9,6 +9,11 @@ Base type for the output of clustering algorithm.
 """
 abstract type ClusteringResult end
 
+# vector of cluster indices for each clustered point
+ClusterAssignments = AbstractVector{<:Integer}
+
+ClusteringResultOrAssignments = Union{ClusteringResult, ClusterAssignments}
+
 # generic functions
 
 """
@@ -48,6 +53,7 @@ Get the vector of cluster indices for each point.
 is assigned.
 """
 assignments(R::ClusteringResult) = R.assignments
+assignments(A::ClusterAssignments) = A
 
 
 ##### convert display symbol to disp level
