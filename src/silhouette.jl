@@ -82,8 +82,9 @@ function silhouettes(assignments::AbstractVector{<:Integer},
         a[j] = r[l, j]
 
         v = typemax(eltype(b))
-        for i = 1:k
-            @inbounds rij = r[i,j]
+        @inbounds for i = 1:k
+            counts[i] == 0 && continue # skip empty clusters
+            rij = r[i,j]
             if (i != l) && (rij < v)
                 v = rij
             end
