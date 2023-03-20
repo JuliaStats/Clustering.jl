@@ -1,11 +1,14 @@
 """
-    confusion(a::Union{ClusteringResult, AbstractVector},
-              b::Union{ClusteringResult, AbstractVector}) -> Matrix{Int}
+    confusion([T = Int],
+              a::Union{ClusteringResult, AbstractVector},
+              b::Union{ClusteringResult, AbstractVector}) -> Matrix{T}
 
-Return 2×2 confusion matrix `C` that represents partition co-occurrence or
-similarity matrix between two clusterings by considering all pairs of samples
-and counting  pairs that are assigned into the same or into different clusters
-under the true and predicted clusterings.
+Calculate the *confusion matrix* of the two clusterings.
+
+Returns the 2×2 confusion matrix `C` of type `T` (`Int` by default) that
+represents partition co-occurrence or similarity matrix between two clusterings
+`a` and `b` by considering all pairs of samples and counting pairs that are
+assigned into the same or into different clusters.
 
 Considering a pair of samples that is in the same group as a **positive pair**,
 and a pair is in the different group as a **negative pair**, then the count of
@@ -17,13 +20,14 @@ true negatives is `C₂₂`:
 |Positive|C₁₁|C₁₂|
 |Negative|C₂₁|C₂₂|
 """
-function confusion(a::AbstractVector{<:Integer}, b::AbstractVector{<:Integer})
-    c = counts(a, b)
+function confusion(::Type{T}, a::AbstractVector{<:Integer}, b::AbstractVector{<:Integer}) where T<:Union{Integer, AbstractFloat}
+    cc = counts(a, b)
+    c = eltype(cc) === T ? cc : convert(Matrix{T}, cc)
 
     n = sum(c)
-    nis = sum(abs2, sum(c, dims=2))
+    nis = sum(abs2, sum!(zeros(T, (size(c, 1), 1)), c))
     (nis < 0) && OverflowError("sum of squares of sums of rows overflowed")
-    njs = sum(abs2, sum(c, dims=1))
+    njs = sum(abs2, sum!(zeros(T, (1, size(c, 2))), c))
     (njs < 0) && OverflowError("sum of squares of sums of columns overflowed")
 
     t2 = sum(abs2, c)
@@ -33,10 +37,10 @@ function confusion(a::AbstractVector{<:Integer}, b::AbstractVector{<:Integer})
     return C
 end
 
-confusion(a::ClusteringResult, b::ClusteringResult) =
-    confusion(assignments(a), assignments(b))
-confusion(a::AbstractVector{<:Integer}, b::ClusteringResult) =
-    confusion(a, assignments(b))
-confusion(a::ClusteringResult, b::AbstractVector{<:Integer}) =
-    confusion(assignments(a), b)
+confusion(T, a::ClusteringResultOrAssignments,
+             b::ClusteringResultOrAssignments) =
+    confusion(T, assignments(a), assignments(b))
 
+confusion(a::ClusteringResultOrAssignments,
+          b::ClusteringResultOrAssignments) =
+    confusion(Int, a, b)
