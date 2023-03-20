@@ -27,7 +27,7 @@ kmeans!
 
 ## Examples
 
-```@example julia
+```@example
 using Clustering
 
 # make a random dataset with 1000 random 5-dimensional points
@@ -43,7 +43,8 @@ c = counts(R) # get the cluster sizes
 M = R.centers # get the cluster centers
 ```
 
-```@example Scatter plot of the K-means clustering results
+Scatter plot of the K-means clustering results:
+```@example
 using RDatasets, Clustering, Plots
 iris = dataset("datasets", "iris"); # load the data
 
