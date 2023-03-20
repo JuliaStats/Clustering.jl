@@ -29,15 +29,16 @@ end
 DBSCAN cluster returned by [`dbscan`](@ref) function (point coordinates-based
 implementation)
 
-# Fields
- * `size::Int`: number of points in a cluster (core + boundary)
- * `core_indices::Vector{Int}`: indices of points in the cluster *core*
- * `boundary_indices::Vector{Int}`: indices of points on the cluster *boundary*
+## Fields
+  - `size::Int`: number of points in a cluster (core + boundary)
+  - `core_indices::Vector{Int}`: indices of points in the cluster *core*, a.k.a. *seeds*
+     (have at least `min_neighbors` neighbors in the cluster)
+  - `boundary_indices::Vector{Int}`: indices of the cluster points outside of *core*
 """
 struct DbscanCluster
-    size::Int                      # number of points in cluster
-    core_indices::Vector{Int}      # core points indices
-    boundary_indices::Vector{Int}  # boundary points indices
+    size::Int
+    core_indices::Vector{Int}
+    boundary_indices::Vector{Int}
 end
 
 ## main algorithm
