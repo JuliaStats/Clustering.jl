@@ -21,10 +21,13 @@ function confusion(a::AbstractVector{<:Integer}, b::AbstractVector{<:Integer})
     c = counts(a, b)
 
     n = sum(c)
-    nis = sum(abs2, sum(c, dims=2))        # sum of squares of sums of rows
-    njs = sum(abs2, sum(c, dims=1))        # sum of squares of sums of columns
+    nis = sum(abs2, sum(c, dims=2))
+    (nis < 0) && OverflowError("sum of squares of sums of rows overflowed")
+    njs = sum(abs2, sum(c, dims=1))
+    (njs < 0) && OverflowError("sum of squares of sums of columns overflowed")
 
-    t2 = sum(abs2, c)                      # sum over rows & columns of nij^2
+    t2 = sum(abs2, c)
+    (t2 < 0) && OverflowError("sum of squares of matrix elements overflowed")
     t3 = nis + njs
     C = [(t2 - n)÷2 (nis - t2)÷2; (njs - t2)÷2 (t2 + n^2 - t3)÷2]
     return C
