@@ -9,7 +9,7 @@ include("test_helpers.jl")
     Random.seed!(34568)
     @test_throws ArgumentError dbscan(randn(2, 3), 1.0, 1)
     @test_throws ArgumentError dbscan(randn(1, 1), 1.0, 1)
-    @test_throws ArgumentError dbscan(randn(2, 2), 0.0, 1)
+    @test_throws ArgumentError dbscan(randn(2, 2), -1.0, 1)
     @test_throws ArgumentError dbscan(randn(2, 2), 1.0, 0)
     @test dbscan(randn(2, 2), 0.5, 1) isa DbscanResult
 end

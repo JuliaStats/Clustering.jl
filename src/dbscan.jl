@@ -54,7 +54,7 @@ function dbscan(D::AbstractMatrix{T}, eps::Real, minpts::Int) where T<:Real
     n = size(D, 1)
     size(D, 2) == n || throw(ArgumentError("D must be a square matrix ($(size(D)) given)."))
     n >= 2 || throw(ArgumentError("At least two data points are required ($n given)."))
-    eps > 0 || throw(ArgumentError("eps must be a positive value ($eps given)."))
+    eps >= 0 || throw(ArgumentError("eps must be a positive value ($eps given)."))
     minpts >= 1 || throw(ArgumentError("minpts must be positive integer ($minpts given)."))
 
     # invoke core algorithm
