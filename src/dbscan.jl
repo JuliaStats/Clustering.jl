@@ -96,7 +96,7 @@ function _dbs_region_query(D::AbstractMatrix{T}, p::Int, eps::T) where T<:Real
     nbs = Int[]
     dists = view(D,:,p)
     for i = 1:n
-        @inbounds if dists[i] < eps
+        @inbounds if dists[i] <= eps
             push!(nbs, i)
         end
     end
