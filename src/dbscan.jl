@@ -211,8 +211,10 @@ function _dbscan(kdtree::KDTree, points::AbstractMatrix, radius::Real;
             core_selection[current_index] = true
             update_exploration_list!(adj_list, to_explore, visited)
         end
-        cluster_size = sum(cluster_selection)
-        min_cluster_size <= cluster_size && accept_cluster!(clusters, core_selection, cluster_selection, cluster_size)
+        if any(core_selection) &&
+           (cluster_size = sum(cluster_selection)) >= min_cluster_size
+            accept_cluster!(clusters, core_selection, cluster_selection, cluster_size)
+        end
     end
     return clusters
 end
