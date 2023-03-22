@@ -12,15 +12,15 @@
 
 The output of [`dbscan`](@ref) function (distance matrix-based implementation).
 
-# Fields
- - `seeds::Vector{Int}`: indices of cluster starting points
- - `assignments::Vector{Int}`: vector of clusters indices, where each point was assigned to
- - `counts::Vector{Int}`: cluster sizes (number of assigned points)
+## Fields
+  - `seeds::Vector{Int}`: indices of cluster starting points, length *K*
+  - `counts::Vector{Int}`: cluster sizes (number of assigned points), length *K*
+  - `assignments::Vector{Int}`: vector of clusters indices, where each point was assigned to, length *N*
 """
 mutable struct DbscanResult <: ClusteringResult
-    seeds::Vector{Int}          # starting points of clusters, size (k,)
-    assignments::Vector{Int}    # assignments, size (n,)
-    counts::Vector{Int}         # number of points in each cluster, size (k,)
+    seeds::Vector{Int}
+    counts::Vector{Int}
+    assignments::Vector{Int}
 end
 
 """
@@ -92,7 +92,7 @@ function _dbscan(D::AbstractMatrix{T}, eps::T, minpts::Int, visitseq::AbstractVe
     end
 
     # make output
-    return DbscanResult(seeds, assignments, counts)
+    return DbscanResult(seeds, counts, assignments)
 end
 
 ## key steps
