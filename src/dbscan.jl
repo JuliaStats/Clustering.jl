@@ -136,7 +136,7 @@ end
 
 """
     dbscan(points::AbstractMatrix, radius::Real;
-           [min_neighbors], [min_cluster_size],
+           [metric], [min_neighbors], [min_cluster_size],
            [nntree_kwargs...]) -> Vector{DbscanCluster}
 
 Cluster `points` using the DBSCAN (density-based spatial clustering of
@@ -148,6 +148,7 @@ applications with noise) algorithm.
  - `radius::Real`: query radius
 
 Optional keyword arguments to control the algorithm:
+ - `metric` (defaults to `Euclidean`): the points distance metric to use
  - `min_neighbors::Integer` (defaults to 1): the minimum number of a *core* point
    neighbors
  - `min_cluster_size::Integer` (defaults to 1): the minimum number of points in
@@ -172,9 +173,10 @@ clusters = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20)
     Vol.42(3)3, pp. 1--21, https://doi.org/10.1145/3068335
 """
 function dbscan(points::AbstractMatrix, radius::Real;
+                metric = Euclidean(),
                 min_neighbors::Integer = 1, min_cluster_size::Integer = 1,
                 nntree_kwargs...)
-    kdtree = KDTree(points; nntree_kwargs...)
+    kdtree = KDTree(points, metric; nntree_kwargs...)
     return _dbscan(kdtree, points, radius;
                    min_neighbors=min_neighbors,
                    min_cluster_size=min_cluster_size)
