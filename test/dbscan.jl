@@ -26,9 +26,10 @@ D = pairwise(Euclidean(), X, dims=2)
 
 R = dbscan(D, 1.0, 10)
 @test isa(R, DbscanResult)
-k = length(R.seeds)
+k = nclusters(R)
 # println("k = $k")
 @test k == 3
+@test k == length(R.seeds)
 @test all(R.assignments .<= k)
 @test length(R.assignments) == n
 @test length(R.counts) == k
@@ -40,6 +41,7 @@ end
 @testset "Support for arrays other than Matrix{T}" begin
     @testset "$(typeof(M))" for M in equivalent_matrices(D)
         R2 = dbscan(M, 1.0, 10)  # run on complete subarray
+        @test nclusters(R2) == nclusters(R)
         @test R2.assignments == R.assignments
     end
 end
