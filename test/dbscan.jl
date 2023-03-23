@@ -60,6 +60,23 @@ end
     end
 end
 
+@testset "detecting outliers (#190)" begin
+    v = vcat([.828 .134 .821 .630 .784 .674 .436 .089 .777 .526 .200 .908 .929 .835 .553 .647 .672 .234 .536 .617])
+    r = @inferred(dbscan(v, 0.075, min_cluster_size=3))
+    @test nclusters(r) == 3
+    @test findall(==(0), r.assignments) == [7]
+    @test r.clusters[1].core_indices == [1, 3, 5, 9, 12, 13, 14]
+    @test isempty(r.clusters[1].boundary_indices)
+    @test r.clusters[2].core_indices == [2, 8, 11, 18]
+    @test isempty(r.clusters[2].boundary_indices)
+    @test r.clusters[3].core_indices == [4, 6, 10, 15, 16, 17, 19, 20]
+    @test isempty(r.clusters[3].boundary_indices)
+
+    # outlier pt #7 assigned to a 3rd cluster when bigger radius is used
+    r2 = @inferred(dbscan(v, 0.1, min_cluster_size=3))
+    @test r2.assignments == setindex!(copy(r.assignments), 3, 7)
+end
+
 @testset "normal points" begin
     p0 = randn(StableRNG(0), 3, 1000)
     p1 = randn(StableRNG(1), 3, 1000) .+ [3.0, 3.0, 0.0]
