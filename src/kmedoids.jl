@@ -231,10 +231,8 @@ end
 
 
 # find medoid for a given group
-#
-# TODO: faster way without creating temporary arrays
-function _find_medoid(dist::AbstractMatrix, grp::Vector{Int})
+function _find_medoid(dist::AbstractMatrix, grp::AbstractVector{Int})
     @assert !isempty(grp)
-    p = argmin(sum(dist[grp, grp], dims=2))
-    return grp[p]::Int
+    p = argmin(sum(view(dist, grp, grp), dims=2))
+    return grp[p]
 end
