@@ -206,7 +206,8 @@ function _kmed_update_assignments!(dist::AbstractMatrix{<:Real}, # in: (n, n)
             m = medoids[i]
             v = dist[m, j]
             # assign if current medoid is closer or if it is j itself
-            if v < mv
+            if (v < mv) || (m == j)
+                (v <= mv) || throw(ArgumentError("sample #$j reassigned from medoid[$p]=#$(medoids[p]) (distance=$mv) to medoid[$i]=#$m (distance=$v); check the distance matrix correctness"))
                 p = i
                 mv = v
             end

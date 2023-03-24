@@ -9,8 +9,12 @@ include("test_helpers.jl")
     Random.seed!(34568)
     @test_throws ArgumentError kmedoids(randn(2, 3), 1)
     @test_throws ArgumentError kmedoids(randn(2, 3), 4)
-    dist = inv.(max.(pairwise(Euclidean(), randn(2, 3), dims=2), 0.1))
+    dist = max.(pairwise(Euclidean(), randn(2, 3), dims=2), 0.1)
     @test @inferred(kmedoids(dist, 2)) isa KmedoidsResult
+    # incorrect distance matrix
+    invdist = inv.(max.(pairwise(Euclidean(), randn(2, 3), dims=2), 0.1))
+    @test_throws ArgumentError kmedoids(invdist, 2)
+
     @test_throws ArgumentError kmedoids(dist, 2, display=:mylog)
     for disp in keys(Clustering.DisplayLevels)
         @test @inferred(kmedoids(dist, 2, display=disp)) isa KmedoidsResult
@@ -46,6 +50,15 @@ R = @inferred(kmedoids(dist, k))
         R2 = kmedoids(M, k)
         @test R2.assignments == R.assignments
     end
+end
+
+@testset "Duplicated points (#231)" begin
+    pts = [0.0 0.0]
+    dists = pairwise(SqEuclidean(), pts, dims=2)
+    dupmed = kmedoids(dists, 2)
+    @test nclusters(dupmed) == 2
+    @test sort(dupmed.medoids) == [1, 2]
+    @test sort(dupmed.assignments) == [1, 2]
 end
 
 @testset "Toy example #1" begin
