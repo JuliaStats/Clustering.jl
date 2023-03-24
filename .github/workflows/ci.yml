@@ -8,7 +8,7 @@ on:
       - master
       - release-*
       - runci/*
-    tags: '*'
+    tags: ['*']
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
@@ -58,14 +58,8 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v1
-      - name: Install dependencies
-        run: |
-          julia --project=doc -e '
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()'
-      - name: Build the manual
-        run: julia --color=yes --project=doc/ doc/make.jl
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
