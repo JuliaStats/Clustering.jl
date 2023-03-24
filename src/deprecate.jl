@@ -12,6 +12,10 @@
                    k2::Int, a2::AbstractVector{Int}) varinfo(a1, a2)
 @deprecate varinfo(R::ClusteringResult, k0::Int, a0::AbstractVector{Int}) varinfo(R, a0)
 
+# deprecated as of 0.14.5
+@deprecate(dbscan(D::AbstractMatrix{<:Real}, radius::Real, min_neighbors::Integer),
+    dbscan(D, radius; metric=nothing, min_neighbors=min_neighbors))
+
 # FIXME remove after deprecation period for merge/labels/height/method
 Base.propertynames(hclu::Hclust, private::Bool = false) =
     (fieldnames(typeof(hclu))...,
