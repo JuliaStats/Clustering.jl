@@ -182,51 +182,44 @@ end
 
 
 # update assignments and related quantities
-function _kmed_update_assignments!(dist::AbstractMatrix{T},      # in: (n, n)
+# returns the total cost and the number of assignment changes
+function _kmed_update_assignments!(dist::AbstractMatrix{<:Real}, # in: (n, n)
                                    medoids::AbstractVector{Int}, # in: (k,)
                                    assignments::Vector{Int},     # out: (n,)
                                    groups::Vector{Vector{Int}},  # out: (k,)
-                                   costs::Vector{T},             # out: (n,)
-                                   isinit::Bool) where T                 # in
+                                   costs::AbstractVector{<:Real},# out: (n,)
+                                   initial::Bool)                # in
     n = size(dist, 1)
     k = length(medoids)
-    ch = 0
 
-    if !isinit
-        for i = 1:k
-            empty!(groups[i])
-        end
-    end
+    # reset cluster groups (note: assignments are not touched yet)
+    initial || foreach(empty!, groups)
 
     tcost = 0.0
+    ch = 0
     for j = 1:n
-        p = 1
+        p = 1 # initialize the closest medoid for j
         mv = dist[medoids[1], j]
 
-        for i = 2:k
-            v = dist[medoids[i], j]
+        # find the closest medoid for j
+        @inbounds for i = 2:k
+            m = medoids[i]
+            v = dist[m, j]
+            # assign if current medoid is closer or if it is j itself
             if v < mv
                 p = i
                 mv = v
             end
         end
 
-        if isinit
-            assignments[j] = p
-        else
-            a = assignments[j]
-            if p != a
-                ch += 1
-            end
-            assignments[j] = p
-        end
-
+        ch += !initial && (p != assignments[j])
+        assignments[j] = p
         costs[j] = mv
         tcost += mv
         push!(groups[p], j)
     end
 
-    return (tcost, ch)::Tuple{Float64, Int}
+    return (tcost, ch)
 end
 
 
