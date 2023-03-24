@@ -1,251 +1,187 @@
 # DBSCAN Clustering
 #
-#   References:
-#
-#       Martin Ester, Hans-peter Kriegel, Jörg S, and Xiaowei Xu
-#       A density-based algorithm for discovering clusters
-#       in large spatial databases with noise. 1996.
-#
 
-"""
-    DbscanResult <: ClusteringResult
-
-The output of [`dbscan`](@ref) function (distance matrix-based implementation).
-
-# Fields
- - `seeds::Vector{Int}`: indices of cluster starting points
- - `assignments::Vector{Int}`: vector of clusters indices, where each point was assigned to
- - `counts::Vector{Int}`: cluster sizes (number of assigned points)
-"""
-mutable struct DbscanResult <: ClusteringResult
-    seeds::Vector{Int}          # starting points of clusters, size (k,)
-    assignments::Vector{Int}    # assignments, size (n,)
-    counts::Vector{Int}         # number of points in each cluster, size (k,)
-end
 
 """
     DbscanCluster
 
-DBSCAN cluster returned by [`dbscan`](@ref) function (point coordinates-based
-implementation)
+DBSCAN cluster, part of [`DbscanResult`](@ref) returned by [`dbscan`](@ref) function.
 
-# Fields
- * `size::Int`: number of points in a cluster (core + boundary)
- * `core_indices::Vector{Int}`: indices of points in the cluster *core*
- * `boundary_indices::Vector{Int}`: indices of points on the cluster *boundary*
+## Fields
+  - `size::Int`: number of points in a cluster (core + boundary)
+  - `core_indices::Vector{Int}`: indices of points in the cluster *core*, a.k.a. *seeds*
+     (have at least `min_neighbors` neighbors in the cluster)
+  - `boundary_indices::Vector{Int}`: indices of the cluster points outside of *core*
 """
 struct DbscanCluster
-    size::Int                      # number of points in cluster
-    core_indices::Vector{Int}      # core points indices
-    boundary_indices::Vector{Int}  # boundary points indices
-end
-
-## main algorithm
-
-"""
-    dbscan(D::AbstractMatrix, eps::Real, minpts::Int) -> DbscanResult
-
-Perform DBSCAN algorithm using the distance matrix `D`.
-
-# Arguments
-The following options control which points would be considered
-*density reachable*:
-  - `eps::Real`: the radius of a point neighborhood
-  - `minpts::Int`: the minimum number of neighboring points (including itself)
-     to qualify a point as a density point.
-"""
-function dbscan(D::AbstractMatrix{T}, eps::Real, minpts::Int) where T<:Real
-    # check arguments
-    n = size(D, 1)
-    size(D, 2) == n || throw(ArgumentError("D must be a square matrix ($(size(D)) given)."))
-    n >= 2 || throw(ArgumentError("At least two data points are required ($n given)."))
-    eps > 0 || throw(ArgumentError("eps must be a positive value ($eps given)."))
-    minpts >= 1 || throw(ArgumentError("minpts must be positive integer ($minpts given)."))
-
-    # invoke core algorithm
-    _dbscan(D, convert(T, eps), minpts, 1:n)
-end
-
-function _dbscan(D::AbstractMatrix{T}, eps::T, minpts::Int, visitseq::AbstractVector{Int}) where T<:Real
-    n = size(D, 1)
-
-    # prepare
-    seeds = Int[]
-    counts = Int[]
-    assignments = zeros(Int, n)
-    visited = zeros(Bool, n)
-    k = 0
-
-    # main loop
-    for p in visitseq
-        if assignments[p] == 0 && !visited[p]
-            visited[p] = true
-            nbs = _dbs_region_query(D, p, eps)
-            if length(nbs) >= minpts
-                k += 1
-                cnt = _dbs_expand_cluster!(D, k, p, nbs, eps, minpts, assignments, visited)
-                push!(seeds, p)
-                push!(counts, cnt)
-            end
-        end
-    end
-
-    # make output
-    return DbscanResult(seeds, assignments, counts)
-end
-
-## key steps
-
-function _dbs_region_query(D::AbstractMatrix{T}, p::Int, eps::T) where T<:Real
-    n = size(D,1)
-    nbs = Int[]
-    dists = view(D,:,p)
-    for i = 1:n
-        @inbounds if dists[i] < eps
-            push!(nbs, i)
-        end
-    end
-    return nbs::Vector{Int}
-end
-
-function _dbs_expand_cluster!(D::AbstractMatrix{T},        # distance matrix
-                              k::Int,                      # the index of current cluster
-                              p::Int,                      # the index of seeding point
-                              nbs::Vector{Int},            # eps-neighborhood of p
-                              eps::T,                      # radius of neighborhood
-                              minpts::Int,                 # minimum number of neighbors of a density point
-                              assignments::Vector{Int},    # assignment vector
-                              visited::Vector{Bool}) where T<:Real       # visited indicators
-    assignments[p] = k
-    cnt = 1
-    while !isempty(nbs)
-        q = popfirst!(nbs)
-        if !visited[q]
-            visited[q] = true
-            qnbs = _dbs_region_query(D, q, eps)
-            if length(qnbs) >= minpts
-                for x in qnbs
-                    if assignments[x] == 0
-                        push!(nbs, x)
-                    end
-                end
-            end
-        end
-        if assignments[q] == 0
-            assignments[q] = k
-            cnt += 1
-        end
-    end
-    return cnt
+    size::Int
+    core_indices::Vector{Int}
+    boundary_indices::Vector{Int}
 end
 
 """
-    dbscan(points::AbstractMatrix, radius::Real,
-           [leafsize], [min_neighbors], [min_cluster_size]) -> Vector{DbscanCluster}
+    DbscanResult <: ClusteringResult
 
-Cluster `points` using the DBSCAN (density-based spatial clustering of
-applications with noise) algorithm.
+The output of [`dbscan`](@ref) function.
 
-# Arguments
- - `points`: the ``d×n`` matrix of points. `points[:, j]` is a
-   ``d``-dimensional coordinates of ``j``-th point
- - `radius::Real`: query radius
+## Fields
+  - `clusters::Vector{DbscanCluster}`: clusters, length *K*
+  - `seeds::Vector{Int}`: indices of the first points of each cluster's *core*, length *K*
+  - `counts::Vector{Int}`: cluster sizes (number of assigned points), length *K*
+  - `assignments::Vector{Int}`: vector of clusters indices, where each point was assigned to, length *N*
+"""
+struct DbscanResult <: ClusteringResult
+    clusters::Vector{DbscanCluster}
+    seeds::Vector{Int}
+    counts::Vector{Int}
+    assignments::Vector{Int}
+
+    function DbscanResult(clusters::AbstractVector{DbscanCluster}, num_points::Integer)
+        assignments = zeros(Int, num_points)
+        for (i, clu) in enumerate(clusters)
+            assignments[clu.core_indices] .= i
+            assignments[clu.boundary_indices] .= i
+        end
+        new(clusters,
+            [c.core_indices[1] for c in clusters],
+            [c.size for c in clusters],
+            assignments)
+    end
+end
+
+
+"""
+    dbscan(points::AbstractMatrix, radius::Real;
+           [metric=Euclidean()],
+           [min_neighbors=1], [min_cluster_size=1],
+           [nntree_kwargs...]) -> DbscanResult
+
+Cluster `points` using the DBSCAN (Density-Based Spatial Clustering of
+Applications with Noise) algorithm.
+
+## Arguments
+ - `points`: when `metric` is specified, the *d×n* matrix, where
+   each column is a *d*-dimensional coordinate of a point;
+   when `metric=nothing`, the *n×n* matrix of pairwise distances between the points
+ - `radius::Real`: neighborhood radius; points within this distance
+   are considered neighbors
 
 Optional keyword arguments to control the algorithm:
- - `leafsize::Int` (defaults to 20): the number of points binned in each
-   leaf node in the `KDTree`
- - `min_neighbors::Int` (defaults to 1): the minimum number of a *core* point
-   neighbors
- - `min_cluster_size::Int` (defaults to 1): the minimum number of points in
-   a valid cluster
+ - `metric` (defaults to `Euclidean()`): the points distance metric to use,
+   `nothing` means `points` is the *n×n* precalculated distance matrix
+ - `min_neighbors::Integer` (defaults to 1): the minimal number of neighbors
+   required to assign a point to a cluster "core"
+ - `min_cluster_size::Integer` (defaults to 1): the minimal number of points in
+   a cluster; cluster candidates with fewer points are discarded
+ - `nntree_kwargs...`: parameters (like `leafsize`) for the `KDTree` constructor
 
-# Example
-``` julia
+## Example
+```julia
 points = randn(3, 10000)
 # DBSCAN clustering, clusters with less than 20 points will be discarded:
-clusters = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20)
+clustering = dbscan(points, 0.05, min_neighbors = 3, min_cluster_size = 20)
 ```
+
+## References:
+
+  * Martin Ester, Hans-Peter Kriegel, Jörg Sander, and Xiaowei Xu,
+    *"A density-based algorithm for discovering clusters
+    in large spatial databases with noise"*, KDD-1996, pp. 226--231.
+  * Erich Schubert, Jörg Sander, Martin Ester, Hans Peter Kriegel, and
+    Xiaowei Xu, *"DBSCAN Revisited, Revisited: Why and How You Should
+    (Still) Use DBSCAN"*, ACM Transactions on Database Systems,
+    Vol.42(3)3, pp. 1--21, https://doi.org/10.1145/3068335
 """
-function dbscan(points::AbstractMatrix, radius::Real; leafsize::Int = 20, kwargs ...)
-    kdtree = KDTree(points; leafsize=leafsize)
-    return _dbscan(kdtree, points, radius; kwargs ...)
+function dbscan(points::AbstractMatrix, radius::Real;
+                metric = Euclidean(),
+                min_neighbors::Integer = 1, min_cluster_size::Integer = 1,
+                nntree_kwargs...)
+    0 <= radius || throw(ArgumentError("radius $radius must be ≥ 0"))
+
+    if metric !== nothing
+        # points are point coordinates
+        dim, num_points = size(points)
+        num_points <= dim && throw(ArgumentError("points has $dim rows and $num_points columns. Must be a D x N matric with D < N"))
+        kdtree = KDTree(points, metric; nntree_kwargs...)
+        data = (kdtree, points)
+    else
+        # points is a distance matrix
+        num_points = size(points, 1)
+        size(points, 2) == num_points || throw(ArgumentError("When metric=nothing, points must be a square distance matrix ($(size(points)) given)."))
+        num_points >= 2 || throw(ArgumentError("At least two data points are required ($num_points given)."))
+        data = points
+    end
+    clusters = _dbscan(data, num_points, radius, min_neighbors, min_cluster_size)
+    return DbscanResult(clusters, num_points)
 end
 
-
 # An implementation of DBSCAN algorithm that keeps track of both the core and boundary points
-function _dbscan(kdtree::KDTree, points::AbstractMatrix, radius::Real;
-                 min_neighbors::Int = 1, min_cluster_size::Int = 1)
-    dim, num_points = size(points)
-    num_points <= dim && throw(ArgumentError("points has $dim rows and $num_points columns. Must be a D x N matric with D < N"))
-    0 <= radius || throw(ArgumentError("radius $radius must be ≥ 0"))
+function _dbscan(data::Union{AbstractMatrix, Tuple{NNTree, AbstractMatrix}},
+                 num_points::Integer, radius::Real,
+                 min_neighbors::Integer, min_cluster_size::Integer)
     1 <= min_neighbors || throw(ArgumentError("min_neighbors $min_neighbors must be ≥ 1"))
     1 <= min_cluster_size || throw(ArgumentError("min_cluster_size $min_cluster_size must be ≥ 1"))
 
     clusters = Vector{DbscanCluster}()
-    visited = falses(num_points)
-    cluster_selection = falses(num_points)
-    core_selection = falses(num_points)
+    visited = fill(false, num_points)
+    cluster_mask = Vector{Bool}(undef, num_points)
+    core_mask = similar(cluster_mask)
     to_explore = Vector{Int}()
-    adj_list = Vector{Int}()
-    for i = 1:num_points
+    neighbors = Vector{Int}()
+    @inbounds for i = 1:num_points
         visited[i] && continue
+        @assert isempty(to_explore)
         push!(to_explore, i) # start a new cluster
-        fill!(core_selection, false)
-        fill!(cluster_selection, false)
+        fill!(core_mask, false)
+        fill!(cluster_mask, false)
+        # depth-first search to find all points in the cluster
         while !isempty(to_explore)
-            current_index = popfirst!(to_explore)
-            visited[current_index] && continue
-            visited[current_index] = true
-            append!(adj_list, inrange(kdtree, points[:, current_index], radius))
-            cluster_selection[adj_list] .= true
-            # if a point doesn't have enough neighbors it is not a 'core' point and its neighbors are not added to the to_explore list
-            if (length(adj_list) - 1) < min_neighbors
-                empty!(adj_list)
-                continue # query returns the query point as well as the neighbors
+            point = popfirst!(to_explore)
+            visited[point] && continue
+            visited[point] = true
+            _dbscan_region_query!(neighbors, data, point, radius)
+            cluster_mask[neighbors] .= true # mark as candidates
+
+            # if a point has enough neighbors, it is a 'core' point and its neighbors are added to the to_explore list
+            if length(neighbors) >= min_neighbors
+                core_mask[point] = true
+                for j in neighbors
+                    visited[j] || push!(to_explore, j)
+                end
             end
-            core_selection[current_index] = true
-            update_exploration_list!(adj_list, to_explore, visited)
+            empty!(neighbors)
         end
-        cluster_size = sum(cluster_selection)
-        min_cluster_size <= cluster_size && accept_cluster!(clusters, core_selection, cluster_selection, cluster_size)
+
+        # if the cluster has core and is large enough, it is accepted
+        if any(core_mask) && (cluster_size = sum(cluster_mask)) >= min_cluster_size
+            core = Vector{Int}()
+            boundary = Vector{Int}()
+            for (i, (is_cluster, is_core)) in enumerate(zip(cluster_mask, core_mask))
+                @assert is_core && is_cluster || !is_core # core is always in a cluster
+                is_cluster && push!(ifelse(is_core, core, boundary), i)
+            end
+            @assert !isempty(core)
+            push!(clusters, DbscanCluster(cluster_size, core, boundary))
+        end
     end
     return clusters
 end
 
-"""
-    update_exploration_list!(adj_list, exploration_list, visited) -> adj_list
-
-Update the queue for expanding the cluster.
-
-# Arguments
-- `adj_list::Vector{Int}`: indices of the neighboring points to move to queue
-- `exploration_list::Vector{Int}`: the indices that will be explored in the future
-- `visited::BitVector`: a flag indicating whether a point has been explored already
-"""
-function update_exploration_list!(adj_list::Vector{T}, exploration_list::Vector{T},
-                                  visited::BitVector) where T <: Integer
-    for j in adj_list
-        visited[j] && continue
-        push!(exploration_list, j)
+# distance matrix-based
+function _dbscan_region_query!(neighbors::AbstractVector, dists::AbstractMatrix,
+                               point::Integer, radius::Real)
+    empty!(neighbors)
+    for (i, dist) in enumerate(view(dists, :, point))
+        (dist <= radius) && push!(neighbors, i)
     end
-    empty!(adj_list)
+    return neighbors
 end
 
-"""
-    accept_cluster!(clusters, core_selection, cluster_selection) -> clusters
-
-Accept cluster and update the clusters list.
-
-# Arguments
-- `clusters::Vector{DbscanCluster}`: a list of the accepted clusters
-- `core_selection::Vector{Bool}`: selection of the core points of the cluster
-- `cluster_selection::Vector{Bool}`: selection of all the cluster points
-"""
-function accept_cluster!(clusters::Vector{DbscanCluster}, core_selection::BitVector,
-                         cluster_selection::BitVector, cluster_size::Int)
-    core_idx = findall(core_selection) # index list of the core members
-    boundary_selection = cluster_selection .& (~).(core_selection) #TODO change to .~ core_selection
-                                                                            # when dropping 0.5
-    boundary_idx = findall(boundary_selection) # index list of the boundary members
-    push!(clusters, DbscanCluster(cluster_size, core_idx, boundary_idx))
+# NN-tree based
+function _dbscan_region_query!(neighbors::AbstractVector,
+                               nntree_and_points::Tuple{NNTree, AbstractMatrix},
+                               point::Integer, radius::Real)
+    nntree, points = nntree_and_points
+    empty!(neighbors)
+    return append!(neighbors, inrange(nntree, view(points, :, point), radius))
 end
