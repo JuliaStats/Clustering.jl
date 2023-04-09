@@ -72,7 +72,7 @@ function updatemin!(r::AbstractArray, x::AbstractArray)
 end
 
 
-"""gi
+"""
     assign_clusters(X::AbstractMatrix{<:Real}, R::ClusteringResult; ...) -> Vector{Int}
 
 Assign the samples specified as the columns of `X` to the corresponding clusters from `R`.
@@ -86,9 +86,13 @@ function assign_clusters(
     R::ClusteringResult, 
     distance::SemiMetric = SqEuclidean()) where {T}
 
+    if typeof(R) != KmeansResult
+        throw("NotImplemented: assign_clusters not implemented for $(typeof(R))")
+    end
+
     cluster_assignments = zeros(Int, size(X, 2))
     
-    Threads.@threads for n in axes(X, 2)
+    for n in axes(X, 2)
         min_dist = typemax(T)
         cluster_assignment = 0
         
