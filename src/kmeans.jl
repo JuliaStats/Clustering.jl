@@ -1,5 +1,5 @@
 # K-means algorithm
-
+using Distances 
 #### Interface
 
 # C is the type of centers, an (abstract) matrix of size (d x k)
@@ -390,4 +390,46 @@ function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix 
         colwise!(ds, distance, v, X)
         tcosts = min(tcosts, ds)
     end
+end
+
+
+"""
+    assign_clusters(X::AbstractMatrix{<:Real}, R::ClusteringResult; ...) -> Vector{Int}
+
+Assign the samples specified as the columns of `X` to the corresponding clusters from `R`.
+
+# Arguments
+- `X`: Input data to be clustered.
+- `R`: Fitted clustering result.
+- `distance`: SemiMertric used to compute distances between vectors and clusters centroids.
+- `pairwise_computation`: Boolean specifying whether to compute and store pairwise distances.
+
+"""
+function assign_clusters(
+    X::AbstractMatrix{T}, 
+    R::KmeansResult;
+    distance::SemiMetric = SqEuclidean(),
+    pairwise_computation::Bool = true) where {T} 
+
+    if pairwise_computation 
+        Xdist = pairwise(distance, X, R.centers, dims=2)
+        cluster_assignments = partialsortperm.(eachrow(Xdist), 1)
+    else
+        cluster_assignments = zeros(Int, size(X, 2))        
+        Threads.@threads for n in axes(X, 2)
+            min_dist = typemax(T)
+            cluster_assignment = 0
+            
+            for k in axes(R.centers, 2)
+                dist = distance(@view(X[:, n]), @view(R.centers[:, k]))
+                if dist < min_dist
+                    min_dist = dist
+                    cluster_assignment = k
+                end
+            end
+            cluster_assignments[n] = cluster_assignment
+        end
+    end
+    
+    return cluster_assignments
 end
