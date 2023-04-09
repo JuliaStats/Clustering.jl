@@ -6,7 +6,8 @@ using SparseArrays
 using StableRNGs
 using Statistics
 
-tests = ["seeding",
+tests = ["assigned_cluster",
+        "seeding",
          "kmeans",
          "kmedoids",
          "affprop",

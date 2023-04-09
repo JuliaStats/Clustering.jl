@@ -1,6 +1,6 @@
 # Common utilities
-
 ##### common types
+using Distances
 
 """
     ClusteringResult
@@ -80,30 +80,39 @@ Assign the samples specified as the columns of `X` to the corresponding clusters
 # Arguments
 - `X`: Input data to be clustered.
 - `R`: Fitted clustering result.
+- `distance`: SemiMertric used to compute distances between vectors and clusters centroids.
+- `pairwise_computation`: Boolean specifying whether to compute and store pairwise distances.
+
 """
 function assign_clusters(
     X::AbstractMatrix{T}, 
-    R::ClusteringResult, 
-    distance::SemiMetric = SqEuclidean()) where {T}
+    R::ClusteringResult;
+    distance::SemiMetric = SqEuclidean(),
+    pairwise_computation::Bool = true) where {T} 
 
-    if typeof(R) != KmeansResult
-        throw("NotImplemented: assign_clusters not implemented for $(typeof(R))")
+    if !(typeof(R) <: KmeansResult)
+        throw(MethodError(assign_clusters,
+              "NotImplemented: assign_clusters not implemented for R of type $(typeof(R))"))
     end
 
-    cluster_assignments = zeros(Int, size(X, 2))
-    
-    for n in axes(X, 2)
-        min_dist = typemax(T)
-        cluster_assignment = 0
-        
-        for k in axes(R.centers, 2)
-            dist = distance(@view(X[:, n]), @view(R.centers[:, k]))
-            if dist < min_dist
-                min_dist = dist
-                cluster_assignment = k
+    if pairwise_computation 
+        Xdist = pairwise(distance, X, R.centers, dims=2)
+        cluster_assignments = partialsortperm.(eachrow(Xdist), 1)
+    else
+        cluster_assignments = zeros(Int, size(X, 2))        
+        Threads.@threads for n in axes(X, 2)
+            min_dist = typemax(T)
+            cluster_assignment = 0
+            
+            for k in axes(R.centers, 2)
+                dist = distance(@view(X[:, n]), @view(R.centers[:, k]))
+                if dist < min_dist
+                    min_dist = dist
+                    cluster_assignment = k
+                end
             end
+            cluster_assignments[n] = cluster_assignment
         end
-        cluster_assignments[n] = cluster_assignment
     end
     
     return cluster_assignments

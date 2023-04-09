@@ -207,8 +207,12 @@ end
 @testset "get cluster assigments" begin
     X = rand(5, 100)
     R = kmeans(X, 10; maxiter=200)
-    reassigned_clusters = assign_clusters(X, R);
+    reassigned_clusters = assign_clusters(X, R; pairwise_computation=true);
     @test R.assignments == reassigned_clusters
+
+    reassigned_clusters2 = assign_clusters(X, R; pairwise_computation=false);
+    @test R.assignments == reassigned_clusters2
+
 end
 
 end
