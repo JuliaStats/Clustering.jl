@@ -394,7 +394,7 @@ end
 
 
 """
-    assign_clusters(X::AbstractMatrix{<:Real}, R::KmeansResult;  [kwargs...])) -> Vector{Int}
+    assign_clusters(X::AbstractMatrix{<:Real}, R::KmeansResult; kwargs...) -> Vector{Int}
 
 Assign the samples specified as the columns of `X` to the corresponding clusters from `R`.
 

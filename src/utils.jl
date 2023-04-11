@@ -73,7 +73,7 @@ end
 
 
 """
-    assign_clusters(X::AbstractMatrix{<:Real}, R::ClusteringResult; ...) -> Vector{Int}
+    assign_clusters(X::AbstractMatrix{<:Real}, R::ClusteringResult; kwargs...) -> Vector{Int}
 
 Assign the samples specified as the columns of `X` to the corresponding clusters from `R`.
 
@@ -81,7 +81,9 @@ Assign the samples specified as the columns of `X` to the corresponding clusters
 - `X`: Input data to be clustered.
 - `R`: Fitted clustering result.
 
-See the `assign_clusters` method in  [`kmeans`](@ref) for the description of optional `kwargs`.
+# Keyword arguments
+- Cluster specific keyword arguments. For example, see the `assign_clusters` method in
+  [`kmeans`](@ref) for the description of optional `kwargs`. 
 
 """
 function assign_clusters(
