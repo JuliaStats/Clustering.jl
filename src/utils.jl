@@ -80,8 +80,8 @@ Assign the samples specified as the columns of `X` to the corresponding clusters
 # Arguments
 - `X`: Input data to be clustered.
 - `R`: Fitted clustering result.
-- `distance`: SemiMertric used to compute distances between vectors and clusters centroids.
-- `pairwise_computation`: Boolean specifying whether to compute and store pairwise distances.
+
+See the `assign_clusters` method in  [`kmeans`](@ref) for the description of optional `kwargs`.
 
 """
 function assign_clusters(

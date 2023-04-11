@@ -394,13 +394,15 @@ end
 
 
 """
-    assign_clusters(X::AbstractMatrix{<:Real}, R::ClusteringResult; ...) -> Vector{Int}
+    assign_clusters(X::AbstractMatrix{<:Real}, R::KmeansResult;  [kwargs...])) -> Vector{Int}
 
 Assign the samples specified as the columns of `X` to the corresponding clusters from `R`.
 
 # Arguments
 - `X`: Input data to be clustered.
 - `R`: Fitted clustering result.
+
+# Keyword arguments
 - `distance`: SemiMertric used to compute distances between vectors and clusters centroids.
 - `pairwise_computation`: Boolean specifying whether to compute and store pairwise distances.
 
