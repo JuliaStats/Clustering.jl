@@ -818,31 +818,42 @@ function cutree(hclu::Hclust;
     # use k and h to calculate how many merges to do before cutting
     if k !== nothing
         k >= min(1, n) || throw(ArgumentError("`k` should be greater or equal $(min(1,n))"))
-        cutm = n - k
+        cutm = max(n - k, 0)
     else
         cutm = m
     end
+    horder = sortperm(hclu.heights) # indices of nodes by height
     if h !== nothing
         # adjust cutm w.r.t h
-        hix = findlast(hh -> hh ≤ h, hclu.heights)
+        hix = findlast(i -> hclu.heights[i] ≤ h, horder)
         if hix !== nothing && hix < cutm
             cutm = hix
-        elseif nmerges(hclu) >= 1 && first(hclu.heights) > h
+        elseif nmerges(hclu) >= 1 && hclu.heights[horder[1]] > h
             # corner case, the requested h smaller that the smallest nontrivial subtree
             cutm = 0
         end
     end
-    clusters = Vector{Int}[]
+    clusters = Vector{Int}[] # contents of the tree nodes, nodes are indexed by height
     unmerged = fill(true, n) # if a node is not merged to a cluster
     noels = Int[]            # placeholder for empty deactivated trees
-    i = 1
-    while i ≤ cutm
-        c1 = hclu.merges[i, 1]
-        c2 = hclu.merges[i, 2]
-        (c1 < 0) && (unmerged[-c1] = false)
-        (c2 < 0) && (unmerged[-c2] = false)
+    hindex = invperm(horder) # index of each tree node by height, i.e. pos in `clusters`
+    resize!(horder, cutm)    # we only process the first cutm merges
+    for i in horder # visit nodes by height
+        m1 = hclu.merges[i, 1]
+        m2 = hclu.merges[i, 2]
+        if m1 < 0
+            unmerged[-m1] = false
+            c1 = m1
+        else
+            c1 = hindex[m1]
+        end
+        if m2 < 0
+            unmerged[-m2] = false
+            c2 = m2
+        else
+            c2 = hindex[m2]
+        end
         merge_clusters!(clusters, c1, c2, noels)
-        i += 1
     end
     ## build an array of cluster indices (R's order)
     res = fill(0, n)

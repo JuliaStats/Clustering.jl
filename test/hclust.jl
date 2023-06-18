@@ -221,4 +221,16 @@ end
     hclu2_ward = hclust(dist2_mtx, linkage=:ward)
 end
 
+@testset "cuttree() with merges not sorted by height (#252)" begin
+    dist_mtx = readdlm(joinpath(@__DIR__, "data", "hclust_dist_issue252.txt"), ',', Float64)
+
+    hclu_opt = hclust(dist_mtx, linkage=:complete, branchorder=:optimal)
+    clu_opt = cutree(hclu_opt, h=20)
+
+    hclu_r = hclust(dist_mtx, linkage=:complete)
+    clu_r = cutree(hclu_r, h=20)
+
+    @test clu_opt == clu_r
+end
+
 end # testset "hclust()"
