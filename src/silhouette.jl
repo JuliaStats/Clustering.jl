@@ -10,8 +10,8 @@ end
 
 """
 SilhouettesDistsPrecompute(k::Int, d::Int, ::Type{T})
-Precomputations container for [@silhouettes_precompute_batch!].
-See also [`silhouettes`](@ref), [`silhouettes_precompute_batch`](@ref)
+Precomputations container for [`silhouettes_precompute_batch!`](@ref).
+See also [`silhouettes`](@ref), [`silhouettes_precompute_batch!`](@ref)
 """
 SilhouettesDistsPrecompute(k::Int, d::Int, ::Type{T}) where T<:Real= SilhouettesDistsPrecompute{T}(k, d, 
                                                                                       zeros(Int, k, 1),
