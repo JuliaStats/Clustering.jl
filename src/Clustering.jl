@@ -47,7 +47,7 @@ module Clustering
     counts, # reexport StatsBase.counts
 
     # silhouette
-    silhouettes,
+    silhouettes, SilhouettesDistsPrecompute, silhouettes_precompute_batch!,
 
     # varinfo
     varinfo,
