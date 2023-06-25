@@ -8,6 +8,11 @@ mutable struct SilhouettesDistsPrecompute{T}
     Y::Matrix{T} #[d, k]
 end
 
+"""
+SilhouettesDistsPrecompute(k::Int, d::Int, ::Type{T})
+Precomputations container for [@silhouettes_precompute_batch!].
+See also [`silhouettes`](@ref), [`silhouettes_precompute_batch`](@ref)
+"""
 SilhouettesDistsPrecompute(k::Int, d::Int, ::Type{T}) where T<:Real= SilhouettesDistsPrecompute{T}(k, d, 
                                                                                       zeros(Int, k, 1),
                                                                                       zeros(T, k, 1), 
@@ -15,7 +20,28 @@ SilhouettesDistsPrecompute(k::Int, d::Int, ::Type{T}) where T<:Real= Silhouettes
 
                                                                                       # this does the same as sil_aggregate_dists, but uses the method in "Distributed Silhouette Algorithm: Evaluating Clustering on Big Data"
 # https://arxiv.org/abs/2303.14102
-# this implementation uses the square
+# this implementation uses the SqEuclidean distance only
+"""
+silhouettes_precompute_batch!(k::Int, assignments::AbstractVector{Int}, x::AbstractMatrix{T}, pre::SilhouettesDistsPrecompute{T}) where T<:Real
+Include a batch of data and cluster assignments (x,a) in the precomputations for silhouettes.
+This implementation supports only square Euclidean distances at present.
+See also [`silhouettes`](@ref) [`SilhouettesDistsPrecompute`](@ref)
+
+# Examples:
+```julia-repl
+Julia> k=10; d=3; bs=100; n=10000;
+Julia> pre = SilhouettesDistsPrecompute(k, d, Float32);
+Julia> x = reshape(collect(Float32, 1:30000), 3, n); # direct computation is impractical on such a big dataset
+Julia> a = reshape(repeat(collect(1:k),trunc(Int, n/k)), n);
+Julia> batches_x = eachslice(reshape(x, 3, trunc(Int, n/bs), bs); dims=3); batches_a = eachslice(reshape(a, trunc(Int, n/bs), bs); dims=2);
+Julia> @time [silhouettes_precompute_batch!(k, aa, xx, pre) for (xx, aa) in zip(batches_x, batches_a)]; # precompute vectors on big data
+0.838358 seconds (2.06 M allocations: 141.495 MiB, 4.24% gc time, 99.00% compilation time)
+Julia> @time sil = vcat([silhouettes(xx, aa, pre) for (xx, aa) in zip(batches_x, batches_a)]); # calculate silhouette scores in batched fashion
+0.049759 seconds (53.78 k allocations: 4.440 MiB, 98.54% compilation time)
+Julia> size(sil)
+(10000,)
+```
+"""
 function silhouettes_precompute_batch!(k::Int, a::AbstractVector{Int}, x::AbstractMatrix{T}, pre::SilhouettesDistsPrecompute{T}) where T<:Real
     # x dims are [D,N]
     d, n = size(x)
@@ -163,11 +189,14 @@ Returns the ``n``-length vector of silhouette values for each individual point.
  - `clustering::ClusteringResult`: the output of some clustering method
  - `dists::AbstractMatrix`: ``n×n`` matrix of pairwise distances between
    the points
+ - `x::AbstractMatrix`: `d×n`` matrix of ``n`` data features of dimensionality ``d``
+ - `pre::SilhouettesDistsPrecompute`: precomputed vectors of cluster silhouettes.
 
 # References
 > Peter J. Rousseeuw (1987). *Silhouettes: a Graphical Aid to the
 > Interpretation and Validation of Cluster Analysis*. Computational and
 > Applied Mathematics. 20: 53–65.
+> Marco Gaido (2023). Distributed Silhouette Algorithm: Evaluating Clustering on Big Data 
 """
 function silhouettes(assignments::AbstractVector{<:Integer},
                      counts::AbstractVector{<:Integer},
