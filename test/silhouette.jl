@@ -63,23 +63,27 @@ end
 
 @testset "streaming silhouettes" begin
     import Clustering: sil_aggregate_distances_normalized_streaming, sil_aggregate_distances_normalized
-    using Distances, Clustering, Random
     nclusters = 10
     dims = 3
     n = 100
     X = rand(MersenneTwister(123), dims, n)
     pd = pairwise(SqEuclidean(), X, dims=2)
     a = rand(1:nclusters, n)
-    s_standard = silhouettes(a, pd)
-    pre_at_init = SqEuclideanPrecomputedSilhouettes(eltype(X), nclusters, dims)
-    pre = SqEuclideanPrecomputedSilhouettes(eltype(X), nclusters, dims)
-    pre_all_at_once = SqEuclideanPrecomputedSilhouettes(eltype(X), nclusters, dims)
+    stats1 = @timed s_standard = silhouettes(a, pd)
+    stats2 = @timed s_streaming_at_once = silhouettes(SqEuclidean(), a, X; nclusters=nclusters)
+    println("standard run time: $(stats1.time), streaming calc time: $(stats2.time)")
+    
+    @test isapprox(s_standard, s_streaming_at_once)
+    
+    pre_at_init = silhouettes_cache(eltype(X), SqEuclidean(), nclusters, dims)
+    pre = silhouettes_cache(eltype(X), SqEuclidean(), nclusters, dims)
+    pre_all_at_once = silhouettes_cache(eltype(X), SqEuclidean(), nclusters, dims)
     batch_size = 10
     for (x, aa) in zip(eachslice(reshape(X, dims, batch_size, trunc(Int, n/batch_size)), dims=3), 
                        eachslice(reshape(a, batch_size, trunc(Int, n/batch_size)), dims=2))
-        pre = precompute_silhouettes(pre, aa, x)
+        pre = pre(x, aa)
     end
-    pre_all_at_once = precompute_silhouettes(pre_all_at_once, a, X)
+    pre_all_at_once = pre_all_at_once(X, a)
     # counts sanity test
     @test sum(pre.counts) == n
     # make sure the batched calculation is the same as calculating all at once
