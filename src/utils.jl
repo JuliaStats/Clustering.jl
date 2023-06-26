@@ -78,6 +78,7 @@ function updatemin!(r::AbstractArray, x::AbstractArray)
 end
 
 function check_assignments(assignments, nclusters)
+    nclusters >= 2 || throw(ArgumentError("silhouettes() not defined for the degenerated clustering with a single cluster."))
     for j in eachindex(assignments)
         all(1 <= assignments[j] <= nclusters) || throw(ArgumentError("Bad assignments[$j]=$(assignments[j]): should be in 1:$nclusters range."))
     end

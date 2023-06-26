@@ -105,7 +105,6 @@ function sil_aggregate_distances_normalized(assignments::AbstractVector{<:Intege
                                         dists::AbstractMatrix{T}) where T<:Real
     n = length(assignments)
     nclusters = length(counts)
-    nclusters >= 2 || throw(ArgumentError("silhouettes() not defined for the degenerated clustering with a single cluster."))
     check_assignments(assignments, nclusters)
     sum(counts) == n || throw(ArgumentError("Mismatch between assignments ($n) and counts (sum(counts)=$(sum(counts)))."))
     size(dists) == (n, n) || throw(DimensionMismatch("The size of a distance matrix ($(size(dists))) doesn't match the length of assignment vector ($n)."))
@@ -118,8 +117,7 @@ end
 
 function sil_aggregate_distances_normalized_streaming(x::AbstractMatrix{T}, assignments::AbstractVector{Int}, pre::SqEuclideanPrecomputedSilhouettes{T}) where T <: Real
     nclusters = pre.nclusters
-    n = size(x, 2)
-    nclusters >= 2 || throw(ArgumentError("silhouettes() not defined for the degenerated clustering with a single cluster."))
+    check_assignments(assignments, nclusters)
     size(x, 1) == size(pre.Y, 1) || throw(ArgumentError("input features dimension does not match with precomputation on dimension 1"))
 
     # compute average distance from each cluster to each point --> r
