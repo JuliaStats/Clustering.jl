@@ -51,7 +51,7 @@ function silhouettes_precompute_batch!(pre::SqEuclideanPrecomputedSilhouettes{T}
         pre.counts[val] += cnt
     end
     @assert n == length(assignments) "data matrix dimensions must be (..., $(length(assignments))) and got $(size(x))"
-    ξ = sum(x.^2; dims=1) # [1,n]
+    ξ = sum(abs2, x; dims=1) # [1,n]
     # precompute vectors
     @inbounds for (i, cluster) in enumerate(assignments)
         pre.Y[:, cluster] .+= view(x, :, i)
