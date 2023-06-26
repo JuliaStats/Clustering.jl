@@ -1,39 +1,43 @@
 # Silhouette
+abstract type PrecomputeSilhouettes end
 
-struct SqEuclideanPrecomputedSilhouettes{T}
+struct SqEuclideanPrecomputeSilhouettes{T} <: PrecomputeSilhouettes
     nclusters::Int
     dims::Int
     counts::Vector{Int} #[nclusters, 1]
     Ψ::Vector{T} #[nclusters], This represents the second moments of each cluster
     Y::Matrix{T} #[dims, nclusters], This represents the first moments of each cluster
     """
-    SqEuclideanPrecomputedSilhouettes(::Type{T}, nclusters::Int, dims::Int)
+    SqEuclideanPrecomputeSilhouettes(::Type{T}, nclusters::Int, dims::Int)
     Precomputations container for [`precompute_silhouettes`](@ref).
     See also [`silhouettes`](@ref), [`precompute_silhouettes`](@ref)
     """
-    SqEuclideanPrecomputedSilhouettes(::Type{T}, nclusters::Int, dims::Int) where T<:Real= new{T}(nclusters, dims, 
+    SqEuclideanPrecomputeSilhouettes(::Type{T}, nclusters::Int, dims::Int) where T<:Real= new{T}(nclusters, dims, 
                                                                                                   zeros(Int, nclusters),
                                                                                                   zeros(T, nclusters), 
                                                                                                   zeros(T, dims, nclusters))
 end
 
+silhouettes_cache(::Type, metric::Union{Metric, SemiMetric}, nclusters, dims) = error("precomputed_silhouettes() for metric $(typeof(metric)) is not implemented")
+silhouettes_cache(t::Type, metric::SqEuclidean, nclusters::Int, dims::Int) = SqEuclideanPrecomputeSilhouettes(t, nclusters, dims)
+
 # this does the same as sil_aggregate_dists, but uses the method in "Distributed Silhouette Algorithm: Evaluating Clustering on Big Data"
 # https://arxiv.org/abs/2303.14102
 # this implementation uses the SqEuclidean distance only
 """
-precompute_silhouettes(pre::SqEuclideanPrecomputedSilhouettes{T}, assignments::AbstractVector{Int}, x::AbstractMatrix{T}) where T<:Real
+precompute_silhouettes(pre::SqEuclideanPrecomputeSilhouettes{T}, assignments::AbstractVector{Int}, x::AbstractMatrix{T}) where T<:Real
 Include a batch of data and cluster assignments (x,assignments) in the precomputations for silhouettes.
 This implementation supports only square Euclidean distances at present.
-See also [`silhouettes`](@ref) [`SqEuclideanPrecomputedSilhouettes`](@ref)
+See also [`silhouettes`](@ref) [`SqEuclideanPrecomputeSilhouettes`](@ref)
 
 # Examples:
 ```julia-repl
 Julia> nclusters=10; d=3; bs=100; n=10000;
-Julia> pre = SqEuclideanPrecomputedSilhouettes(Float32, nclusters, d);
+Julia> pre = SqEuclideanPrecomputeSilhouettes(Float32, nclusters, d);
 Julia> x = reshape(collect(Float32, 1:30000), 3, n); # direct computation is impractical on such a big dataset
 Julia> a = reshape(repeat(collect(1:nclusters),trunc(Int, n/nclusters)), n);
 Julia> batches_x = eachslice(reshape(x, 3, trunc(Int, n/bs), bs); dims=3); batches_a = eachslice(reshape(a, trunc(Int, n/bs), bs); dims=2);
-Julia> @time [precompute_silhouettes(nclusters, aa, xx, pre) for (xx, aa) in zip(batches_x, batches_a)]; # precompute vectors on big data
+Julia> @time [precompute_silhouettes(pre, aa, xx) for (xx, aa) in zip(batches_x, batches_a)]; # precompute vectors on big data
 0.838358 seconds (2.06 M allocations: 141.495 MiB, 4.24% gc time, 99.00% compilation time)
 Julia> @time sil = vcat([silhouettes(xx, aa, pre) for (xx, aa) in zip(batches_x, batches_a)]); # calculate silhouette scores in batched fashion
 0.049759 seconds (53.78 nclusters allocations: 4.440 MiB, 98.54% compilation time)
@@ -41,7 +45,7 @@ Julia> size(sil)
 (10000,)
 ```
 """
-function precompute_silhouettes(pre::SqEuclideanPrecomputedSilhouettes{T}, assignments::AbstractVector{Int}, x::AbstractMatrix{T}) where T<:Real
+function precompute_silhouettes(pre::SqEuclideanPrecomputeSilhouettes{T}, x::AbstractMatrix{T}, assignments::AbstractVector{Int}) where T<:Real
     # x dims are [D,N]
     d, n = size(x)
     check_assignments(assignments, pre.nclusters)
@@ -60,9 +64,13 @@ function precompute_silhouettes(pre::SqEuclideanPrecomputedSilhouettes{T}, assig
     return pre
 end
 
-precompute_silhouettes(pre::SqEuclideanPrecomputedSilhouettes{T}, 
-                              R::ClusteringResult, 
-                              x::AbstractMatrix{T}) where T<:Real = precompute_silhouettes(pre, assignments(R), x)
+precompute_silhouettes(pre::SqEuclideanPrecomputeSilhouettes{T}, 
+                       x::AbstractMatrix{T}, R::ClusteringResult) where T<:Real = precompute_silhouettes(pre, x, assignments(R))
+
+
+function (pre::SqEuclideanPrecomputeSilhouettes)(x::AbstractMatrix{T}, assignments::Union{AbstractVector{Int}, ClusteringResult}) where T<:Real
+    precompute_silhouettes(pre, x, assignments)
+end
 
 # this function returns r of size (nclusters, n), such that
 # r[i, j] is the sum of distances of all points from cluster i to point j
@@ -115,7 +123,7 @@ function sil_aggregate_distances_normalized(assignments::AbstractVector{<:Intege
     return cluster_to_point
 end
 
-function sil_aggregate_distances_normalized_streaming(x::AbstractMatrix{T}, assignments::AbstractVector{Int}, pre::SqEuclideanPrecomputedSilhouettes{T}) where T <: Real
+function sil_aggregate_distances_normalized_streaming(x::AbstractMatrix{T}, assignments::AbstractVector{Int}, pre::SqEuclideanPrecomputeSilhouettes{T}) where T <: Real
     nclusters = pre.nclusters
     check_assignments(assignments, nclusters)
     size(x, 1) == size(pre.Y, 1) || throw(ArgumentError("input features dimension does not match with precomputation on dimension 1"))
@@ -170,7 +178,7 @@ end
 """
     silhouettes(assignments::AbstractVector, [counts,] dists) -> Vector{Float64}
     silhouettes(clustering::ClusteringResult, dists) -> Vector{Float64}
-    silhouettes(x::AbstractMatrix, assignments::AbstractVector, pre::SqEuclideanPrecomputedSilhouettes) -> Vector{Float64}
+    silhouettes(x::AbstractMatrix, assignments::AbstractVector, pre::SqEuclideanPrecomputeSilhouettes) -> Vector{Float64}
 
 Compute *silhouette* values for individual points w.r.t. given clustering.
 
@@ -185,7 +193,7 @@ Returns the ``n``-length vector of silhouette values for each individual point.
  - `dists::AbstractMatrix`: ``n×n`` matrix of pairwise distances between
    the points
  - `x::AbstractMatrix`: `d×n`` matrix of ``n`` data features of dimensionality ``d``
- - `pre::SqEuclideanPrecomputedSilhouettes`: precomputed vectors of cluster silhouettes.
+ - `pre::SqEuclideanPrecomputeSilhouettes`: precomputed vectors of cluster silhouettes.
 
 # References
 > Peter J. Rousseeuw (1987). *Silhouettes: a Graphical Aid to the
@@ -201,7 +209,7 @@ function silhouettes(assignments::AbstractVector{<:Integer},
     return silhouette_scores(cluster_to_point, assignments, counts)
 end
 
-function silhouettes(x::AbstractMatrix{T}, assignments::AbstractVector{<:Integer}, pre::SqEuclideanPrecomputedSilhouettes{T}) where T<:Real
+function silhouettes(x::AbstractMatrix{T}, assignments::AbstractVector{<:Integer}, pre::PrecomputeSilhouettes) where T<:Real
     cluster_to_point = sil_aggregate_distances_normalized_streaming(x, assignments, pre)
     return silhouette_scores(cluster_to_point, assignments, pre.counts)
 end
@@ -215,4 +223,23 @@ function silhouettes(assignments::AbstractVector{<:Integer}, dists::AbstractMatr
         counts[a] += 1
     end
     silhouettes(assignments, counts, dists)
+end
+
+function silhouettes(metric::Union{Metric, SemiMetric}, assignments::AbstractVector{<:Integer}, x::AbstractMatrix; nclusters=maximum(assignments), batch_size=size(x, 2), pre_calculate::Bool=true)
+    if metric isa SqEuclidean && pre_calculate
+        dims, n = size(x)
+        check_assignments(assignments, nclusters)
+        pre_calculate = silhouettes_cache(eltype(x), metric, nclusters, dims)
+        batched_x = eachslice(reshape(x, dims, batch_size, trunc(Int, n/batch_size)), dims=3)
+        batched_assignments = eachslice(reshape(assignments, batch_size, trunc(Int, n/batch_size)), dims=2)
+        [pre_calculate(x_batch, a_batch) for (x_batch, a_batch) in zip(batched_x, batched_assignments)]
+        s_streaming = []
+        for (x_batch, a_batch) in zip(batched_x, batched_assignments)
+            s_streaming = vcat(s_streaming, silhouettes(x_batch, a_batch, pre_calculate))
+        end
+        return s_streaming
+    else
+        dists = pairwise(metric, x, x; dims=2)
+        silhouettes(assignments::AbstractVector{<:Integer}, dists::AbstractMatrix)
+    end
 end
