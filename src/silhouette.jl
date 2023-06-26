@@ -179,7 +179,9 @@ end
 """
     silhouettes(assignments::AbstractVector, [counts,] dists) -> Vector{Float64}
     silhouettes(clustering::ClusteringResult, dists) -> Vector{Float64}
-    silhouettes(x::AbstractMatrix, assignments::AbstractVector, pre::SqEuclideanPrecomputeSilhouettes) -> Vector{Float64}
+    silhouettes(x::AbstractMatrix, assignments::AbstractVector, pre::PrecomputeSilhouettes) -> Vector{Float64}
+    silhouettes(metric::Union{Metric, SemiMetric}, assignments::AbstractVector{<:Integer}, x::AbstractMatrix; 
+                nclusters=maximum(assignments), batch_size=size(x, 2), pre_calculate::Bool=true)
 
 Compute *silhouette* values for individual points w.r.t. given clustering.
 
@@ -194,7 +196,13 @@ Returns the ``n``-length vector of silhouette values for each individual point.
  - `dists::AbstractMatrix`: ``n×n`` matrix of pairwise distances between
    the points
  - `x::AbstractMatrix`: `d×n`` matrix of ``n`` data features of dimensionality ``d``
- - `pre::SqEuclideanPrecomputeSilhouettes`: precomputed vectors of cluster silhouettes.
+ - `pre::PrecomputeSilhouettes`: precomputed vectors of cluster silhouettes.
+ - `metric::Union{Metric, SemiMetric}`: Distances metric object specifying which 
+   metric should be used to calculate the distances when given x.
+ - `nclusters` optional, how many clusters are associated with the assignments.
+ - `batch_size` optional, what batch size to use for distributed calculation, 
+    when available. Does not apply to direct use of `PrecomputeSilhouettes`.
+ - `pre_calculate` optional, control use of distributed algorithm (recommended by default).
 
 # References
 > Peter J. Rousseeuw (1987). *Silhouettes: a Graphical Aid to the
