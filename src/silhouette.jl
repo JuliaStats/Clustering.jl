@@ -8,8 +8,8 @@ struct SqEuclideanPrecomputedSilhouettes{T}
     Y::Matrix{T} #[dims, nclusters], This represents the first moments of each cluster
     """
     SqEuclideanPrecomputedSilhouettes(::Type{T}, nclusters::Int, dims::Int)
-    Precomputations container for [`silhouettes_precompute_batch!`](@ref).
-    See also [`silhouettes`](@ref), [`silhouettes_precompute_batch!`](@ref)
+    Precomputations container for [`precompute_silhouettes`](@ref).
+    See also [`silhouettes`](@ref), [`precompute_silhouettes`](@ref)
     """
     SqEuclideanPrecomputedSilhouettes(::Type{T}, nclusters::Int, dims::Int) where T<:Real= new{T}(nclusters, dims, 
                                                                                                   zeros(Int, nclusters),
@@ -21,8 +21,8 @@ end
 # https://arxiv.org/abs/2303.14102
 # this implementation uses the SqEuclidean distance only
 """
-silhouettes_precompute_batch!(pre::SqEuclideanPrecomputedSilhouettes{T}, assignments::AbstractVector{Int}, x::AbstractMatrix{T}) where T<:Real
-Include a batch of data and cluster assignments (x,a) in the precomputations for silhouettes.
+precompute_silhouettes(pre::SqEuclideanPrecomputedSilhouettes{T}, assignments::AbstractVector{Int}, x::AbstractMatrix{T}) where T<:Real
+Include a batch of data and cluster assignments (x,assignments) in the precomputations for silhouettes.
 This implementation supports only square Euclidean distances at present.
 See also [`silhouettes`](@ref) [`SqEuclideanPrecomputedSilhouettes`](@ref)
 
@@ -33,7 +33,7 @@ Julia> pre = SqEuclideanPrecomputedSilhouettes(Float32, nclusters, d);
 Julia> x = reshape(collect(Float32, 1:30000), 3, n); # direct computation is impractical on such a big dataset
 Julia> a = reshape(repeat(collect(1:nclusters),trunc(Int, n/nclusters)), n);
 Julia> batches_x = eachslice(reshape(x, 3, trunc(Int, n/bs), bs); dims=3); batches_a = eachslice(reshape(a, trunc(Int, n/bs), bs); dims=2);
-Julia> @time [silhouettes_precompute_batch!(nclusters, aa, xx, pre) for (xx, aa) in zip(batches_x, batches_a)]; # precompute vectors on big data
+Julia> @time [precompute_silhouettes(nclusters, aa, xx, pre) for (xx, aa) in zip(batches_x, batches_a)]; # precompute vectors on big data
 0.838358 seconds (2.06 M allocations: 141.495 MiB, 4.24% gc time, 99.00% compilation time)
 Julia> @time sil = vcat([silhouettes(xx, aa, pre) for (xx, aa) in zip(batches_x, batches_a)]); # calculate silhouette scores in batched fashion
 0.049759 seconds (53.78 nclusters allocations: 4.440 MiB, 98.54% compilation time)
@@ -41,7 +41,7 @@ Julia> size(sil)
 (10000,)
 ```
 """
-function silhouettes_precompute_batch!(pre::SqEuclideanPrecomputedSilhouettes{T}, assignments::AbstractVector{Int}, x::AbstractMatrix{T}) where T<:Real
+function precompute_silhouettes(pre::SqEuclideanPrecomputedSilhouettes{T}, assignments::AbstractVector{Int}, x::AbstractMatrix{T}) where T<:Real
     # x dims are [D,N]
     d, n = size(x)
     check_assignments(assignments, pre.nclusters)
@@ -60,9 +60,9 @@ function silhouettes_precompute_batch!(pre::SqEuclideanPrecomputedSilhouettes{T}
     return pre
 end
 
-silhouettes_precompute_batch!(pre::SqEuclideanPrecomputedSilhouettes{T}, 
+precompute_silhouettes(pre::SqEuclideanPrecomputedSilhouettes{T}, 
                               R::ClusteringResult, 
-                              x::AbstractMatrix{T}) where T<:Real = silhouettes_precompute_batch!(pre, assignments(R), x)
+                              x::AbstractMatrix{T}) where T<:Real = precompute_silhouettes(pre, assignments(R), x)
 
 # this function returns r of size (nclusters, n), such that
 # r[i, j] is the sum of distances of all points from cluster i to point j
