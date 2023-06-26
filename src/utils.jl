@@ -76,3 +76,9 @@ function updatemin!(r::AbstractArray, x::AbstractArray)
     end
     return r
 end
+
+function check_assignments(assignments, nclusters)
+    for j in eachindex(assignments)
+        all(1 <= assignments[j] <= nclusters) || throw(ArgumentError("Bad assignments[$j]=$(assignments[j]): should be in 1:$nclusters range."))
+    end
+end
