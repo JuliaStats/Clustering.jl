@@ -77,9 +77,9 @@ end
     batch_size = 10
     for (x, aa) in zip(eachslice(reshape(X, dims, batch_size, trunc(Int, n/batch_size)), dims=3), 
                        eachslice(reshape(a, batch_size, trunc(Int, n/batch_size)), dims=2))
-        pre = silhouettes_precompute_batch!(pre, aa, x)
+        pre = precompute_silhouettes(pre, aa, x)
     end
-    pre_all_at_once = silhouettes_precompute_batch!(pre_all_at_once, a, X)
+    pre_all_at_once = precompute_silhouettes(pre_all_at_once, a, X)
     # counts sanity test
     @test sum(pre.counts) == n
     # make sure the batched calculation is the same as calculating all at once
