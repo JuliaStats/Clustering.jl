@@ -93,7 +93,7 @@ end
 
 function normalize_aggregate_distances!(r, assignments, counts)
     # from sum to average
-    @assert size(r) == (length(counts), length(assignments)) "cluster_to_point matrix dimensions $(size(r)) do not match assignments and counts - $(((length(counts), length(assignments))))"
+    @assert size(r) == (length(counts), length(assignments)) "silhouettes: cluster_to_point matrix dimensions $(size(r)) do not match assignments and counts - $(((length(counts), length(assignments))))"
     @inbounds for j in eachindex(assignments)
         for i in eachindex(counts)
             c = counts[i]
@@ -128,8 +128,8 @@ end
 function sil_aggregate_distances_normalized_streaming(x::AbstractMatrix{T}, assignments::AbstractVector{Int}, pre::SqEuclideanPrecomputeSilhouettes{T}) where T <: Real
     nclusters = pre.nclusters
     check_assignments(assignments, nclusters)
-    size(x, 1) == size(pre.Y, 1) || throw(ArgumentError("number of input features (dimension 1) used in pre computation was $(size(pre.Y, 1)), got $(size(x, 1))"))
-    size(x, 2) == length(assignments) || throw(ArgumentError("number of input points $(size(x, 2)) do not match number of assignments $(length(assignments))"))
+    size(x, 1) == size(pre.Y, 1) || throw(ArgumentError("silhouette: number of input features (dimension 1) used in pre computation was $(size(pre.Y, 1)), got $(size(x, 1))"))
+    size(x, 2) == length(assignments) || throw(ArgumentError("silhouette: number of input points $(size(x, 2)) do not match number of assignments $(length(assignments))"))
 
     # compute average distance from each cluster to each point --> r
     ξx = sum(abs2, x; dims=1) # [1,n]
