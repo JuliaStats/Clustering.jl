@@ -32,11 +32,10 @@ end
 
 SUITE["silhouette"] = BenchmarkGroup()
 
-precalc_val(pre_calculate) = pre_calculate == "without_precalculation" ? false : true
 function silhouette_benchmark(a, X, nclusters)
     res = BenchmarkGroup()
-    for pre_calculate in ("without_precalculation", "with_precalculation")
-        res[pre_calculate] = @benchmarkable silhouettes(SqEuclidean(), $a, $X; nclusters=$nclusters, pre_calculate=precalc_val($pre_calculate))
+    for method in (:classic, :cached)
+        res[string(method)] = @benchmarkable silhouettes($a, $X; metric=SqEuclidean(), nclusters=$nclusters, method=Symbol($method))
     end
     return res
 end
