@@ -47,7 +47,7 @@ module Clustering
     counts, # reexport StatsBase.counts
 
     # silhouette
-    silhouettes, PrecomputeSilhouettes, silhouettes_cache,
+    silhouettes,
 
     # varinfo
     varinfo,
