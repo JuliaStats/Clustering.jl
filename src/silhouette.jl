@@ -217,7 +217,7 @@ function silhouettes(assignments::AbstractVector{<:Integer}, points:: AbstractMa
                      method::Symbol = :default,
                      nclusters=maximum(assignments))
 
-    @assert in(method, [:default, :classis, :cached]) "method key argument must be one of :default, :classic or :cached"
+    @assert in(method, [:default, :classic, :cached]) "method key argument must be one of :default, :classic or :cached"
     metric === nothing && @assert(iszero(diag(points)) && issymmetric(points), "silhouettes(): metric not provided, yet points matrix does not seem to be a distances matrix - symmetric and zero on the diagonal.")
     
     if method == :default
