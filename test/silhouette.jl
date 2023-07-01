@@ -15,25 +15,25 @@ local a = [1, 1, 2, 2]
 local c = [2, 2]
 
 @testset "Input checks" begin
-    @test_skip silhouettes(a, [1, 1, 2], D) # should throw because cluster counts are inconsistent
-    @test_throws ArgumentError silhouettes(a, [3, 2], D)
-    @test_throws ArgumentError silhouettes([1, 1, 3, 2], [2, 2], D)
-    @test_throws DimensionMismatch silhouettes([1, 1, 2, 2, 2], [2, 3], D)
+    @test_skip silhouettes(a, D; counts=[1, 1, 2]) # should throw because cluster counts are inconsistent
+    @test_throws ArgumentError silhouettes(a, D; counts=[3, 2])
+    @test_throws ArgumentError silhouettes([1, 1, 3, 2], D; counts=[2, 2])
+    @test_throws DimensionMismatch silhouettes([1, 1, 2, 2, 2], D; counts=[2, 3])
 end
 
-@test @inferred(silhouettes(a, c, D)) ≈ [1.5/2.5, 0.5/1.5, 0.5/1.5, 1.5/2.5]
-@test @inferred(silhouettes(a, c, convert(Matrix{Float32}, D))) isa AbstractVector{Float32}
-@test silhouettes(a, D) == silhouettes(a, c, D) # c is optional
+@test @inferred(silhouettes(a, D; counts=c)) ≈ [1.5/2.5, 0.5/1.5, 0.5/1.5, 1.5/2.5]
+@test @inferred(silhouettes(a, convert(Matrix{Float32}, D); counts=c)) isa AbstractVector{Float32}
+@test silhouettes(a, D) == silhouettes(a, D; counts=c) # c is optional
 
 a = [1, 2, 1, 2]
 c = [2, 2]
 
-@test silhouettes(a, c, D) ≈ [0.0, -0.5, -0.5, 0.0]
+@test silhouettes(a, D; counts=c) ≈ [0.0, -0.5, -0.5, 0.0]
 
 a = [1, 1, 1, 2]
 c = [3, 1]
 
-@test silhouettes(a, c, D) ≈ [0.5, 0.5, -1/3, 0.0]
+@test silhouettes(a, D; counts=c) ≈ [0.5, 0.5, -1/3, 0.0]
 
 @testset "zero cluster distances correctly" begin
     a = [fill(1, 5); fill(2, 5)]
@@ -42,6 +42,7 @@ c = [3, 1]
     @test silhouettes(a, d) == fill(0.0, 10)
 
     d = fill(1, (10, 10))
+    for i in 1:10; d[i, i] = 0; end
     d[1, 2] = d[2, 1] = 5
 
     @test silhouettes(a, d) == [[-0.5, -0.5]; fill(0.0, 8)]
@@ -62,7 +63,7 @@ end
 end
 
 @testset "streaming silhouettes" begin
-    import Clustering: sil_aggregate_distances_normalized_streaming, sil_aggregate_distances_normalized
+    import Clustering: sil_aggregate_distances_normalized_streaming, sil_aggregate_distances_normalized, silhouettes_using_cache, silhouettes_cache
     nclusters = 10
     dims = 3
     n = 100
@@ -70,8 +71,7 @@ end
     pd = pairwise(SqEuclidean(), X, dims=2)
     a = rand(1:nclusters, n)
     stats1 = @timed s_standard = silhouettes(a, pd)
-    stats2 = @timed s_streaming_at_once = silhouettes(SqEuclidean(), a, X; nclusters=nclusters)
-    println("standard run time: $(stats1.time), streaming calc time: $(stats2.time)")
+    stats2 = @timed s_streaming_at_once = silhouettes(a, X; metric=SqEuclidean(), nclusters=nclusters)
     
     @test isapprox(s_standard, s_streaming_at_once)
     
@@ -102,7 +102,7 @@ end
     s_streaming = []
     for (x, aa) in zip(eachslice(reshape(X, dims, batch_size, trunc(Int, n/batch_size)), dims=3), 
                        eachslice(reshape(a, batch_size, trunc(Int, n/batch_size)), dims=2))
-        s_streaming = vcat(s_streaming, silhouettes(x, aa, pre))
+        s_streaming = vcat(s_streaming, silhouettes_using_cache(x, aa, pre))
     end
     # compare final scores with standard calculation results
     @test isapprox(s_standard, s_streaming)
