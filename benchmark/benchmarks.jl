@@ -32,17 +32,15 @@ end
 
 SUITE["silhouette"] = BenchmarkGroup()
 
-function silhouette_benchmark(a, X, nclusters)
-    res = BenchmarkGroup()
-    for method in (:classic, :cached)
-        res[string(method)] = @benchmarkable silhouettes($a, $X; metric=SqEuclidean(), nclusters=$nclusters, method=Symbol($method))
-    end
-    return res
-end
-
 for (label, n) in (("n=100", 100), ("n=1,000", 1000), ("n=10,000", 10000), ("n=20,000", 20000))
     nclusters = 10
     dims = 3
     X = rand(dims, n); a = rand(1:nclusters, n)
-    SUITE["silhouette"][label] = silhouette_benchmark(a, X, nclusters)
+    SUITE["silhouette"][label] = BenchmarkGroup()
+    for method in (:classic, :cached)
+        SUITE["silhouette"][label][string(method)] = BenchmarkGroup()
+        for metric in [SqEuclidean(), CosineDist()]
+            SUITE["silhouette"][label][string(method)][string(metric)] = @benchmarkable silhouettes($a, $X; metric=$metric, nclusters=$nclusters, method=Symbol($method))
+        end
+    end
 end

@@ -12,13 +12,74 @@ struct SqEuclideanSilhouettesCache{T} <: SilhouettesCache{T}
     Y::Matrix{T} #[dims, nclusters], This represents the first moments of each cluster
     """
     SqEuclideanSilhouettesCache(::Type{T}, nclusters::Int, dims::Int)
-    Precomputations container for [`precompute_silhouettes`](@ref).
+    Precomputations cache for [`precompute_silhouettes`](@ref).
     See also [`silhouettes`](@ref), [`precompute_silhouettes`](@ref)
     """
     SqEuclideanSilhouettesCache(::Type{T}, nclusters::Int, dims::Int) where T<:Real= new{T}(nclusters, dims, 
-                                                                                                  zeros(Int, nclusters),
-                                                                                                  zeros(T, nclusters), 
-                                                                                                  zeros(T, dims, nclusters))
+                                                                                            zeros(Int, nclusters),
+                                                                                            zeros(T, nclusters), 
+                                                                                            zeros(T, dims, nclusters))
+end
+
+# this does the same as sil_aggregate_dists, but uses the method in "Distributed Silhouette Algorithm: Evaluating Clustering on Big Data"
+# https://arxiv.org/abs/2303.14102
+# this implementation uses the SqEuclidean distance only
+function precompute_silhouettes(pre::SqEuclideanSilhouettesCache{T}, x::AbstractMatrix{T}, assignments::AbstractVector{Int}) where T<:Real
+    # x dims are [D,N]
+    d, n = size(x)
+    check_assignments(assignments, pre.nclusters)
+    d == pre.dims || throw(ArgumentError("Bad data: x[1]=$d must match pre.d=$(pre.d)."))
+    # update counts
+    for (val, cnt) in countmap(assignments)
+        pre.counts[val] += cnt
+    end
+    @assert n == length(assignments) "data matrix dimensions must be (..., $(length(assignments))) and got $(size(x))"
+    ξ = sum(abs2, x; dims=1) # [1,n]
+    # precompute vectors
+    @inbounds for (i, cluster) in enumerate(assignments)
+        pre.Y[:, cluster] .+= view(x, :, i)
+        pre.Ψ[cluster] += ξ[i]
+    end
+    return pre
+end
+
+struct CosineSilhouettesCache{T} <: SilhouettesCache{T}
+    nclusters::Int
+    dims::Int
+    counts::Vector{Int} #[nclusters, 1]
+    Ω::Matrix{T} #[dims, nclusters], This represents the first moments post normalization of each cluster
+    """
+    CosineSilhouettesCache(::Type{T}, nclusters::Int, dims::Int)
+    Precomputations cache for [`precompute_silhouettes`](@ref).
+    See also [`silhouettes`](@ref), [`precompute_silhouettes`](@ref)
+    """
+    CosineSilhouettesCache(::Type{T}, nclusters::Int, dims::Int) where T<:Real= new{T}(nclusters, dims, 
+                                                                                       zeros(Int, nclusters),
+                                                                                       zeros(T, dims, nclusters))
+end
+
+function precompute_silhouettes(pre::CosineSilhouettesCache{T}, x::AbstractMatrix{T}, assignments::AbstractVector{Int}) where T<:Real
+    # x dims are [D,N]
+    d, n = size(x)
+    check_assignments(assignments, pre.nclusters)
+    d == pre.dims || throw(ArgumentError("Bad data: x[1]=$d must match pre.d=$(pre.d)."))
+    # update counts
+    for (val, cnt) in countmap(assignments)
+        pre.counts[val] += cnt
+    end
+    @assert n == length(assignments) "data matrix dimensions must be (..., $(length(assignments))) and got $(size(x))"
+    ξ = x ./ sqrt.(sum(abs2, x; dims=1)) # [d,n]
+    # precompute vectors
+    @inbounds for (i, cluster) in enumerate(assignments)
+        pre.Ω[:, cluster] .+= view(ξ, :, i)
+    end
+    return pre
+end
+
+precompute_silhouettes(pre::SilhouettesCache{T}, x::AbstractMatrix{T}, R::ClusteringResult) where T<:Real = precompute_silhouettes(pre, x, assignments(R))
+
+function (pre::SilhouettesCache)(x::AbstractMatrix{T}, assignments::Union{AbstractVector{Int}, ClusteringResult}) where T<:Real
+    precompute_silhouettes(pre, x, assignments)
 end
 
 """
@@ -45,36 +106,7 @@ Julia> size(sil)
 """
 silhouettes_cache(::Type, metric::Union{Metric, SemiMetric}, nclusters, dims) = error("precomputed_silhouettes() for metric $(typeof(metric)) is not implemented")
 silhouettes_cache(t::Type, metric::SqEuclidean, nclusters::Int, dims::Int)::SilhouettesCache = SqEuclideanSilhouettesCache(t, nclusters, dims)
-
-# this does the same as sil_aggregate_dists, but uses the method in "Distributed Silhouette Algorithm: Evaluating Clustering on Big Data"
-# https://arxiv.org/abs/2303.14102
-# this implementation uses the SqEuclidean distance only
-function precompute_silhouettes(pre::SqEuclideanSilhouettesCache{T}, x::AbstractMatrix{T}, assignments::AbstractVector{Int}) where T<:Real
-    # x dims are [D,N]
-    d, n = size(x)
-    check_assignments(assignments, pre.nclusters)
-    d == pre.dims || throw(ArgumentError("Bad data: x[1]=$d must match pre.d=$(pre.d)."))
-    # update counts
-    for (val, cnt) in countmap(assignments)
-        pre.counts[val] += cnt
-    end
-    @assert n == length(assignments) "data matrix dimensions must be (..., $(length(assignments))) and got $(size(x))"
-    ξ = sum(abs2, x; dims=1) # [1,n]
-    # precompute vectors
-    @inbounds for (i, cluster) in enumerate(assignments)
-        pre.Y[:, cluster] .+= view(x, :, i)
-        pre.Ψ[cluster] += ξ[i]
-    end
-    return pre
-end
-
-precompute_silhouettes(pre::SqEuclideanSilhouettesCache{T}, 
-                       x::AbstractMatrix{T}, R::ClusteringResult) where T<:Real = precompute_silhouettes(pre, x, assignments(R))
-
-
-function (pre::SqEuclideanSilhouettesCache)(x::AbstractMatrix{T}, assignments::Union{AbstractVector{Int}, ClusteringResult}) where T<:Real
-    precompute_silhouettes(pre, x, assignments)
-end
+silhouettes_cache(t::Type, metric::CosineDist, nclusters::Int, dims::Int)::SilhouettesCache = CosineSilhouettesCache(t, nclusters, dims)
 
 # this function returns r of size (nclusters, n), such that
 # r[i, j] is the sum of distances of all points from cluster i to point j
@@ -137,6 +169,19 @@ function sil_aggregate_distances_normalized_streaming(x::AbstractMatrix{T}, assi
     # compute average distance from each cluster to each point --> r
     ξx = sum(abs2, x; dims=1) # [1,n]
     cluster_to_point = reshape(pre.counts, :, 1) .* ξx .+ reshape(pre.Ψ, pre.nclusters, 1) .- 2 .* transpose(pre.Y) * x # cluster_to_point is [nclusters, n]
+    cluster_to_point = normalize_aggregate_distances!(cluster_to_point, assignments, pre.counts)
+    return cluster_to_point
+end
+
+function sil_aggregate_distances_normalized_streaming(x::AbstractMatrix{T}, assignments::AbstractVector{Int}, pre::CosineSilhouettesCache{T}) where T <: Real
+    nclusters = pre.nclusters
+    check_assignments(assignments, nclusters)
+    size(x, 1) == size(pre.Ω, 1) || throw(ArgumentError("silhouette: number of input features (dimension 1) used in pre computation was $(size(pre.Y, 1)), got $(size(x, 1))"))
+    size(x, 2) == length(assignments) || throw(ArgumentError("silhouette: number of input points $(size(x, 2)) do not match number of assignments $(length(assignments))"))
+
+    # compute average distance from each cluster to each point --> r
+    ξx = x ./ sqrt.(sum(abs2, x; dims=1)) # [1,n]
+    cluster_to_point = reshape(pre.counts, :, 1) .- transpose(pre.Ω) * ξx # cluster_to_point is [nclusters, n]
     cluster_to_point = normalize_aggregate_distances!(cluster_to_point, assignments, pre.counts)
     return cluster_to_point
 end
@@ -245,7 +290,7 @@ function silhouettes(assignments::AbstractVector{<:Integer}, points:: AbstractMa
         sil = silhouette_scores(cluster_to_point, assignments, counts)
 
     elseif  method == :cached
-        !(metric isa SqEuclidean) && throw(ArgumentError("method :cached currently only supports SqEuclidean metric."))
+        !(any([metric isa SqEuclidean, metric isa CosineDist])) && throw(ArgumentError("method :cached currently only supports SqEuclidean and CosineDist metrics."))
         batch_size=size(points, 2) # a single batch. May not be optimal. Use `silhouettes_cache` and `silhouettes_using_cache` to change this.
         dims, n = size(points)
         check_assignments(assignments, nclusters)

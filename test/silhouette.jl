@@ -64,48 +64,49 @@ end
 
 @testset "streaming silhouettes" begin
     import Clustering: sil_aggregate_distances_normalized_streaming, sil_aggregate_distances_normalized, silhouettes_using_cache, silhouettes_cache
-    nclusters = 10
-    dims = 3
-    n = 100
-    X = rand(MersenneTwister(123), dims, n)
-    pd = pairwise(SqEuclidean(), X, dims=2)
-    a = rand(1:nclusters, n)
-    stats1 = @timed s_standard = silhouettes(a, pd)
-    stats2 = @timed s_streaming_at_once = silhouettes(a, X; metric=SqEuclidean(), nclusters=nclusters)
+    @testset "$metric" for metric in [SqEuclidean(), CosineDist()]
+        nclusters = 10
+        dims = 3
+        n = 100
+        X = rand(MersenneTwister(123), dims, n)
+        pd = pairwise(metric, X, dims=2)
+        a = rand(1:nclusters, n)
+        stats1 = @timed s_standard = silhouettes(a, pd)
+        stats2 = @timed s_streaming_at_once = silhouettes(a, X; metric=metric, nclusters=nclusters, method=:cached)
+        
+        @test isapprox(s_standard, s_streaming_at_once)
+        
+        pre_at_init = silhouettes_cache(eltype(X), metric, nclusters, dims)
+        pre = silhouettes_cache(eltype(X), metric, nclusters, dims)
+        pre_all_at_once = silhouettes_cache(eltype(X), metric, nclusters, dims)
+        batch_size = 10
+        for (x, aa) in zip(eachslice(reshape(X, dims, batch_size, trunc(Int, n/batch_size)), dims=3), 
+                           eachslice(reshape(a, batch_size, trunc(Int, n/batch_size)), dims=2))
+            pre = pre(x, aa)
+        end
+        pre_all_at_once = pre_all_at_once(X, a)
+        # counts sanity test
+        @test sum(pre.counts) == n
+        # make sure the batched calculation is the same as calculating all at once and different than initialization
+        for prop in propertynames(pre)
+            @test isapprox(getproperty(pre, prop), getproperty(pre_all_at_once, prop))
+            prop in [:nclusters, :dims] && continue
+            @test !isapprox(getproperty(pre, prop), getproperty(pre_at_init, prop))
+        end
     
-    @test isapprox(s_standard, s_streaming_at_once)
+        # compare with standard calculation results
+        r_standard = sil_aggregate_distances_normalized(a, reshape(pre.counts, :), pd)
+        r_streaming = sil_aggregate_distances_normalized_streaming(X, a, pre)
+        @test isapprox(r_standard, r_streaming)
     
-    pre_at_init = silhouettes_cache(eltype(X), SqEuclidean(), nclusters, dims)
-    pre = silhouettes_cache(eltype(X), SqEuclidean(), nclusters, dims)
-    pre_all_at_once = silhouettes_cache(eltype(X), SqEuclidean(), nclusters, dims)
-    batch_size = 10
-    for (x, aa) in zip(eachslice(reshape(X, dims, batch_size, trunc(Int, n/batch_size)), dims=3), 
-                       eachslice(reshape(a, batch_size, trunc(Int, n/batch_size)), dims=2))
-        pre = pre(x, aa)
+        s_streaming = []
+        for (x, aa) in zip(eachslice(reshape(X, dims, batch_size, trunc(Int, n/batch_size)), dims=3), 
+                           eachslice(reshape(a, batch_size, trunc(Int, n/batch_size)), dims=2))
+            s_streaming = vcat(s_streaming, silhouettes_using_cache(x, aa, pre))
+        end
+        # compare final scores with standard calculation results
+        @test isapprox(s_standard, s_streaming) 
     end
-    pre_all_at_once = pre_all_at_once(X, a)
-    # counts sanity test
-    @test sum(pre.counts) == n
-    # make sure the batched calculation is the same as calculating all at once
-    @test pre.counts == pre_all_at_once.counts
-    @test pre.counts != pre_at_init.counts
-    @test pre.Ψ != pre_at_init.Ψ
-    @test pre.Y != pre_at_init.Y
-    @test isapprox(pre.Ψ, pre_all_at_once.Ψ)
-    @test isapprox(pre.Y, pre_all_at_once.Y)
-
-    # compare with standard calculation results
-    r_standard = sil_aggregate_distances_normalized(a, reshape(pre.counts, :), pd)
-    r_streaming = sil_aggregate_distances_normalized_streaming(X, a, pre)
-    @test isapprox(r_standard, r_streaming)
-
-    s_streaming = []
-    for (x, aa) in zip(eachslice(reshape(X, dims, batch_size, trunc(Int, n/batch_size)), dims=3), 
-                       eachslice(reshape(a, batch_size, trunc(Int, n/batch_size)), dims=2))
-        s_streaming = vcat(s_streaming, silhouettes_using_cache(x, aa, pre))
-    end
-    # compare final scores with standard calculation results
-    @test isapprox(s_standard, s_streaming)
 end
 
 end
