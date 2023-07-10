@@ -34,11 +34,13 @@ function _check_qualityindex_argument(
     (1 <= k <= n) || throw(ArgumentError("Cluster number k must be from 1:n (n=$n), k=$k given."))
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
-    all(>=(zero(eltype(weights))), weights) || throw(ArgumentError("All weights must be larger or equal 0."))
+    all(>=(0), weights) || throw(ArgumentError("All weights must be larger or equal 0."))
     1 < fuzziness || throw(ArgumentError("Fuzziness must be greater than 1 ($fuzziness given)"))
 end
 
 function _check_qualityindex_argument(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Real})
     n, m = size(dist)
+    na = length(assignments)
     n == m || throw(ArgumentError("Distance matrix must be square."))
+    n == na || throw(DimensionMismatch("Inconsistent array dimensions for distance matrix and assignments."))
 end
