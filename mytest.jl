@@ -26,8 +26,8 @@ q = [calinski_harabasz(X,kmeans(X,k)) for k in 2:5]
 q = [xie_beni(X,kmeans(X,k)) for k in 2:5]
 q = [davies_bouldin(X,kmeans(X,k)) for k in 2:5]
 
-qf = [calinski_harabasz(X,fuzzy_cmeans(X,k,2), 2) for k in 2:5]
-qf = [xie_beni(X,fuzzy_cmeans(X,k,2), 2) for k in 2:5]
+q = [calinski_harabasz(X,fuzzy_cmeans(X,k,2), 2) for k in 2:5]
+q = [xie_beni(X,fuzzy_cmeans(X,k,2), 2) for k in 2:5]
 
 plot(2:5,q)
 
