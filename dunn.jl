@@ -3,7 +3,6 @@
 
 
 function dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Real})
-
     _check_qualityindex_argument(assignments, dist)
 
     n = size(dist, 1)

@@ -6,7 +6,6 @@ function davies_bouldin(
         assignments::AbstractVector{<:Integer},
         distance::SemiMetric=SqEuclidean()
     )
-
     _check_qualityindex_argument(X, centers, assignments)
 
     n, k = size(X, 2), size(centers,2)

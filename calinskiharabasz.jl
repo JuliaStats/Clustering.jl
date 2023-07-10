@@ -7,8 +7,7 @@ function calinski_harabasz(
         assignments::AbstractVector{<:Integer},
         distance::SemiMetric=SqEuclidean()
     )
-
-    _check_qualityindex_argument(X,centers,assignments)
+    _check_qualityindex_argument(X, centers, assignments)
 
     n, k = size(X, 2), size(centers,2)
 
@@ -16,7 +15,7 @@ function calinski_harabasz(
         sum(colwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
     )
 
-    counts = [count(==(j)assignment) for j in 1:k]
+    counts = [count(==(j), assignments) for j in 1:k]
     globalCenter = mean(X, dims=2)
     outerInertia = sum(
         counts[j] * distance(centers[:, j], globalCenter) for j in 1:k
@@ -37,7 +36,6 @@ function calinski_harabasz(
         fuzziness::Real,
         distance::SemiMetric=SqEuclidean()
     )
-
     _check_qualityindex_argument(X, centers, weights, fuzziness)
 
     n, k = size(X, 2), size(centers,2)

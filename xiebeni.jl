@@ -7,7 +7,6 @@ function xie_beni(
         assignments::AbstractVector{<:Integer},
         distance::SemiMetric=SqEuclidean()
     )
-
     _check_qualityindex_argument(X, centers, assignments)
 
     n, k = size(X, 2), size(centers,2)
@@ -33,7 +32,6 @@ function xie_beni(
         fuzziness::Real,
         distance::SemiMetric=SqEuclidean()
     )
-
     _check_qualityindex_argument(X, centers, weights, fuzziness)
 
     n, k = size(X, 2), size(centers,2)
