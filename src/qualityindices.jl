@@ -149,6 +149,7 @@ function xie_beni(
 
     centerDistances = pairwise(distance,centers)
     minOuterDistance = minimum(centerDistances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
+    
     return innerInertia / (n * minOuterDistance)
 end
 
@@ -172,7 +173,8 @@ function xie_beni(
     )
 
     centerDistances = pairwise(distance,centers)
-    minOuterDistance = minimum(centerDistances[i,j] for i in 1:k for j in i+1:k)
+    minOuterDistance = minimum(centerDistances[i,j] for j₁ in 1:k for j₂ in j₁+1:k)
+
     return innerInertia / (n * minOuterDistance)
 end
 
