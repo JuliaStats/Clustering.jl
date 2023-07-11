@@ -114,7 +114,7 @@ function davies_bouldin(
     )
     _check_qualityindex_arguments(X, centers, assignments)
 
-    n, k = size(X, 2), size(centers,2)
+    k = size(centers,2)
 
     clusterDiameters = [mean(colwise(distance,view(X, :, assignments .== j), centers[:,j])) for j in 1:k ]
     centerDistances = pairwise(distance,centers)
