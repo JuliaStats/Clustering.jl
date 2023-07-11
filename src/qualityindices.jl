@@ -1,8 +1,8 @@
 
 function _check_qualityindex_arguments(
-        X::AbstractMatrix{<:Real},                  # data matrix (d x n)
-        centers::AbstractMatrix{<:Real},   # cluster centers (d x k)
-        assignments::AbstractVector{<:Integer},     # assignments (n)
+        X::AbstractMatrix{<:Real},              # data matrix (d x n)
+        centers::AbstractMatrix{<:Real},        # cluster centers (d x k)
+        assignments::AbstractVector{<:Integer}, # assignments (n)
     )
     d, n = size(X)
     dc, k = size(centers)
@@ -17,10 +17,10 @@ function _check_qualityindex_arguments(
 end
 
 function _check_qualityindex_arguments(
-        X::AbstractMatrix{<:Real},                # data matrix (d x n)
+        X::AbstractMatrix{<:Real},       # data matrix (d x n)
         centers::AbstractMatrix{<:Real}, # cluster centers (d x k)
-        weights::AbstractMatrix{<:Real}, # assigned weights (n x C)
-        fuzziness::Real,                          # cluster fuzziness 
+        weights::AbstractMatrix{<:Real}, # assigned weights (n x k)
+        fuzziness::Real,                 # cluster fuzziness
     )
     d, n = size(X)
     dc, k = size(centers)
@@ -185,7 +185,6 @@ xie_beni(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::Real, dista
 function dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Real})
     _check_qualityindex_arguments(assignments, dist)
 
-    n = size(dist, 1)
     k = maximum(assignments)
 
     minOuterDistance = eltype(dist)(Inf)
