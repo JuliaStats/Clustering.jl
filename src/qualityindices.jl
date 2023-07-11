@@ -1,5 +1,5 @@
 
-function _check_qualityindex_argument(
+function _check_qualityindex_arguments(
         X::AbstractMatrix{<:Real},                  # data matrix (d x n)
         centers::AbstractMatrix{<:Real},   # cluster centers (d x k)
         assignments::AbstractVector{<:Integer},     # assignments (n)
@@ -16,7 +16,7 @@ function _check_qualityindex_argument(
     end
 end
 
-function _check_qualityindex_argument(
+function _check_qualityindex_arguments(
         X::AbstractMatrix{<:Real},                # data matrix (d x n)
         centers::AbstractMatrix{<:Real}, # cluster centers (d x k)
         weights::AbstractMatrix{<:Real}, # assigned weights (n x C)
@@ -36,7 +36,7 @@ function _check_qualityindex_argument(
     1 < fuzziness || throw(ArgumentError("Fuzziness must be greater than 1 ($fuzziness given)"))
 end
 
-function _check_qualityindex_argument(
+function _check_qualityindex_arguments(
         assignments::AbstractVector{<:Integer}, # assignments (n)
         dist::AbstractMatrix{<:Real}            # data distance matrix (n x n)
     )
@@ -54,7 +54,7 @@ function calinski_harabasz(
     assignments::AbstractVector{<:Integer},
     distance::SemiMetric=SqEuclidean()
 )
-_check_qualityindex_argument(X, centers, assignments)
+_check_qualityindex_arguments(X, centers, assignments)
 
 n, k = size(X, 2), size(centers,2)
 
@@ -83,7 +83,7 @@ function calinski_harabasz(
     fuzziness::Real,
     distance::SemiMetric=SqEuclidean()
 )
-_check_qualityindex_argument(X, centers, weights, fuzziness)
+_check_qualityindex_arguments(X, centers, weights, fuzziness)
 
 n, k = size(X, 2), size(centers,2)
 
@@ -112,7 +112,7 @@ function davies_bouldin(
     assignments::AbstractVector{<:Integer},
     distance::SemiMetric=SqEuclidean()
     )
-    _check_qualityindex_argument(X, centers, assignments)
+    _check_qualityindex_arguments(X, centers, assignments)
 
     n, k = size(X, 2), size(centers,2)
 
@@ -128,7 +128,7 @@ function davies_bouldin(
 end
 
 davies_bouldin(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEuclidean()) =
-davies_bouldin(X, R.centers, R.assignments, distance)
+    davies_bouldin(X, R.centers, R.assignments, distance)
 
 
 # Xie-Beni index
@@ -139,7 +139,7 @@ function xie_beni(
         assignments::AbstractVector{<:Integer},
         distance::SemiMetric=SqEuclidean()
     )
-    _check_qualityindex_argument(X, centers, assignments)
+    _check_qualityindex_arguments(X, centers, assignments)
 
     n, k = size(X, 2), size(centers,2)
 
@@ -163,7 +163,7 @@ function xie_beni(
         fuzziness::Real,
         distance::SemiMetric=SqEuclidean()
     )
-    _check_qualityindex_argument(X, centers, weights, fuzziness)
+    _check_qualityindex_arguments(X, centers, weights, fuzziness)
 
     n, k = size(X, 2), size(centers,2)
 
@@ -183,7 +183,7 @@ xie_beni(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::Real, dista
 # Dunn index
 
 function dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Real})
-    _check_qualityindex_argument(assignments, dist)
+    _check_qualityindex_arguments(assignments, dist)
 
     n = size(dist, 1)
     k = maximum(assignments)
