@@ -11,7 +11,7 @@ function _check_qualityindex_arguments(
     (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
-    for j = 1:n
+    for j in 1:n
         (1 <= assignments[j] <= k) || throw(ArgumentError("Bad assignments[$j]=$(assignments[j]): should be in 1:$k range."))
     end
 end
