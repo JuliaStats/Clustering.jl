@@ -101,7 +101,7 @@ function calinski_harabasz(
 end
 
 calinski_harabasz(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::Real, distance::SemiMetric=SqEuclidean()) =
-calinski_harabasz(X, R.centers, R.weights, fuzziness, distance)
+    calinski_harabasz(X, R.centers, R.weights, fuzziness, distance)
 
 
 # Davies-Bouldin idex 
