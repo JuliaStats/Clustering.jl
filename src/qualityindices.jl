@@ -77,27 +77,27 @@ calinski_harabasz(X, R.centers, R.assignments, distance)
 
 
 function calinski_harabasz(
-    X::AbstractMatrix{<:Real},
-    centers::AbstractMatrix{<:Real},
-    weights::AbstractMatrix{<:Real},
-    fuzziness::Real,
-    distance::SemiMetric=SqEuclidean()
-)
-_check_qualityindex_arguments(X, centers, weights, fuzziness)
+        X::AbstractMatrix{<:Real},
+        centers::AbstractMatrix{<:Real},
+        weights::AbstractMatrix{<:Real},
+        fuzziness::Real,
+        distance::SemiMetric=SqEuclidean()
+    )
+    _check_qualityindex_arguments(X, centers, weights, fuzziness)
 
-n, k = size(X, 2), size(centers,2)
+    n, k = size(X, 2), size(centers,2)
 
-globalCenter = mean(X, dims=2)[:]
-centerDistances = colwise(distance, centers, globalCenter)
-outerInertia = sum(
-    weights[i,j]^fuzziness * centerDistances[j] for i in 1:n, j in 1:k
-)
+    globalCenter = mean(X, dims=2)[:]
+    centerDistances = colwise(distance, centers, globalCenter)
+    outerInertia = sum(
+        weights[i,j]^fuzziness * centerDistances[j] for i in 1:n, j in 1:k
+    )
 
-innerInertia = sum(
-    weights[i,j]^fuzziness * distance(X[:,i],centers[:,j]) for i in 1:n, j in 1:k
-)
+    innerInertia = sum(
+        weights[i,j]^fuzziness * distance(X[:,i],centers[:,j]) for i in 1:n, j in 1:k
+    )
 
-return (outerInertia / (k - 1)) / (innerInertia / (n - k))
+    return (outerInertia / (k - 1)) / (innerInertia / (n - k))
 end
 
 calinski_harabasz(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::Real, distance::SemiMetric=SqEuclidean()) =
@@ -107,10 +107,10 @@ calinski_harabasz(X, R.centers, R.weights, fuzziness, distance)
 # Davies-Bouldin idex 
 
 function davies_bouldin(
-    X::AbstractMatrix{<:Real},
-    centers::AbstractMatrix{<:Real},
-    assignments::AbstractVector{<:Integer},
-    distance::SemiMetric=SqEuclidean()
+        X::AbstractMatrix{<:Real},
+        centers::AbstractMatrix{<:Real},
+        assignments::AbstractVector{<:Integer},
+        distance::SemiMetric=SqEuclidean()
     )
     _check_qualityindex_arguments(X, centers, assignments)
 
