@@ -187,7 +187,7 @@ function dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Rea
 
     k = maximum(assignments)
 
-    minOuterDistance = eltype(dist)(Inf)
+    minOuterDistance = typemax(eltype(dist))
     
     for j₁ in 1:k, j₂ in j₁+1:k
         # δ is min distance between points from clusters j₁ and j₂
@@ -198,7 +198,7 @@ function dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Rea
         end
     end
 
-    maxInnerDistance = eltype(dist)(-Inf)
+    maxInnerDistance = typemin(eltype(dist))
 
     for j in 1:k
         # Δ is max distance between points in cluster j
