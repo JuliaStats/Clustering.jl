@@ -1,18 +1,14 @@
-using Distances
-# 1-based indexing
-
-# argument checking
 
 function _check_qualityindex_argument(
         X::AbstractMatrix{<:Real},                  # data matrix (d x n)
-        centers::AbstractMatrix{<:AbstractFloat},   # cluster centers (d x k)
+        centers::AbstractMatrix{<:Real},   # cluster centers (d x k)
         assignments::AbstractVector{<:Integer},     # assignments (n)
     )
     d, n = size(X)
     dc, k = size(centers)
 
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
-    (1 <= k <= n) || throw(ArgumentError("Cluster number k must be from 1:n (n=$n), k=$k given."))
+    (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
     for j = 1:n
@@ -22,8 +18,8 @@ end
 
 function _check_qualityindex_argument(
         X::AbstractMatrix{<:Real},                # data matrix (d x n)
-        centers::AbstractMatrix{<:AbstractFloat}, # cluster centers (d x k)
-        weights::AbstractMatrix{<:AbstractFloat}, # assigned weights (n x C)
+        centers::AbstractMatrix{<:Real}, # cluster centers (d x k)
+        weights::AbstractMatrix{<:Real}, # assigned weights (n x C)
         fuzziness::Real,                          # cluster fuzziness 
     )
     d, n = size(X)
@@ -33,7 +29,7 @@ function _check_qualityindex_argument(
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
     n == nw || throw(DimensionMismatch("Inconsistent data length for `X` and `weights`."))
     k == kw || throw(DimensionMismatch("Inconsistent number of clusters for `centers` and `weights`."))
-    (1 <= k <= n) || throw(ArgumentError("Cluster number k must be from 1:n (n=$n), k=$k given."))
+    (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
     all(>=(0), weights) || throw(ArgumentError("All weights must be larger or equal 0."))
@@ -54,7 +50,7 @@ end
 
 function calinski_harabasz(
     X::AbstractMatrix{<:Real},
-    centers::AbstractMatrix{<:AbstractFloat},
+    centers::AbstractMatrix{<:Real},
     assignments::AbstractVector{<:Integer},
     distance::SemiMetric=SqEuclidean()
 )
@@ -62,14 +58,15 @@ _check_qualityindex_argument(X, centers, assignments)
 
 n, k = size(X, 2), size(centers,2)
 
-innerInertia = sum(
-    sum(colwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
+counts = [count(==(j), assignments) for j in 1:k]
+globalCenter = mean(X, dims=2)[:]
+centerDistances = colwise(distance, centers, globalCenter)
+outerInertia = sum(
+    counts[j] * centerDistances[j] for j in 1:k
 )
 
-counts = [count(==(j), assignments) for j in 1:k]
-globalCenter = mean(X, dims=2)
-outerInertia = sum(
-    counts[j] * distance(centers[:, j], globalCenter) for j in 1:k
+innerInertia = sum(
+    sum(colwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
 )
 
 return (outerInertia / (k - 1)) / (innerInertia / (n - k))
@@ -81,8 +78,8 @@ calinski_harabasz(X, R.centers, R.assignments, distance)
 
 function calinski_harabasz(
     X::AbstractMatrix{<:Real},
-    centers::AbstractMatrix{<:AbstractFloat},
-    weights::AbstractMatrix{<:AbstractFloat},
+    centers::AbstractMatrix{<:Real},
+    weights::AbstractMatrix{<:Real},
     fuzziness::Real,
     distance::SemiMetric=SqEuclidean()
 )
@@ -90,14 +87,14 @@ _check_qualityindex_argument(X, centers, weights, fuzziness)
 
 n, k = size(X, 2), size(centers,2)
 
-innerInertia = sum(
-    weights[i,j]^fuzziness * distance(X[:,i],centers[:,j]) for i in 1:n, j in 1:k
-)
-
 globalCenter = mean(X, dims=2)[:]
 centerDistances = colwise(distance, centers, globalCenter)
 outerInertia = sum(
     weights[i,j]^fuzziness * centerDistances[j] for i in 1:n, j in 1:k
+)
+
+innerInertia = sum(
+    weights[i,j]^fuzziness * distance(X[:,i],centers[:,j]) for i in 1:n, j in 1:k
 )
 
 return (outerInertia / (k - 1)) / (innerInertia / (n - k))
@@ -111,18 +108,23 @@ calinski_harabasz(X, R.centers, R.weights, fuzziness, distance)
 
 function davies_bouldin(
     X::AbstractMatrix{<:Real},
-    centers::AbstractMatrix{<:AbstractFloat},
+    centers::AbstractMatrix{<:Real},
     assignments::AbstractVector{<:Integer},
     distance::SemiMetric=SqEuclidean()
-)
-_check_qualityindex_argument(X, centers, assignments)
+    )
+    _check_qualityindex_argument(X, centers, assignments)
 
-n, k = size(X, 2), size(centers,2)
+    n, k = size(X, 2), size(centers,2)
 
-centerDiameters = [mean(colwise(distance,view(X, :, assignments .== j), centers[:,j])) for j in 1:k ]
-centerDistances = pairwise(distance,centers)
+    clusterDiameters = [mean(colwise(distance,view(X, :, assignments .== j), centers[:,j])) for j in 1:k ]
+    centerDistances = pairwise(distance,centers)
 
-return  maximum( (centerDiameters[j₁] + centerDiameters[j₂]) / centerDistances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k ) / k
+    DB = mean(
+        maximum( (clusterDiameters[j₁] + clusterDiameters[j₂]) / centerDistances[j₁,j₂] for j₂ in 1:k if j₂ ≠ j₁)
+        for j₁ in 1:k
+    )
+
+    return  DB
 end
 
 davies_bouldin(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEuclidean()) =
@@ -133,7 +135,7 @@ davies_bouldin(X, R.centers, R.assignments, distance)
 
 function xie_beni(
         X::AbstractMatrix{<:Real},
-        centers::AbstractMatrix{<:AbstractFloat},
+        centers::AbstractMatrix{<:Real},
         assignments::AbstractVector{<:Integer},
         distance::SemiMetric=SqEuclidean()
     )
@@ -156,8 +158,8 @@ xie_beni(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEucl
 
 function xie_beni(
         X::AbstractMatrix{<:Real},
-        centers::AbstractMatrix{<:AbstractFloat},
-        weights::AbstractMatrix{<:AbstractFloat},
+        centers::AbstractMatrix{<:Real},
+        weights::AbstractMatrix{<:Real},
         fuzziness::Real,
         distance::SemiMetric=SqEuclidean()
     )

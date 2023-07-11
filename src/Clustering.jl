@@ -68,7 +68,10 @@ module Clustering
     mcl, MCLResult,
 
     # pair confusion matrix
-    confusion
+    confusion,
+
+    # quality indices
+    calinski_harabasz, davies_bouldin, xie_beni, dunn
 
     ## source files
 
@@ -89,7 +92,7 @@ module Clustering
     include("vmeasure.jl")
     include("mutualinfo.jl")
     include("confusion.jl")
-
+    include("qualityindices.jl")
     include("hclust.jl")
 
     include("deprecate.jl")
