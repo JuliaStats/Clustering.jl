@@ -93,8 +93,9 @@ function calinski_harabasz(
         weights[i,j]^fuzziness * centerDistances[j] for i in 1:n, j in 1:k
     )
 
+    pointCentreDistances = pairwise(distance,X,centers)
     innerInertia = sum(
-        weights[i,j]^fuzziness * distance(X[:,i],centers[:,j]) for i in 1:n, j in 1:k
+        weights[i,j]^fuzziness * pointCentreDistances[i,j] for i in 1:n, j in 1:k
     )
 
     return (outerInertia / (k - 1)) / (innerInertia / (n - k))
@@ -173,7 +174,7 @@ function xie_beni(
     )
 
     centerDistances = pairwise(distance,centers)
-    minOuterDistance = minimum(centerDistances[i,j] for j₁ in 1:k for j₂ in j₁+1:k)
+    minOuterDistance = minimum(centerDistances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
 
     return innerInertia / (n * minOuterDistance)
 end

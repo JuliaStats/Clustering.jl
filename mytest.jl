@@ -62,10 +62,10 @@ scatter!(C[:,1],C[:,2],
 ## tests
 using Test
 
-@test_throws ArgumentError Clustering._check_qualityindex_argument(zeros(2,2), zeros(2,3), [1, 2])
-@test_throws DimensionMismatch Clustering._check_qualityindex_argument(zeros(2,2),zeros(3,2), [1, 2])
-@test_throws ArgumentError Clustering._check_qualityindex_argument(zeros(2,2),zeros(2,1), [1, ])
-@test_throws ArgumentError Clustering._check_qualityindex_argument(zeros(2,2),zeros(2,2), [1, 2])
+@test_throws ArgumentError Clustering._check_qualityindex_arguments(zeros(2,2), zeros(2,3), [1, 2])
+@test_throws DimensionMismatch Clustering._check_qualityindex_arguments(zeros(2,2),zeros(3,2), [1, 2])
+@test_throws ArgumentError Clustering._check_qualityindex_arguments(zeros(2,2),zeros(2,1), [1, ])
+@test_throws ArgumentError Clustering._check_qualityindex_arguments(zeros(2,2),zeros(2,2), [1, 2])
 
 @test calinski_harabasz(Y',C',A,Euclidean()) ≈ (32/3) / (16/8)
 @test calinski_harabasz(Y',C',W,2,Euclidean()) ≈ (32/3) / (16/8)
