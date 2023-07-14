@@ -67,7 +67,7 @@ innerInertia = sum(
     sum(pairwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
 )
 
-return (outerInertia / (k - 1)) / (innerInertia / (n - k))
+    return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
 
 calinski_harabasz(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEuclidean()) =
