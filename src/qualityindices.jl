@@ -59,14 +59,12 @@ _check_qualityindex_arguments(X, centers, assignments)
 n, k = size(X, 2), size(centers,2)
 
 counts = [count(==(j), assignments) for j in 1:k]
-globalCenter = mean(X, dims=2)[:]
-centerDistances = colwise(distance, centers, globalCenter)
-outerInertia = sum(
-    counts[j] * centerDistances[j] for j in 1:k
-)
+globalCenter = vec(mean(X, dims=2))
+centerDistances = pairwise(distance, centers, globalCenter)
+outerInertia = counts ⋅ centerDistances
 
 innerInertia = sum(
-    sum(colwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
+    sum(pairwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
 )
 
 return (outerInertia / (k - 1)) / (innerInertia / (n - k))
@@ -87,13 +85,13 @@ function calinski_harabasz(
 
     n, k = size(X, 2), size(centers,2)
 
-    globalCenter = mean(X, dims=2)[:]
-    centerDistances = colwise(distance, centers, globalCenter)
+    globalCenter = vec(mean(X, dims=2))
+    centerDistances = pairwise(distance, centers, globalCenter)
     outerInertia = sum(
         weights[i,j]^fuzziness * centerDistances[j] for i in 1:n, j in 1:k
     )
 
-    pointCentreDistances = pairwise(distance,X,centers)
+    pointCentreDistances = pairwise(distance, X, centers)
     innerInertia = sum(
         weights[i,j]^fuzziness * pointCentreDistances[i,j] for i in 1:n, j in 1:k
     )
@@ -117,7 +115,7 @@ function davies_bouldin(
 
     k = size(centers,2)
 
-    clusterDiameters = [mean(colwise(distance,view(X, :, assignments .== j), centers[:,j])) for j in 1:k ]
+    clusterDiameters = [mean(pairwise(distance,view(X, :, assignments .== j), centers[:,j])) for j in 1:k ]
     centerDistances = pairwise(distance,centers)
 
     DB = mean(
@@ -145,7 +143,7 @@ function xie_beni(
     n, k = size(X, 2), size(centers,2)
 
     innerInertia = sum(
-        sum(colwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
+        sum(pairwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
     )
 
     centerDistances = pairwise(distance,centers)
@@ -169,8 +167,9 @@ function xie_beni(
 
     n, k = size(X, 2), size(centers,2)
 
+    pointCentreDistances = pairwise(distance, X, centers)
     innerInertia = sum(
-        weights[i,j]^fuzziness * distance(X[:,i],centers[:,j]) for i in 1:n, j in 1:k
+        weights[i,j]^fuzziness * pointCentreDistances[i,j] for i in 1:n, j in 1:k
     )
 
     centerDistances = pairwise(distance,centers)
