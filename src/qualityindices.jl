@@ -49,23 +49,28 @@ end
 # Calinski-Harabasz index
 
 function calinski_harabasz(
-    X::AbstractMatrix{<:Real},
-    centers::AbstractMatrix{<:Real},
-    assignments::AbstractVector{<:Integer},
-    distance::SemiMetric=SqEuclidean()
-)
-_check_qualityindex_arguments(X, centers, assignments)
+        X::AbstractMatrix{<:Real},
+        centers::AbstractMatrix{<:Real},
+        assignments::AbstractVector{<:Integer},
+        distance::SemiMetric=SqEuclidean()
+    )
+    _check_qualityindex_arguments(X, centers, assignments)
 
-n, k = size(X, 2), size(centers,2)
+    n, k = size(X, 2), size(centers, 2)
 
-counts = [count(==(j), assignments) for j in 1:k]
-global_center = vec(mean(X, dims=2))
-center_distances = pairwise(distance, centers, global_center)
-outer_intertia = counts ⋅ center_distances
+    clu_samples = [Int[] for _ in 1:k]
+    for (i, a) in enumerate(assignments)
+        push!(clu_samples[a], i)
+    end
+    clu_sizes = length.(clu_samples)
+    global_center = vec(mean(X, dims=2))
+    center_distances = pairwise(distance, centers, global_center)
+    outer_inertia = counts ⋅ center_distances
 
-inner_intertia = sum(
-    sum(pairwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
-)
+    inner_inertia = sum(
+        sum(pairwise(distance, view(X, :, samples), clu_center))
+                for (clu_center, samples) in zip(eachcol(centers), clu_samples)
+        )
 
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
