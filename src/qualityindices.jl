@@ -59,11 +59,11 @@ _check_qualityindex_arguments(X, centers, assignments)
 n, k = size(X, 2), size(centers,2)
 
 counts = [count(==(j), assignments) for j in 1:k]
-globalCenter = vec(mean(X, dims=2))
-centerDistances = pairwise(distance, centers, globalCenter)
-outerInertia = counts ⋅ centerDistances
+global_center = vec(mean(X, dims=2))
+center_distances = pairwise(distance, centers, global_center)
+outer_intertia = counts ⋅ center_distances
 
-innerInertia = sum(
+inner_intertia = sum(
     sum(pairwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
 )
 
@@ -85,18 +85,18 @@ function calinski_harabasz(
 
     n, k = size(X, 2), size(centers,2)
 
-    globalCenter = vec(mean(X, dims=2))
-    centerDistances = pairwise(distance, centers, globalCenter)
-    outerInertia = sum(
-        weights[i,j]^fuzziness * centerDistances[j] for i in 1:n, j in 1:k
+    global_center = vec(mean(X, dims=2))
+    center_distances = pairwise(distance, centers, global_center)
+    outer_intertia = sum(
+        weights[i,j]^fuzziness * center_distances[j] for i in 1:n, j in 1:k
     )
 
     pointCentreDistances = pairwise(distance, X, centers)
-    innerInertia = sum(
+    inner_intertia = sum(
         weights[i,j]^fuzziness * pointCentreDistances[i,j] for i in 1:n, j in 1:k
     )
 
-    return (outerInertia / (k - 1)) / (innerInertia / (n - k))
+    return (outer_intertia / (k - 1)) / (inner_intertia / (n - k))
 end
 
 calinski_harabasz(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::Real, distance::SemiMetric=SqEuclidean()) =
@@ -115,11 +115,11 @@ function davies_bouldin(
 
     k = size(centers,2)
 
-    clusterDiameters = [mean(pairwise(distance,view(X, :, assignments .== j), centers[:,j])) for j in 1:k ]
-    centerDistances = pairwise(distance,centers)
+    cluster_diameters = [mean(pairwise(distance,view(X, :, assignments .== j), centers[:,j])) for j in 1:k ]
+    center_distances = pairwise(distance,centers)
 
     DB = mean(
-        maximum( (clusterDiameters[j₁] + clusterDiameters[j₂]) / centerDistances[j₁,j₂] for j₂ in 1:k if j₂ ≠ j₁)
+        maximum( (cluster_diameters[j₁] + cluster_diameters[j₂]) / center_distances[j₁,j₂] for j₂ in 1:k if j₂ ≠ j₁)
         for j₁ in 1:k
     )
 
@@ -142,14 +142,14 @@ function xie_beni(
 
     n, k = size(X, 2), size(centers,2)
 
-    innerInertia = sum(
+    inner_intertia = sum(
         sum(pairwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
     )
 
-    centerDistances = pairwise(distance,centers)
-    minOuterDistance = minimum(centerDistances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
+    center_distances = pairwise(distance,centers)
+    min_outer_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
     
-    return innerInertia / (n * minOuterDistance)
+    return inner_intertia / (n * min_outer_distance)
 end
 
 xie_beni(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEuclidean()) =
@@ -168,14 +168,14 @@ function xie_beni(
     n, k = size(X, 2), size(centers,2)
 
     pointCentreDistances = pairwise(distance, X, centers)
-    innerInertia = sum(
+    inner_intertia = sum(
         weights[i,j]^fuzziness * pointCentreDistances[i,j] for i in 1:n, j in 1:k
     )
 
-    centerDistances = pairwise(distance,centers)
-    minOuterDistance = minimum(centerDistances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
+    center_distances = pairwise(distance,centers)
+    min_outer_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
 
-    return innerInertia / (n * minOuterDistance)
+    return inner_intertia / (n * min_outer_distance)
 end
 
 xie_beni(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::Real, distance::SemiMetric=SqEuclidean()) =
@@ -189,29 +189,29 @@ function dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Rea
 
     k = maximum(assignments)
 
-    minOuterDistance = typemax(eltype(dist))
+    min_outer_distance = typemax(eltype(dist))
     
     for j₁ in 1:k, j₂ in j₁+1:k
         # δ is min distance between points from clusters j₁ and j₂
         δ = minimum(dist[i₁,i₂] for i₁ in findall(==(j₁), assignments), i₂ in findall(==(j₂), assignments))
 
-        if δ < minOuterDistance
-            minOuterDistance = δ
+        if δ < min_outer_distance
+            min_outer_distance = δ
         end
     end
 
-    maxInnerDistance = typemin(eltype(dist))
+    max_inner_distance = typemin(eltype(dist))
 
     for j in 1:k
         # Δ is max distance between points in cluster j
         Δ = maximum(dist[i₁,i₂] for i₁ in findall(==(j), assignments), i₂ in findall(==(j), assignments))
 
-        if Δ > maxInnerDistance
-            maxInnerDistance = Δ
+        if Δ > max_inner_distance
+            max_inner_distance = Δ
         end
     end
     
-    return minOuterDistance / maxInnerDistance
+    return min_outer_distance / max_inner_distance
 end
 
 dunn(X::AbstractMatrix{<:Real}, assignments::AbstractVector{<:Integer}, distance::SemiMetric=SqEuclidean()) = 
