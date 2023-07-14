@@ -58,7 +58,11 @@ _check_qualityindex_arguments(X, centers, assignments)
 
 n, k = size(X, 2), size(centers,2)
 
-counts = [count(==(j), assignments) for j in 1:k]
+    clu_samples = [Vector{Int}() for _ in 1:k]
+    for (i, a) in enumerate(assignments)
+        push!(clu_samples[a], i)
+    end
+    clu_sizes = length.(clu_samples)
 globalCenter = vec(mean(X, dims=2))
 centerDistances = pairwise(distance, centers, globalCenter)
 outerInertia = counts ⋅ centerDistances
