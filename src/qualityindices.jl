@@ -5,14 +5,15 @@ function _check_qualityindex_arguments(
         assignments::AbstractVector{<:Integer}, # assignments (n)
     )
     d, n = size(X)
+    _, data_idx = axes(X)
     dc, k = size(centers)
 
     d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
     (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
-    for j in 1:n
-        (1 <= assignments[j] <= k) || throw(ArgumentError("Bad assignments[$j]=$(assignments[j]): should be in 1:$k range."))
+    for i in eachindex(assignments)
+        (assignments[i] in data_idx) || throw(ArgumentError("Bad assignments[$i]=$(assignments[i]) is not a valid index for `X`."))
     end
 end
 
@@ -46,6 +47,34 @@ function _check_qualityindex_arguments(
     n == na || throw(DimensionMismatch("Inconsistent array dimensions for distance matrix and assignments."))
 end
 
+
+function _gather_samples(assignments, k)
+    cluster_samples = [Int[] for _ in  1:k]
+    for (i, a) in enumerate(assignments)
+        push!(cluster_samples[a], i)
+    end
+    return cluster_samples
+end
+
+
+function _inner_inertia(X, centers, cluster_samples, distance) # shared between hard clustering calinski_harabasz and xie_beni
+    inner_inertia = sum(
+        sum(colwise(distance, view(X, :, samples), center))
+            for (center, samples) in zip(eachcol(centers), cluster_samples)
+    )
+    return inner_inertia
+end
+
+function _inner_inertia(X, centers, weights, fuzziness, distance) # shared between soft clustering calinski_harabasz and xie_beni
+    n, k = size(X, 2), size(centers, 2)
+    w_idx1, w_idx2 = axes(weights)
+    pointCentreDistances = pairwise(distance, eachcol(X), eachcol(centers))
+    inner_inertia = sum(
+        weights[i₁,j₁]^fuzziness * pointCentreDistances[i₂,j₂] for (i₁,i₂) in zip(w_idx1,1:n), (j₁,j₂) in zip(w_idx2, 1:k)
+    )
+    return inner_inertia
+end
+
 # Calinski-Harabasz index
 
 function calinski_harabasz(
@@ -58,19 +87,12 @@ function calinski_harabasz(
 
     n, k = size(X, 2), size(centers, 2)
 
-    clu_samples = [Int[] for _ in 1:k]
-    for (i, a) in enumerate(assignments)
-        push!(clu_samples[a], i)
-    end
-    clu_sizes = length.(clu_samples)
+    cluster_samples = _gather_samples(assignments, k)
     global_center = vec(mean(X, dims=2))
-    center_distances = pairwise(distance, centers, global_center)
-    outer_inertia = counts ⋅ center_distances
+    center_distances = colwise(distance, centers, global_center)
+    outer_inertia = length.(cluster_samples) ⋅ center_distances
 
-    inner_inertia = sum(
-        sum(pairwise(distance, view(X, :, samples), clu_center))
-                for (clu_center, samples) in zip(eachcol(centers), clu_samples)
-        )
+    inner_inertia = _inner_inertia(X, centers, cluster_samples, distance)
 
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
@@ -89,17 +111,15 @@ function calinski_harabasz(
     _check_qualityindex_arguments(X, centers, weights, fuzziness)
 
     n, k = size(X, 2), size(centers,2)
+    w_idx1, w_idx2 = axes(weights)
 
     global_center = vec(mean(X, dims=2))
-    center_distances = pairwise(distance, centers, global_center)
+    center_distances = colwise(distance, centers, global_center)
     outer_intertia = sum(
-        weights[i,j]^fuzziness * center_distances[j] for i in 1:n, j in 1:k
+        weights[i,j₁]^fuzziness * center_distances[j₂] for i in w_idx1, (j₁,j₂) in zip(w_idx2, 1:k)
     )
 
-    pointCentreDistances = pairwise(distance, X, centers)
-    inner_intertia = sum(
-        weights[i,j]^fuzziness * pointCentreDistances[i,j] for i in 1:n, j in 1:k
-    )
+    inner_intertia = _inner_inertia(X, centers, weights, fuzziness, distance)
 
     return (outer_intertia / (k - 1)) / (inner_intertia / (n - k))
 end
@@ -118,16 +138,18 @@ function davies_bouldin(
     )
     _check_qualityindex_arguments(X, centers, assignments)
 
-    k = size(centers,2)
+    k = size(centers, 2)
+    c_idx = axes(centers,2)
 
-    cluster_diameters = [mean(pairwise(distance,view(X, :, assignments .== j), centers[:,j])) for j in 1:k ]
+    cluster_samples = _gather_samples(assignments, k)
+
+    cluster_diameters = [mean(colwise(distance,view(X, :, sample), centers[:,j])) for (j, sample) in zip(c_idx, cluster_samples) ]
     center_distances = pairwise(distance,centers)
 
     DB = mean(
-        maximum( (cluster_diameters[j₁] + cluster_diameters[j₂]) / center_distances[j₁,j₂] for j₂ in 1:k if j₂ ≠ j₁)
-        for j₁ in 1:k
+        maximum( (cluster_diameters[j₁] + cluster_diameters[j₂]) / center_distances[j₁,j₂] for j₂ in c_idx if j₂ ≠ j₁)
+            for j₁ in c_idx
     )
-
     return  DB
 end
 
@@ -147,14 +169,13 @@ function xie_beni(
 
     n, k = size(X, 2), size(centers,2)
 
-    inner_intertia = sum(
-        sum(pairwise(distance, view(X, :, assignments .== j), centers[:, j])) for j in 1:k
-    )
+    cluster_samples = _gather_samples(assignments, k)
+    inner_intertia  = _inner_inertia(X, centers, cluster_samples, distance)
 
     center_distances = pairwise(distance,centers)
-    min_outer_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
+    min_center_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
     
-    return inner_intertia / (n * min_outer_distance)
+    return inner_intertia / (n * min_center_distance)
 end
 
 xie_beni(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEuclidean()) =
@@ -170,17 +191,14 @@ function xie_beni(
     )
     _check_qualityindex_arguments(X, centers, weights, fuzziness)
 
-    n, k = size(X, 2), size(centers,2)
+    n, k = size(X, 2), size(centers, 2)
 
-    pointCentreDistances = pairwise(distance, X, centers)
-    inner_intertia = sum(
-        weights[i,j]^fuzziness * pointCentreDistances[i,j] for i in 1:n, j in 1:k
-    )
+    inner_intertia = _inner_inertia(X, centers, weights, fuzziness, distance)
 
-    center_distances = pairwise(distance,centers)
-    min_outer_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
+    center_distances = pairwise(distance, eachcol(centers))
+    min_center_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
 
-    return inner_intertia / (n * min_outer_distance)
+    return inner_intertia / (n * min_center_distance)
 end
 
 xie_beni(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::Real, distance::SemiMetric=SqEuclidean()) =
@@ -193,34 +211,23 @@ function dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Rea
     _check_qualityindex_arguments(assignments, dist)
 
     k = maximum(assignments)
+    cluster_samples = _gather_samples(assignments, k)
 
-    min_outer_distance = typemax(eltype(dist))
-    
-    for j₁ in 1:k, j₂ in j₁+1:k
-        # δ is min distance between points from clusters j₁ and j₂
-        δ = minimum(dist[i₁,i₂] for i₁ in findall(==(j₁), assignments), i₂ in findall(==(j₂), assignments))
+    min_outer_distance = minimum(
+        minimum(view(dist, cluster_samples[j₁], cluster_samples[j₂]))
+            for j₁ in 1:k for j₂ in j₁+1:k
+    )
 
-        if δ < min_outer_distance
-            min_outer_distance = δ
-        end
-    end
-
-    max_inner_distance = typemin(eltype(dist))
-
-    for j in 1:k
-        # Δ is max distance between points in cluster j
-        Δ = maximum(dist[i₁,i₂] for i₁ in findall(==(j), assignments), i₂ in findall(==(j), assignments))
-
-        if Δ > max_inner_distance
-            max_inner_distance = Δ
-        end
-    end
+    max_inner_distance = maximum(
+        maximum(dist[i₁,i₂] for i₁ in sample, i₂ in sample)
+            for sample in cluster_samples
+    )
     
     return min_outer_distance / max_inner_distance
 end
 
 dunn(X::AbstractMatrix{<:Real}, assignments::AbstractVector{<:Integer}, distance::SemiMetric=SqEuclidean()) = 
-    dunn(assignments, pairwise(distance,X))
+    dunn(assignments, pairwise(distance,eachcol(X)))
 
 dunn(X::AbstractMatrix{<:Real}, R::ClusteringResult, distance::SemiMetric=SqEuclidean()) =
     dunn(X, R.assignments, distance)

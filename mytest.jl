@@ -1,4 +1,5 @@
 using Plots, Clustering, Distances, Statistics
+using LinearAlgebra # for testing
 
 X = hcat([4., 5.] .+ 0.2 * randn(2, 10),
          [9., -5.] .+ 0.2 * randn(2, 5),
@@ -52,6 +53,7 @@ scatter!(C[:,1],C[:,2],
 )
 
 ## tests
+
 using Test
 
 @test_throws ArgumentError Clustering._check_qualityindex_arguments(zeros(2,2), zeros(2,3), [1, 2])
