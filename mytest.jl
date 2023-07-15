@@ -15,10 +15,9 @@ resf = fuzzy_cmeans(X,3,2)
 
 res = kmeans(X,3)
 
-q = [calinski_harabasz(X,kmeans(X,k)) for k in 2:5]
-q = [xie_beni(X,kmeans(X,k)) for k in 2:5]
-q = [davies_bouldin(X,kmeans(X,k)) for k in 2:5]
-q = [dunn(X,kmeans(X,k),SqEuclidean()) for k in 2:5]
+clusterings = kmeans.(Ref(X), 2:5)
+kmeans_quality = Dict(qmetric => clustering_quality.(Ref(X), clusterings, quality_metric=qmetric)
+                      for qmetric in [:silhouette, :calinski_harabasz, :xie_beni, :davies_bouldin, :dunn])
 
 q = [calinski_harabasz(X,fuzzy_cmeans(X,k,2), 2) for k in 2:5]
 q = [xie_beni(X,fuzzy_cmeans(X,k,2), 2) for k in 2:5]
