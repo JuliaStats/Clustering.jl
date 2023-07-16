@@ -1,4 +1,89 @@
 
+
+
+function clustering_quality(
+        X::AbstractMatrix{<:Real},
+        centers::AbstractMatrix{<:Real},
+        assignments::AbstractVector{<:Integer},
+        distance::SemiMetric=SqEuclidean();
+        quality_index::Symbol
+    )
+    d, n = size(X)
+    _, data_idx = axes(X)
+    dc, k = size(centers)
+
+    d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
+    (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
+    k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
+    n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
+    for i in eachindex(assignments)
+        (assignments[i] in data_idx) || throw(ArgumentError("Bad assignments[$i]=$(assignments[i]) is not a valid index for `X`."))
+    end
+
+
+    if quality_index ∈ (:silhouettes, :silhouette, :s)
+    elseif quality_index ∈ (:calinski_harabasz, :Calinski-Harabasz, :ch)
+    elseif quality_index ∈ (:xie_beni, :Xie-Beni, :xb)
+    elseif quality_index ∈ (:davies_bouldin, :Davies-Bouldin, :db)
+    elseif quality_index ∈ (:dunn, Dunn, :d)
+    else
+        error(ArgumentError("Quality index $quality_index not available."))
+    end
+end
+
+clustering_quality(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEuclidean(); quality_index::Symbol) =
+    clustering_quality(X, R.centers, R.assignments, distance; quality_index = quality_index)
+
+
+function clustering_quality(
+        X::AbstractMatrix{<:Real},
+        centers::AbstractMatrix{<:Real},
+        weights::AbstractMatrix{<:Real},
+        fuzziness::Real,
+        distance::SemiMetric=SqEuclidean();
+        quality_index::Symbol
+    )
+    d, n = size(X)
+    dc, k = size(centers)
+    nw, kw = size(weights)
+
+    d == dc || throw(DimensionMismatch("Inconsistent array dimensions for `X` and `centers`."))
+    n == nw || throw(DimensionMismatch("Inconsistent data length for `X` and `weights`."))
+    k == kw || throw(DimensionMismatch("Inconsistent number of clusters for `centers` and `weights`."))
+    (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
+    k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
+    n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
+    all(>=(0), weights) || throw(ArgumentError("All weights must be larger or equal 0."))
+    1 < fuzziness || throw(ArgumentError("Fuzziness must be greater than 1 ($fuzziness given)"))
+
+
+end
+
+clustering_quality(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::Real, distance::SemiMetric=SqEuclidean(); quality_index::Symbol) =
+    clustering_quality(X, R.centers, R.weights, fuzziness, distance; quality_index)
+
+function clustering_quality(
+        assignments::AbstractVector{<:Integer},
+        dist::AbstractMatrix{<:Real};
+        quality_index::Symbol = :dunn
+    )
+    n, m = size(dist)
+    na = length(assignments)
+    n == m || throw(ArgumentError("Distance matrix must be square."))
+    n == na || throw(DimensionMismatch("Inconsistent array dimensions for distance matrix and assignments."))
+
+end
+
+
+clustering_quality(X::AbstractMatrix{<:Real}, assignments::AbstractVector{<:Integer}, distance::SemiMetric=SqEuclidean(); quality_index::Symbol = :dunn) = 
+    clustering_quality(assignments, pairwise(distance,eachcol(X)); quality_index)
+
+clustering_quality(X::AbstractMatrix{<:Real}, R::ClusteringResult, distance::SemiMetric=SqEuclidean(); quality_index::Symbol = :dunn) =
+    clustering_quality(X, R.assignments, distance; quality_index)
+
+clustering_quality(R::ClusteringResult, dist::AbstractMatrix{<:Real}; quality_index::Symbol = :dunn) = 
+    clustering_quality(R.assignments, dist; quality_index)
+
 function _check_qualityindex_arguments(
         X::AbstractMatrix{<:Real},              # data matrix (d x n)
         centers::AbstractMatrix{<:Real},        # cluster centers (d x k)
