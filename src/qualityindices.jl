@@ -182,8 +182,6 @@ function calinski_harabasz(
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
 
-calinski_harabasz(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEuclidean()) =
-calinski_harabasz(X, R.centers, R.assignments, distance)
 
 
 function calinski_harabasz(
