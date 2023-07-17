@@ -87,8 +87,10 @@ module Clustering
     include("fuzzycmeans.jl")
 
     include("counts.jl")
+
     include("silhouette.jl")
     include("qualityindices.jl")
+
     include("randindex.jl")
     include("varinfo.jl")
     include("vmeasure.jl")
