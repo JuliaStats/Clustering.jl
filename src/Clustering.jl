@@ -49,6 +49,9 @@ module Clustering
     # silhouette
     silhouettes,
 
+    # quality indices
+    clustering_quality,
+
     # varinfo
     varinfo,
 
@@ -68,10 +71,8 @@ module Clustering
     mcl, MCLResult,
 
     # pair confusion matrix
-    confusion,
+    confusion
 
-    # quality indices
-    calinski_harabasz, davies_bouldin, xie_beni, dunn
 
     ## source files
 
@@ -87,12 +88,12 @@ module Clustering
 
     include("counts.jl")
     include("silhouette.jl")
+    include("qualityindices.jl")
     include("randindex.jl")
     include("varinfo.jl")
     include("vmeasure.jl")
     include("mutualinfo.jl")
     include("confusion.jl")
-    include("qualityindices.jl")
     include("hclust.jl")
 
     include("deprecate.jl")
