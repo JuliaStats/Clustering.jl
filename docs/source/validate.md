@@ -54,6 +54,28 @@ Higher values indicate better separation of clusters w.r.t. point distances.
 silhouettes
 ```
 
+## Clustering quality indices
+
+A group of clustering evaluation metrics which are intrinsic and depend only on the clustering itself. They can be used to compare different clustering algorithms and choose the optimal number of clusters.
+
+Available methods are:
+
+### Average silhouette index
+
+The average over all silhouettes in the data set, see section **Silhouettes**
+
+### Calinski-Harabasz index
+
+### Xie-Beni index
+
+### Davis-Bouldin index
+
+### Dunn index
+
+
+```@docs
+clustering_quality
+```
 
 ## Variation of Information
 
