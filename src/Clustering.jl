@@ -89,7 +89,7 @@ module Clustering
     include("counts.jl")
 
     include("silhouette.jl")
-    include("qualityindices.jl")
+    include("clustering_quality.jl")
 
     include("randindex.jl")
     include("varinfo.jl")
