@@ -1,5 +1,4 @@
-using Plots, Clustering, Distances, Statistics
-using LinearAlgebra 
+using Plots, Clustering
 
 ## visualisation of the exemplary data
 ## there are 3 real clusters
@@ -13,6 +12,7 @@ scatter(X[1,:],X[2,:],
     label = "exemplary data points",
     xlabel = "x",
     ylabel = "y",
+    legend = :right,
 )
 
 ## hard clustering quality for number of clusters in 2:5
@@ -52,7 +52,7 @@ fuzzy_cmeans_quality =
 
 
 p = [
-    plot(2:5, [kmeans_quality[qidx] ],
+    plot(2:5, fuzzy_cmeans_quality[qidx],
         marker = :circle,
         title = string.(qidx),
         label = nothing,
