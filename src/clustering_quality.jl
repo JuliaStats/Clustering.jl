@@ -20,12 +20,10 @@ Depending on the index higher (↑) or lower (↓) value suggests better cluster
 - `:silhouettes`: average silhouette index (↑), for all silhouettes use `silhouettes` method instead
 - `:calinski_harabasz`: Calinski-Harabsz index (↑) returns corrected ratio between inertia between cluster centers and inertia within clusters
 - `:xie_beni`: Xie-Beni index (↓) returns ratio betwen inertia within clusters and minimal distance between cluster centers
-- `:davies_bouldin`: Davies-Bouldin index (↑) returns average similarity between each cluster and its most similar one, averaged over all the clusters
+- `:davies_bouldin`: Davies-Bouldin index (↓) returns average similarity between each cluster and its most similar one, averaged over all the clusters
+- `:silhouettes`: average silhouette index (↑), to obtain all silhouettes use `silhouettes` function instead, it does not make use of `centers` argument
+- `:dunn`: Dunn index (↑) returns ratio between minimal distance between clusters and maximal cluster diameter, it does not make use of `centers` argument
 
-# References
-> Peter J. Rousseeuw (1987). *Silhouettes: a Graphical Aid to the
-> Interpretation and Validation of Cluster Analysis*. Computational and
-> Applied Mathematics. 20: 53–65.
 """
 function clustering_quality(
         X::AbstractMatrix{<:Real},
@@ -42,7 +40,7 @@ function clustering_quality(
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
     for i in eachindex(assignments)
-        (assignments[i] in axes(X, 2)) || throw(ArgumentError("Bad assignments[$i]=$(assignments[i]) is not a valid index for `X`."))
+        (assignments[i] in axes(centers, 2)) || throw(ArgumentError("Bad assignments[$i]=$(assignments[i]) is not a valid index for `X`."))
     end
 
     if quality_index ∈ (:calinski_harabasz, :Calinski_Harabasz, :ch)
@@ -51,9 +49,15 @@ function clustering_quality(
         _cluquality_xie_beni(X, centers, assignments, distance)
     elseif quality_index ∈ (:davies_bouldin, :Davies_Bouldin, :db)
         _cluquality_davies_bouldin(X, centers, assignments, distance)
+    else quality_index ∈ (:davies_bouldin, :Davies_Bouldin, :db)
+    if quality_index ∈ (:silhouettes, :silhouette, :s)
+        mean(silhouettes(assignments, pairwise(distance, eachcol(X))))
+    elseif quality_index ∈ (:dunn, :Dunn, :d)
+        _cluquality_dunn(assignments, pairwise(distance, eachcol(X)))
     else
         error(ArgumentError("Quality index $quality_index not available."))
     end
+end
 end
 
 clustering_quality(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMetric=SqEuclidean(); quality_index::Symbol) =
@@ -80,10 +84,6 @@ Compute chosen quality index  value for a soft (fuzzy) clustering
  - `:calinski_harabasz`: Calinski-Harabsz index (↑) returns corrected ratio between inertia between cluster centers and inertia within clusters
  - `:xie_beni`: Xie-Beni index (↓) returns ratio betwen inertia within clusters and minimal distance between cluster centers
 
-# References
-> Peter J. Rousseeuw (1987). *Silhouettes: a Graphical Aid to the
-> Interpretation and Validation of Cluster Analysis*. Computational and
-> Applied Mathematics. 20: 53–65.
 """
 function clustering_quality(
         X::AbstractMatrix{<:Real},
@@ -120,8 +120,8 @@ clustering_quality(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::R
 
 """
 
-    clustering_quality(assignments, dist; quality_index)
-    clustering_quality(clustering, dist; quality_index)
+    clustering_quality(assignments, dist_matrix; quality_index)
+    clustering_quality(clustering, dist_matrix; quality_index)
     clustering_quality(data, assignments, [distance;] quality_index)
     clustering_quality(data, clustering, [distance;] quality_index)
 
@@ -130,8 +130,8 @@ Compute chosen quality index value for a clustering in a case cluster centres ma
 # Arguments
  - `data::AbstractMatrix`: ``d×n`` data matrix with each column representing one ``d``-dimensional data point
  - `assignments::AbstractVector{Int}`: the vector of point assignments (cluster indices)
- - `dist::AbstractMatrix`: a ``n×n`` pairwise distance matrix; ``dist_{ij}`` is the distance between ``i``-th and ``j``-th points.
- - `distance::SemiMetric=SqEuclidean()`: : `SemiMetric` object that defines the distance between the data points
+ - `dist_matrix::AbstractMatrix`: a ``n×n`` pairwise distance matrix; `dist_matrix[i,j]` is the distance between ``i``-th and ``j``-th points.
+ - `distance::SemiMetric=SqEuclidean()`:  `SemiMetric` object that defines the distance between the data points
  - `clustering::ClusteringResult`: the output of some clustering method
  - `quality_index::Symbol`: chosen quality index
 
@@ -141,10 +141,6 @@ Depending on the index higher (↑) or lower (↓) value suggests better cluster
 - `:silhouettes`: average silhouette index (↑), to obtain all silhouettes use `silhouettes` function instead
 - `:dunn`: Dunn index (↑) returns ratio between minimal distance between clusters and maximal cluster diameter
 
-# References
-> Peter J. Rousseeuw (1987). *Silhouettes: a Graphical Aid to the
-> Interpretation and Validation of Cluster Analysis*. Computational and
-> Applied Mathematics. 20: 53–65.
 """
 function clustering_quality(
         assignments::AbstractVector{<:Integer},
@@ -178,14 +174,14 @@ clustering_quality(R::ClusteringResult, dist::AbstractMatrix{<:Real}; quality_in
 
 function _gather_samples(assignments, k) # cluster_samples[j]: indices of points in cluster j
     cluster_samples = [Int[] for _ in  1:k]
-    for (i, a) in enumerate(assignments)
+    for (i, a) in zip(eachindex(assignments), assignments)
         push!(cluster_samples[a], i)
     end
     return cluster_samples
 end
 
 
-function _inner_inertia(X, centers, cluster_samples, distance) # hard clustering, shared between hard clustering calinski_harabasz and xie_beni
+function _inner_inertia(X, centers, cluster_samples, distance) # shared between hard clustering calinski_harabasz and xie_beni
     inner_inertia = sum(
         sum(colwise(distance, view(X, :, samples), center))
             for (center, samples) in zip(eachcol(centers), cluster_samples)
@@ -193,7 +189,7 @@ function _inner_inertia(X, centers, cluster_samples, distance) # hard clustering
     return inner_inertia
 end
 
-function _inner_inertia(X, centers, weights, fuzziness, distance) # soft clustering, shared between soft clustering calinski_harabasz and xie_beni
+function _inner_inertia(X, centers, weights, fuzziness, distance) # shared between soft clustering calinski_harabasz and xie_beni
     n, k = size(X, 2), size(centers, 2)
     w_idx1, w_idx2 = axes(weights)
     pointCentreDistances = pairwise(distance, eachcol(X), eachcol(centers))

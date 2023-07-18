@@ -56,21 +56,62 @@ silhouettes
 
 ## Clustering quality indices
 
-A group of clustering evaluation metrics which are intrinsic and depend only on the clustering itself. They can be used to compare different clustering algorithms and choose the optimal number of clusters.
+A group of clustering evaluation metrics which are intrinsic, i.e. depend only on the clustering itself. They can be used to compare different clustering algorithms or choose the optimal number of clusters.
 
-Available methods are:
+The data points are denoted by ``x_1,x_2,\ldots, x_n``, clusters by ``C_1,C_2,\ldots,C_k`` and their centers by ``c_j``, ``c`` is global center of the dataset, ``d`` is a given similarity (distance) function. For soft (fuzzy) clustering ``w_{ij}`` are weights measuring membership of point ``x_i`` to cluster ``C_j`` and ``m`` is the fuzziness parameter.  Arrow up (↑) or down (↓) indicate if higher or lower index values indicate better quality.
 
-### Average silhouette index
+Given this notation, available indices and their definitions are:
 
-The average over all silhouettes in the data set, see section **Silhouettes**
+### Average silhouette index (↑) 
 
-### Calinski-Harabasz index
+Option `:silhouettes`. The average over all silhouettes in the data set, see section **Silhouettes** for a more detailed description of the method.
 
-### Xie-Beni index
+### Calinski-Harabasz index (↑) 
 
-### Davis-Bouldin index
+Option `:calinski_harabasz`. Measures corrected ratio between the summed internal inertia of clusters divided by global inertia of the cluster centers. For hard clustering and soft (fuzzy) it is defined as
 
-### Dunn index
+```math
+
+\frac{n-k}{k-1}\frac{\sum_{C_j}|C_j|d(c_j,c)}{\sum\limits_{C_j}\sum\limits_{x_i\in C_j} d(x_i,c_j)} \quad \text{and}\quad 
+\frac{n-k}{k-1} \frac{\sum_{C_j}\sum_{x_i} w_{ik}^md(x_i,c_j)}{\sum\limits_{C_j}\sum\limits_{x_i}w_{ij}^m d(c_j,c)}
+```
+respectively.
+
+
+### Xie-Beni index (↓)
+Option `:xie_beni`. Measures ratio between summed inertia of clusters and minimum distance between cluster centres. For hard clustering and soft (fuzzy) clustering. It is defined as
+```math
+\frac{\sum_{C_j}\sum_{x_i\in C_j}d(x_i,c_j)}{n\min\limits_{c_{j_1}\neq c_{j_2}} d(c_{j_1},c_{j_2}) }
+\quad \text{and}\quad
+\frac{\sum_{C_j}\sum_{x_i} w_{ij}^md(x_i,c_j)}{n\min\limits_{c_{j_1}\neq c_{j_2}} d(c_{j_1},c_{j_2}) }
+```
+respectively.
+### [Davis-Bouldin index](https://en.wikipedia.org/wiki/Davies%E2%80%93Bouldin_index) (↓)
+Option `:davis_bouldin`. It measures average cohesion based on the cluster diameters and distances between cluster centers. It is defined as
+
+```math
+\frac{1}{k}\sum_{C_{j_1}}\max_{c_{j_2}\neq c_{j_1}}\frac{S(C_{j_1})+S(C_{j_2})}{d(c_{j_1},c_{j_2})}
+```
+where
+```math
+S(C_j) = \frac{1}{|C_j|}\sum_{x_i\in C_j}d(x_i,c_j).
+```
+### [Dunn index](https://en.wikipedia.org/wiki/Dunn_index) (↑) 
+Option `:dunn`. More computationally demanding index which can be used when the centres are not known. It measures ratio between the nearest neighbour distance divided by the maximum cluster diameter. It is defined as
+```math
+\frac{\min\limits_{ C_{j_1}\neq C_{j_2}} \delta(C_{j_1},C_{j_2})}{\max\limits_{C_j}\Delta(C_j)}
+```
+
+where
+```math
+\delta(C_{j_1},C_{j_2}) = \min\limits_{x_{i_1}\in C_{j_1},x_{i_2}\in C_{j_2}} d(x_{i_1},x_{i_2}),\quad \Delta(C_j) = \max\limits_{x_{i_1},x_{i_2}\in C_j} d(x_{i_1},x_{i_2}).
+```
+
+### References
+> Olatz Arbelaitz *et al.* (2013). *An extensive comparative study of cluster validity indices*. Pattern Recognition. 46 1: 243-256. [doi:10.1016/j.patcog.2012.07.021](https://doi.org/10.1016/j.patcog.2012.07.021)
+
+> Aybükë Oztürk, Stéphane Lallich, Jérôme Darmont. (2018). *A Visual Quality Index for Fuzzy C-Means*.  14th International Conference on Artificial Intelligence Applications and Innovations (AIAI 2018). 546-555. [doi:10.1007/978-3-319-92007-8_46](https://doi.org/10.1007/978-3-319-92007-8_46). 
+
 
 
 ```@docs
