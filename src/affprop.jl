@@ -254,7 +254,6 @@ function _afp_get_assignments(S::AbstractMatrix, exemplars::Vector{Int})
     k = length(exemplars)
     Se = S[:, exemplars]
     a = Vector{Int}(undef, n)
-    cnts = zeros(Int, k)
     for i = 1:n
         p = 1
         v = Se[i,1]
@@ -267,11 +266,10 @@ function _afp_get_assignments(S::AbstractMatrix, exemplars::Vector{Int})
         end
         a[i] = p
     end
-    for i = 1:k
-        a[exemplars[i]] = i
-    end
-    for i = 1:n
-        @inbounds cnts[a[i]] += 1
+    a[exemplars] = eachindex(exemplars)
+    cnts = zeros(Int, k)
+    for aa in a
+        @inbounds cnts[aa] += 1
     end
     return (a, cnts)
 end
