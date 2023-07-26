@@ -30,19 +30,21 @@ for (n, k) in ((10, 3), (100, 10), (1000, 100), (10000, 1000))
     SUITE["cutree"][(n,k)] = @benchmarkable cutree(hclu, k=$k) setup=(D=random_distance_matrix($n, 5); hclu=hclust(D, linkage=:single))
 end
 
-SUITE["silhouette"] = BenchmarkGroup()
-
-function silhouette_benchmark(a, X, nclusters)
+function silhouette_benchmark(metric, assgns, points, nclusters)
     res = BenchmarkGroup()
-    for method in (:classic, :cached)
-        res[string(method)] = @benchmarkable silhouettes($a, $X; metric=SqEuclidean(), nclusters=$nclusters, method=Symbol($method))
-    end
+    res[:distances] = @benchmarkable silhouettes($assgns, pairwise($metric, $points, $points, dims=2))
+    res[:points] = @benchmarkable silhouettes($assgns, $points; metric=$metric)
     return res
 end
 
-for (label, n) in (("n=100", 100), ("n=1,000", 1000), ("n=10,000", 10000), ("n=20,000", 20000))
-    nclusters = 10
-    dims = 3
-    X = rand(dims, n); a = rand(1:nclusters, n)
-    SUITE["silhouette"][label] = silhouette_benchmark(a, X, nclusters)
+SUITE["silhouette"] = BenchmarkGroup()
+for metric in [SqEuclidean(), Euclidean()]
+    SUITE["silhouette"]["metric=$(typeof(metric))"] = metric_bench = BenchmarkGroup()
+    for n in [100, 1000, 10000, 20000]
+        nclusters = 10
+        dims = 10
+        points = randn(dims, n)
+        assgns = rand(1:nclusters, n)
+        metric_bench["n=$n"] = silhouette_benchmark(metric, assgns, points, nclusters)
+    end
 end
