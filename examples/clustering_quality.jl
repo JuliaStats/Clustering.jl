@@ -27,7 +27,7 @@ kmeans_quality =
 
 
 p = [
-    plot(2:5, [kmeans_quality[qidx] ],
+    plot(2:5, kmeans_quality[qidx],
         marker = :circle,
         title = string.(qidx),
         label = nothing,
