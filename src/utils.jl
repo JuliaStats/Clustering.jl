@@ -77,9 +77,9 @@ function updatemin!(r::AbstractArray, x::AbstractArray)
     return r
 end
 
-function check_assignments(assignments, nclusters)
-    nclusters >= 2 || throw(ArgumentError("silhouettes() not defined for the degenerated clustering with a single cluster."))
-    for j in eachindex(assignments)
-        all(1 <= assignments[j] <= nclusters) || throw(ArgumentError("Bad assignments[$j]=$(assignments[j]): should be in 1:$nclusters range."))
+function check_assignments(assignments::AbstractVector{<:Integer}, nclusters::Union{Integer, Nothing})
+    nclu = nclusters === nothing ? maximum(assignments) : nclusters
+    for (j, c) in enumerate(assignments)
+        all(1 <= c <= nclu) || throw(ArgumentError("Bad assignments[$j]=$c: should be in 1:$nclu range."))
     end
 end
