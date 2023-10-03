@@ -76,3 +76,10 @@ function updatemin!(r::AbstractArray, x::AbstractArray)
     end
     return r
 end
+
+function check_assignments(assignments::AbstractVector{<:Integer}, nclusters::Union{Integer, Nothing})
+    nclu = nclusters === nothing ? maximum(assignments) : nclusters
+    for (j, c) in enumerate(assignments)
+        all(1 <= c <= nclu) || throw(ArgumentError("Bad assignments[$j]=$c: should be in 1:$nclu range."))
+    end
+end
