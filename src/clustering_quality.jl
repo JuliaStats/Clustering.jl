@@ -242,7 +242,7 @@ function _cluquality_calinski_harabasz(
     return (outer_intertia / (k - 1)) / (inner_intertia / (n - k))
 end
 
-# Davies-Bouldin idex 
+# Davies-Bouldin index 
 
 function _cluquality_davies_bouldin(
         X::AbstractMatrix{<:Real},
