@@ -118,13 +118,17 @@ function _affinityprop(S::AbstractMatrix{T},
 
     # extract exemplars and assignments
     exemplars = _afp_extract_exemplars(A, R)
+    if isempty(exemplars)
+        @show A R
+    end
+    @assert !isempty(exemplars)
     assignments, counts = _afp_get_assignments(S, exemplars)
 
     if displevel >= 1
         if converged
-            println("Affinity propagation converged with $t iterations: $(length(exemplars)) exemplars.")
+            @info "Affinity propagation converged with $t iterations: $(length(exemplars)) exemplars."
         else
-            println("Affinity propagation terminated without convergence after $t iterations: $(length(exemplars)) exemplars.")
+            @warn "Affinity propagation terminated without convergence after $t iterations: $(length(exemplars)) exemplars."
         end
     end
 
@@ -250,7 +254,6 @@ function _afp_get_assignments(S::AbstractMatrix, exemplars::Vector{Int})
     k = length(exemplars)
     Se = S[:, exemplars]
     a = Vector{Int}(undef, n)
-    cnts = zeros(Int, k)
     for i = 1:n
         p = 1
         v = Se[i,1]
@@ -263,11 +266,10 @@ function _afp_get_assignments(S::AbstractMatrix, exemplars::Vector{Int})
         end
         a[i] = p
     end
-    for i = 1:k
-        a[exemplars[i]] = i
-    end
-    for i = 1:n
-        @inbounds cnts[a[i]] += 1
+    a[exemplars] = eachindex(exemplars)
+    cnts = zeros(Int, k)
+    for aa in a
+        @inbounds cnts[aa] += 1
     end
     return (a, cnts)
 end

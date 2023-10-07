@@ -11,7 +11,7 @@ rng = StableRNG(42)
 struct MySqEuclidean <: SemiMetric end
 
 # redefinition of Distances.pairwise! for MySqEuclidean type
-function Distances.pairwise!(r::AbstractMatrix, dist::MySqEuclidean,
+function Distances.pairwise!(dist::MySqEuclidean, r::AbstractMatrix,
                              a::AbstractMatrix, b::AbstractMatrix; dims::Integer=2)
     dims == 2 || throw(ArgumentError("only dims=2 supported for MySqEuclidean distance"))
     mul!(r, transpose(a), b)
