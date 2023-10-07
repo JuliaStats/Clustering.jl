@@ -1,4 +1,4 @@
-"""
+#===
 Base type for efficient computation of average(mean) distances
 from the cluster centers to a given point.
 
@@ -7,7 +7,7 @@ The descendant types should implement the following methods:
     state of `dists` with point coordinates and their assignments to the clusters
   * `sumdistances(dists, points, indices)`: compute the sum of
     distances from all `dists` clusters to `points`
-"""
+===#
 abstract type ClusterDistances{T} end
 
 # create empty ClusterDistances object for a given metric

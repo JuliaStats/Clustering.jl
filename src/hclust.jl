@@ -218,7 +218,7 @@ function hclust_n3(d::AbstractMatrix, linkage::Function)
     return htre.merges
 end
 
-"""
+#===
     ReducibleMetric{T<:Real}
 
 Base type for _reducible_ Lance–Williams cluster metrics.
@@ -235,7 +235,7 @@ d(A∪B, C) > ρ
 
 If the cluster metrics belongs to Lance-Williams family, there is an efficient
 formula that defines `d(A∪B, C)` using `d(A, C)`, `d(B, C)` and `d(A, B)`.
-"""
+===#
 abstract type ReducibleMetric{T <: Real} end
 
 # due to reducibility, new_dki=d[k,i∪j] distance should not be less than
@@ -243,12 +243,12 @@ abstract type ReducibleMetric{T <: Real} end
 # arithmetic errors in Lance-Williams formula
 @inline clamp_reducible_metric(new_dki, dki, dkj) = max(new_dki, min(dki, dkj))
 
-"""
+#===
     MinimalDistance <: ReducibleMetric
 
 Distance between the clusters is the minimal distance between any pair of their
 points.
-"""
+===#
 struct MinimalDistance{T} <: ReducibleMetric{T}
     MinimalDistance(d::AbstractMatrix{T}) where T<:Real = new{T}()
 end
@@ -261,13 +261,13 @@ end
 ) where T =
     (d[k, i] > d_kj) && (d[k, i] = d_kj)
 
-"""
+#===
     WardDistance <: ReducibleMetric
 
 Ward distance between the two clusters `A` and `B` is the amount by
 which merging the two clusters into a single larger cluster `A∪B` would increase
 the average squared distance of a point to its cluster centroid.
-"""
+===#
 struct WardDistance{T} <: ReducibleMetric{T}
     WardDistance(d::AbstractMatrix{T}) where T<:Real = new{typeof(one(T)/2)}()
 end
@@ -283,11 +283,11 @@ end
                                      d_ki, d_kj)
 end
 
-"""
+#===
     AverageDistance <: ReducibleMetric
 
 Average distance between a pair of points from each clusters.
-"""
+===#
 struct AverageDistance{T} <: ReducibleMetric{T}
     AverageDistance(d::AbstractMatrix{T}) where T<:Real = new{typeof(one(T)/2)}()
 end
@@ -303,11 +303,11 @@ end
     d[k, i] = clamp_reducible_metric((ni * d_ki + nj * d_kj) / nij, d_ki, d_kj)
 end
 
-"""
+#===
     MaximumDistance <: ReducibleMetric
 
 Maximum distance between a pair of points from each clusters.
-"""
+===#
 struct MaximumDistance{T} <: ReducibleMetric{T}
     MaximumDistance(d::AbstractMatrix{T}) where T<:Real = new{T}()
 end
