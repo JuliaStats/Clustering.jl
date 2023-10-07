@@ -169,11 +169,11 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
         end
 
         if t == 1 || num_affected > 0.75 * k
-            pairwise!(dmat, distance, centers, X, dims=2)
+            pairwise!(distance, dmat, centers, X, dims=2)
         else
             # if only a small subset is affected, only compute for that subset
             affected_inds = findall(to_update)
-            pairwise!(view(dmat, affected_inds, :), distance,
+            pairwise!(distance, view(dmat, affected_inds, :),
                       view(centers, :, affected_inds), X, dims=2)
         end
 
@@ -387,7 +387,7 @@ function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix 
         tcosts[j] = 0
         v = view(X, :, j)
         centers[:, i] = v
-        colwise!(ds, distance, v, X)
+        colwise!(distance, ds, v, X)
         tcosts = min(tcosts, ds)
     end
 end

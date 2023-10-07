@@ -88,6 +88,8 @@ module Clustering
 
     include("counts.jl")
 
+    include("cluster_distances.jl")
+
     include("silhouette.jl")
     include("clustering_quality.jl")
 

@@ -16,9 +16,11 @@ include("test_helpers.jl")
         @test_throws ArgumentError affinityprop(randn(2, 2), tol=0.0)
         @test_throws ArgumentError affinityprop(randn(2, 2), damp=-0.1)
         @test_throws ArgumentError affinityprop(randn(2, 2), damp=1.0)
-        @test affinityprop(randn(2, 2), damp=0.5, tol=0.5) isa AffinityPropResult
+        x = randn(2, 4)
+        S = -pairwise(Euclidean(), x, x, dims=2)
+        @test affinityprop(S, damp=0.5, tol=0.5) isa AffinityPropResult
         for disp in keys(Clustering.DisplayLevels)
-            @test affinityprop(randn(2, 2), tol=0.1, display=disp) isa AffinityPropResult
+            @test affinityprop(S, tol=0.1, display=disp) isa AffinityPropResult
         end
     end
 
