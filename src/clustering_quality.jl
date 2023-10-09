@@ -4,7 +4,7 @@
     clustering_quality(X, centers, assignments, [distance;] quality_index)
     clustering_quality(X, kmeans_clustering, [distance;] quality_index)
 
-Compute chosen quality index value for a hard clustering.
+Compute the clustering quality index for a given clustering.
 
 # Arguments
  - `data::AbstractMatrix`: ``d×n`` data matrix with each column representing one ``d``-dimensional data point
