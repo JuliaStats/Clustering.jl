@@ -252,7 +252,7 @@ function _cluquality_davies_bouldin(
     )
 
     k = size(centers, 2)
-    c_idx = axes(centers,2)
+    c_idx = axes(centers, 2)
 
     cluster_samples = _gather_samples(assignments, k)
 
