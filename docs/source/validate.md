@@ -60,7 +60,6 @@ A group of clustering evaluation metrics which are intrinsic, i.e. depend only o
 
 The data points are denoted by ``x_1,x_2,\ldots, x_n``, clusters by ``C_1,C_2,\ldots,C_k`` and their centers by ``c_j``, ``c`` is global center of the dataset, ``d`` is a given similarity (distance) function. For soft (fuzzy) clustering ``w_{ij}`` are weights measuring membership of point ``x_i`` to cluster ``C_j`` and ``m`` is the fuzziness parameter.  Arrow up (↑) or down (↓) indicate if higher or lower index values indicate better quality.
 
-Given this notation, available indices and their definitions are:
 
 ### Average silhouette index (↑) 
 

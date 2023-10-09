@@ -14,11 +14,12 @@ Compute the clustering quality index for a given clustering.
  - `distance::SemiMetric=SqEuclidean()`: `SemiMetric` object that defines the distance between the data points
  - `quality_index::Symbol`: quality index to calculate; see below for the supported options
 
-# Available quality indices:
-Depending on the index higher (↑) or lower (↓) value suggests better clustering quality.
+# Supported quality indices
 
-- `:silhouettes`: average silhouette index (↑), for all silhouettes use `silhouettes` method instead
-- `:calinski_harabasz`: Calinski-Harabsz index (↑) returns corrected ratio between inertia between cluster centers and inertia within clusters
+Please refer to the [documentation](@ref clustering_quality) for the extended description of the quality indices.
+
+- `:silhouettes`: average silhouette index, for all silhouettes use [`silhouettes`](@ref) method instead
+- `:calinski_harabasz`: Calinski-Harabsz index, the corrected ratio of inertia between cluster centers and within-clusters inertia
 - `:xie_beni`: Xie-Beni index (↓) returns ratio betwen inertia within clusters and minimal distance between cluster centers
 - `:davies_bouldin`: Davies-Bouldin index (↓) returns average similarity between each cluster and its most similar one, averaged over all the clusters
 - `:silhouettes`: average silhouette index (↑), to obtain all silhouettes use `silhouettes` function instead, it does not make use of `centers` argument
@@ -43,7 +44,7 @@ function clustering_quality(
         (assignments[i] in axes(centers, 2)) || throw(ArgumentError("Bad assignments[$i]=$(assignments[i]) is not a valid index for `X`."))
     end
 
-    if quality_index ∈ (:calinski_harabasz, :Calinski_Harabasz, :ch)
+    if quality_index == :calinski_harabasz
         _cluquality_calinski_harabasz(X, centers, assignments, distance)
     elseif quality_index ∈ (:xie_beni, :Xie_Beni, :xb)
         _cluquality_xie_beni(X, centers, assignments, distance)
@@ -106,7 +107,7 @@ function clustering_quality(
     all(>=(0), weights) || throw(ArgumentError("All weights must be larger or equal 0."))
     1 < fuzziness || throw(ArgumentError("Fuzziness must be greater than 1 ($fuzziness given)"))
 
-    if quality_index ∈ (:calinski_harabasz, :Calinski_Harabasz, :ch)
+    if quality_index == :calinski_harabasz
         _cluquality_calinski_harabasz(X, centers, weights, fuzziness, distance)
     elseif quality_index ∈ (:xie_beni, :Xie_Beni, :xb)
         _cluquality_xie_beni(X, centers, weights, fuzziness, distance)
@@ -152,7 +153,7 @@ function clustering_quality(
     n == m || throw(ArgumentError("Distance matrix must be square."))
     n == na || throw(DimensionMismatch("Inconsistent array dimensions for distance matrix and assignments."))
 
-    if quality_index ∈ (:silhouettes, :silhouette, :s)
+    if quality_index == :silhouettes
         mean(silhouettes(assignments, dist))
     elseif quality_index ∈ (:dunn, :Dunn, :d)
         _cluquality_dunn(assignments, dist)
@@ -228,7 +229,7 @@ function _cluquality_calinski_harabasz(
         distance::SemiMetric=SqEuclidean()
     )
 
-    n, k = size(X, 2), size(centers,2)
+    n, k = size(X, 2), size(centers, 2)
     w_idx1, w_idx2 = axes(weights)
 
     global_center = vec(mean(X, dims=2))
