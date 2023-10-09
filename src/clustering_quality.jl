@@ -11,7 +11,7 @@ Compute chosen quality index value for a hard clustering.
  - `centers::AbstractMatrix`: ``d×k`` matrix with cluster centers represented as columns
  - `assignments::AbstractVector{Int}`: ``n`` vector of point assignments (cluster indices)
  - `kmeans_clustering::KmeansResult`: the output of kmeans method
- - `distance::SemiMetric=SqEuclidean()`: : `SemiMetric` object that defines the distance between the data points
+ - `distance::SemiMetric=SqEuclidean()`: `SemiMetric` object that defines the distance between the data points
  - `quality_index::Symbol`: chosen quality index
 
 # Available quality indices:
