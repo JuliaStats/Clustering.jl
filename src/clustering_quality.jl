@@ -55,7 +55,7 @@ function clustering_quality(
     elseif quality_index ∈ (:dunn, :Dunn, :d)
         _cluquality_dunn(assignments, pairwise(distance, eachcol(X)))
     else
-        error(ArgumentError("Quality index $quality_index not available."))
+        throw(ArgumentError("Quality index $quality_index not supported."))
     end
 end
 end
