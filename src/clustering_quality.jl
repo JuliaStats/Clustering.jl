@@ -46,14 +46,14 @@ function clustering_quality(
 
     if quality_index == :calinski_harabasz
         _cluquality_calinski_harabasz(X, centers, assignments, distance)
-    elseif quality_index ∈ (:xie_beni, :Xie_Beni, :xb)
+    elseif quality_index == :xie_beni
         _cluquality_xie_beni(X, centers, assignments, distance)
-    elseif quality_index ∈ (:davies_bouldin, :Davies_Bouldin, :db)
+    elseif quality_index == :davies_bouldin
         _cluquality_davies_bouldin(X, centers, assignments, distance)
-    else quality_index ∈ (:davies_bouldin, :Davies_Bouldin, :db)
-    if quality_index ∈ (:silhouettes, :silhouette, :s)
+    else quality_index == :davies_bouldin
+    if quality_index == :silhouettes
         mean(silhouettes(assignments, pairwise(distance, eachcol(X))))
-    elseif quality_index ∈ (:dunn, :Dunn, :d)
+    elseif quality_index == :dunn 
         _cluquality_dunn(assignments, pairwise(distance, eachcol(X)))
     else
         throw(ArgumentError("Quality index $quality_index not supported."))
@@ -155,7 +155,7 @@ function clustering_quality(
 
     if quality_index == :silhouettes
         mean(silhouettes(assignments, dist))
-    elseif quality_index ∈ (:dunn, :Dunn, :d)
+    elseif quality_index == :dunn
         _cluquality_dunn(assignments, dist)
     else
         error(ArgumentError("Quality index $quality_index not available."))
