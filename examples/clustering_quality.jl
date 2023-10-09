@@ -18,7 +18,7 @@ scatter(X[1,:],X[2,:],
 ## hard clustering quality for number of clusters in 2:5
 
 clusterings = kmeans.(Ref(X), 2:5)
-hard_indices = [:silhouette, :calinski_harabasz, :xie_beni, :davies_bouldin, :dunn]
+hard_indices = [:silhouettes, :calinski_harabasz, :xie_beni, :davies_bouldin, :dunn]
 
 kmeans_quality = 
     Dict(qidx => clustering_quality.(Ref(X), clusterings, quality_index = qidx)
