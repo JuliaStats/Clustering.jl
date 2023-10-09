@@ -111,7 +111,7 @@ function clustering_quality(
     elseif quality_index ∈ (:xie_beni, :Xie_Beni, :xb)
         _cluquality_xie_beni(X, centers, weights, fuzziness, distance)
     else
-        error(ArgumentError("Quality index $quality_index not available."))
+        throw(ArgumentError("Quality index $quality_index not supported."))
     end
 end
 
