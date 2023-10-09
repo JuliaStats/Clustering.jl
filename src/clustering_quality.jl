@@ -239,7 +239,7 @@ function _cluquality_calinski_harabasz(
 
     inner_intertia = _inner_inertia(X, centers, weights, fuzziness, distance)
 
-    return (outer_intertia / (k - 1)) / (inner_intertia / (n - k))
+    return (outer_intertia / inner_inertia) * (n - k) / (k - 1)
 end
 
 # Davies-Bouldin idex 
