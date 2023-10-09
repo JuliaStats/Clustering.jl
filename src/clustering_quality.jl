@@ -12,7 +12,7 @@ Compute chosen quality index value for a hard clustering.
  - `assignments::AbstractVector{Int}`: ``n`` vector of point assignments (cluster indices)
  - `kmeans_clustering::KmeansResult`: the output of kmeans method
  - `distance::SemiMetric=SqEuclidean()`: `SemiMetric` object that defines the distance between the data points
- - `quality_index::Symbol`: chosen quality index
+ - `quality_index::Symbol`: quality index to calculate; see below for the supported options
 
 # Available quality indices:
 Depending on the index higher (↑) or lower (↓) value suggests better clustering quality.
