@@ -123,8 +123,8 @@ clustering_quality(X::AbstractMatrix{<:Real}, R::FuzzyCMeansResult, fuzziness::R
 
     clustering_quality(assignments, dist_matrix; quality_index)
     clustering_quality(clustering, dist_matrix; quality_index)
-    clustering_quality(data, assignments, [distance;] quality_index)
-    clustering_quality(data, clustering, [distance;] quality_index)
+    clustering_quality(data, assignments; quality_index, [metric])
+    clustering_quality(data, clustering; quality_index, [metric])
 
 Compute chosen quality index value for a clustering in a case cluster centres may be not known. 
 
