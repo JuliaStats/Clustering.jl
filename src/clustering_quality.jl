@@ -1,13 +1,13 @@
 
 
 """
-    clustering_quality(X, centers, assignments, [distance;] quality_index)
-    clustering_quality(X, kmeans_clustering, [distance;] quality_index)
+    clustering_quality(X, centers, assignments; quality_index, [metric])
+    clustering_quality(data, clustering; quality_index, [metric])
 
 Compute the clustering quality index for a given clustering.
 
 # Arguments
- - `data::AbstractMatrix`: ``d×n`` data matrix with each column representing one ``d``-dimensional data point
+ - `data::AbstractMatrix`: ``d×n`` data matrix with each column representing one ``d``-dimensional data point if `metric` is provided; otherwise ``n×n`` matrix of distances between the points
  - `centers::AbstractMatrix`: ``d×k`` matrix with cluster centers represented as columns
  - `assignments::AbstractVector{Int}`: ``n`` vector of point assignments (cluster indices)
  - `clustering::ClusteringResult`: the output of the clustering method
@@ -65,8 +65,8 @@ clustering_quality(X::AbstractMatrix{<:Real}, R::KmeansResult, distance::SemiMet
     clustering_quality(X, R.centers, R.assignments, distance; quality_index = quality_index)
 
 """
-    clustering_quality(X, centers, weights, fuzziness, [distance;] quality_index)
-    clustering_quality(X, fuzzy_cmeans_clustering, fuzziness, [distance;] quality_index)
+    clustering_quality(data, centers, weights; quality_index, fuzziness, [metric])
+    clustering_quality(data, clustering; quality_index, fuzziness, [metric])
 
 Compute chosen quality index  value for a soft (fuzzy) clustering 
 
