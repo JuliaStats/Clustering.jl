@@ -44,15 +44,15 @@ using OffsetArrays
     end
 
     @testset "correct index values" begin
-        @test clustering_quality(Y', C', A, Euclidean(), quality_index = :calinski_harabasz) ≈ (32/3) / (16/8)
-        @test clustering_quality(Y', C', W, 2, Euclidean(), quality_index = :calinski_harabasz) ≈ (32/3) / (16/8)
+        @test clustering_quality(Y', C', A; quality_index = :calinski_harabasz, metric = Euclidean()) ≈ (32/3) / (16/8)
+        @test clustering_quality(Y', C', W; quality_index = :calinski_harabasz, fuzziness = 2, metric = Euclidean()) ≈ (32/3) / (16/8)
 
-        @test clustering_quality(Y', C', A, Euclidean(), quality_index = :davies_bouldin) ≈ 3/2√5
+        @test clustering_quality(Y', C', A; quality_index = :davies_bouldin, metric = Euclidean()) ≈ 3/2√5
 
-        @test clustering_quality(Y', C', A, Euclidean(), quality_index = :xie_beni) ≈ 1/3
-        @test clustering_quality(Y', C', W, 2, Euclidean(), quality_index = :xie_beni) ≈ 1/3
+        @test clustering_quality(Y', C', A; quality_index = :xie_beni, metric = Euclidean()) ≈ 1/3
+        @test clustering_quality(Y', C', W; quality_index = :xie_beni, fuzziness = 2, metric = Euclidean()) ≈ 1/3
 
-        @test clustering_quality(Y', A, Euclidean(), quality_index = :dunn) ≈ 1/2
+        @test clustering_quality(Y', A; quality_index = :dunn, metric = Euclidean()) ≈ 1/2
     end
 
 end
