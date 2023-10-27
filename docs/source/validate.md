@@ -46,8 +46,8 @@ s_i = \frac{b_i - a_i}{\max(a_i, b_i)}, \ \text{where}
    from the ``i``-th point to the points in the ``k``-th cluster.
 
 Note that ``s_i \le 1``, and that ``s_i`` is close to ``1`` when the ``i``-th
-point lies well within its own cluster. This property allows using
-`mean(silhouettes(assignments, counts, X))` as a measure of clustering quality.
+point lies well within its own cluster. This property allows using average silhouette value
+`mean(silhouettes(assignments, counts, X))` as a measure of clustering quality; it is also available using `clustering_quality(...; quality_index = :silhouettes)` method.
 Higher values indicate better separation of clusters w.r.t. point distances.
 
 ```@docs
@@ -58,35 +58,52 @@ silhouettes
 
 A group of clustering evaluation metrics which are intrinsic, i.e. depend only on the clustering itself. They can be used to compare different clustering algorithms or choose the optimal number of clusters.
 
-The data points are denoted by ``x_1,x_2,\ldots, x_n``, clusters by ``C_1,C_2,\ldots,C_k`` and their centers by ``c_j``, ``c`` is global center of the dataset, ``d`` is a given similarity (distance) function. For soft (fuzzy) clustering ``w_{ij}`` are weights measuring membership of point ``x_i`` to cluster ``C_j`` and ``m`` is the fuzziness parameter.  Arrow up (↑) or down (↓) indicate if higher or lower index values indicate better quality.
 
 
-### Average silhouette index (↑) 
+|   **index name**  |   **quality_index**  |  **type**  | **direction** | **cluster centers** |
+|:-----------------:|:--------------------:|:----------:|:-------------:|:-------------------:|
+| Calinski-Harabasz | `:calinsky_harabasz` | hard/fuzzy |       up      |       required      |
+|      Xie-Beni     |      `:xie_beni`     | hard/fuzzy |      down     |       required      |
+|   Davis-Bouldin   |   `:davis_bouldin`   |    hard    |      down     |       required      |
+|        Dunn       |        `:dunn`       |    hard    |       up      |     not required    |
+|    silhouettes    |    `:silhouettes`    |    hard    |       up      |     not required    |
 
-Option `:silhouettes`. The average over all silhouettes in the data set, see section **Silhouettes** for a more detailed description of the method.
 
-### Calinski-Harabasz index (↑) 
+```@docs
+Clustering.clustering_quality
+```
 
-Option `:calinski_harabasz`. Measures corrected ratio between the summed internal inertia of clusters divided by global inertia of the cluster centers. For hard clustering and soft (fuzzy) it is defined as
+Notation for the index definitions below:
+- ``x_1,x_2,\ldots, x_n``: data points,
+- ``C_1,C_2,\ldots,C_k``: clusters,
+- ``c_j`` and ``c``: cluster centers and global dataset center,
+- ``d``: a similarity (distance) function, 
+- ``w_{ij}``: weights measuring membership of a point ``x_i`` to a cluster ``C_j``,
+- ``\alpha``:  a fuzziness parameter.
+
+### Calinski-Harabasz index
+
+Option `:calinski_harabasz`. Higher values indicate better quality. Measures corrected ratio between global inertia of the cluster centers and the summed internal inertias of clusters. For hard and fuzzy (soft) clustering it is defined as
 
 ```math
 
 \frac{n-k}{k-1}\frac{\sum_{C_j}|C_j|d(c_j,c)}{\sum\limits_{C_j}\sum\limits_{x_i\in C_j} d(x_i,c_j)} \quad \text{and}\quad 
-\frac{n-k}{k-1} \frac{\sum_{C_j}\sum_{x_i} w_{ik}^md(x_i,c_j)}{\sum\limits_{C_j}\sum\limits_{x_i}w_{ij}^m d(c_j,c)}
+\frac{n-k}{k-1} \frac{\sum_{C_j} \sum_{x_i} w_{ik}^\alpha d(x_i,c_j)}{\sum\limits_{C_j}\sum\limits_{x_i}w_{ij}^\alpha d(c_j,c)}
 ```
 respectively.
 
 
-### Xie-Beni index (↓)
-Option `:xie_beni`. Measures ratio between summed inertia of clusters and minimum distance between cluster centres. For hard clustering and soft (fuzzy) clustering. It is defined as
+### Xie-Beni index
+Option `:xie_beni`. Lower values indicate better quality. Measures ratio between summed inertia of clusters and minimum distance between cluster centres. For hard clustering and fuzzy (soft) clustering. It is defined as
 ```math
 \frac{\sum_{C_j}\sum_{x_i\in C_j}d(x_i,c_j)}{n\min\limits_{c_{j_1}\neq c_{j_2}} d(c_{j_1},c_{j_2}) }
 \quad \text{and}\quad
-\frac{\sum_{C_j}\sum_{x_i} w_{ij}^md(x_i,c_j)}{n\min\limits_{c_{j_1}\neq c_{j_2}} d(c_{j_1},c_{j_2}) }
+\frac{\sum_{C_j}\sum_{x_i} w_{ij}^\alpha d(x_i,c_j)}{n\min\limits_{c_{j_1}\neq c_{j_2}} d(c_{j_1},c_{j_2}) }
 ```
 respectively.
-### [Davis-Bouldin index](https://en.wikipedia.org/wiki/Davies%E2%80%93Bouldin_index) (↓)
-Option `:davis_bouldin`. It measures average cohesion based on the cluster diameters and distances between cluster centers. It is defined as
+
+### [Davis-Bouldin index](https://en.wikipedia.org/wiki/Davies%E2%80%93Bouldin_index)
+Option `:davis_bouldin`. Lower values indicate better quality. It measures average cohesion based on the cluster diameters and distances between cluster centers. It is defined as
 
 ```math
 \frac{1}{k}\sum_{C_{j_1}}\max_{c_{j_2}\neq c_{j_1}}\frac{S(C_{j_1})+S(C_{j_2})}{d(c_{j_1},c_{j_2})}
@@ -95,16 +112,21 @@ where
 ```math
 S(C_j) = \frac{1}{|C_j|}\sum_{x_i\in C_j}d(x_i,c_j).
 ```
-### [Dunn index](https://en.wikipedia.org/wiki/Dunn_index) (↑) 
-Option `:dunn`. More computationally demanding index which can be used when the centres are not known. It measures ratio between the nearest neighbour distance divided by the maximum cluster diameter. It is defined as
+### [Dunn index](https://en.wikipedia.org/wiki/Dunn_index)
+Option `:dunn`. Higher values indicate better quality. More computationally demanding index which can be used when the centres are not known. It measures ratio between the nearest neighbour distance divided by the maximum cluster diameter. It is defined as
 ```math
-\frac{\min\limits_{ C_{j_1}\neq C_{j_2}} \delta(C_{j_1},C_{j_2})}{\max\limits_{C_j}\Delta(C_j)}
+\frac{\min\limits_{ C_{j_1}\neq C_{j_2}} \mathrm{dist}(C_{j_1},C_{j_2})}{\max\limits_{C_j}\mathrm{diam}(C_j)}
 ```
-
 where
 ```math
-\delta(C_{j_1},C_{j_2}) = \min\limits_{x_{i_1}\in C_{j_1},x_{i_2}\in C_{j_2}} d(x_{i_1},x_{i_2}),\quad \Delta(C_j) = \max\limits_{x_{i_1},x_{i_2}\in C_j} d(x_{i_1},x_{i_2}).
+\mathrm{dist}(C_{j_1},C_{j_2}) = \min\limits_{x_{i_1}\in C_{j_1},x_{i_2}\in C_{j_2}} d(x_{i_1},x_{i_2}),\quad \mathrm{diam}(C_j) = \max\limits_{x_{i_1},x_{i_2}\in C_j} d(x_{i_1},x_{i_2}).
 ```
+
+
+### Average silhouette index
+
+Option `:silhouettes`. Higher values indicate better quality. It returns the average over silhouette values in the whole data set. See section [Silhouettes](#silhouettes) for a more detailed description of the method.
+
 
 ### References
 > Olatz Arbelaitz *et al.* (2013). *An extensive comparative study of cluster validity indices*. Pattern Recognition. 46 1: 243-256. [doi:10.1016/j.patcog.2012.07.021](https://doi.org/10.1016/j.patcog.2012.07.021)
@@ -113,7 +135,7 @@ where
 
 ### Examples
 
-Exemplary data with 3 clusters. 
+Exemplary data with 3 real clusters. 
 ```@example
 using Plots, Clustering
 X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
@@ -129,7 +151,7 @@ scatter(X[1,:],X[2,:],
 )
 ```
 
-Hard clustering quality for number of clusters in `2:5`
+Hard clustering quality for K-means method number of clusters in `2:5`
 
 ```@example 
 using Plots, Clustering
@@ -138,7 +160,7 @@ X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
          [-4., -9.] .+ 1 * randn(2, 5))
 
 clusterings = kmeans.(Ref(X), 2:5)
-hard_indices = [:silhouette, :calinski_harabasz, :xie_beni, :davies_bouldin, :dunn]
+hard_indices = [:silhouettes, :calinski_harabasz, :xie_beni, :davies_bouldin, :dunn]
 
 kmeans_quality = 
     Dict(qidx => clustering_quality.(Ref(X), clusterings, quality_index = qidx)
@@ -159,7 +181,7 @@ plot(p...,
 )
 ```
 
-Soft clustering quality for number of clusters in `2:5`
+Fuzzy clustering quality for fuzzy C-means method with number of clusters in `2:5`
 ```@example
 using Plots, Clustering
 X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
@@ -167,12 +189,12 @@ X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
          [-4., -9.] .+ 1 * randn(2, 5))
 
 fuzziness = 2
-soft_indices = [:calinski_harabasz, :xie_beni]
+fuzzy_indices = [:calinski_harabasz, :xie_beni]
 fuzzy_clusterings = fuzzy_cmeans.(Ref(X), 2:5, fuzziness)
 
 fuzzy_cmeans_quality = 
-    Dict(qidx => clustering_quality.(Ref(X), fuzzy_clusterings, fuzziness, quality_index = qidx)
-        for qidx in soft_indices
+    Dict(qidx => clustering_quality.(Ref(X), fuzzy_clusterings, fuzziness = fuzziness, quality_index = qidx)
+        for qidx in fuzzy_indices
     )
 
 
@@ -182,17 +204,13 @@ p = [
         title = string.(qidx),
         label = nothing,
     )
-        for qidx in soft_indices
+        for qidx in fuzzy_indices
 ]
 plot(p...,
     layout = (2,1),
     plot_title = "Quality indices for various number of clusters"
 )
 
-```
-
-```@docs
-clustering_quality
 ```
 
 ## Variation of Information
@@ -204,7 +222,7 @@ information*, but it is a true metric, *i.e.* it is symmetric and satisfies
 the triangle inequality.
 
 ```@docs
-varinfo
+Clustering.varinfo
 ```
 
 

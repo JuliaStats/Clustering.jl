@@ -1,3 +1,8 @@
 doc/build
 Manifest.toml
 *.swp
+.vscode/settings.json
+docs/build/
+docs/build/assets/
+Project.toml
+*.html
