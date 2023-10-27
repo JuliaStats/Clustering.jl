@@ -1,8 +1,5 @@
 doc/build
 Manifest.toml
 *.swp
-.vscode/settings.json
+.vscode
 docs/build/
-docs/build/assets/
-Project.toml
-*.html
