@@ -46,7 +46,7 @@ soft_indices = [:calinski_harabasz, :xie_beni]
 fuzzy_clusterings = fuzzy_cmeans.(Ref(X), 2:5, fuzziness)
 
 fuzzy_cmeans_quality = 
-    Dict(qidx => clustering_quality.(Ref(X), fuzzy_clusterings, fuzziness, quality_index = qidx)
+    Dict(qidx => clustering_quality.(Ref(X), fuzzy_clusterings, fuzziness = fuzziness, quality_index = qidx)
         for qidx in soft_indices
     )
 
