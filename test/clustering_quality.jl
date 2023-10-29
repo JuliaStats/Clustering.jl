@@ -46,7 +46,7 @@ using Clustering, Distances
         @test clustering_quality(Y', C', A; quality_index = :calinski_harabasz, metric = Euclidean()) ≈ (32/3) / (16/8)
         @test clustering_quality(Y', C', W; quality_index = :calinski_harabasz, fuzziness = 2, metric = Euclidean()) ≈ (32/3) / (16/8)
 
-        @test clustering_quality(Y', C', A; quality_index = :davies_bouldin, metric = Euclidean()) ≈ 3/2 sqrt(5)
+        @test clustering_quality(Y', C', A; quality_index = :davies_bouldin, metric = Euclidean()) ≈ 3/sqrt(20)
 
         @test clustering_quality(Y', C', A; quality_index = :xie_beni, metric = Euclidean()) ≈ 1/3
         @test clustering_quality(Y', C', W; quality_index = :xie_beni, fuzziness = 2, metric = Euclidean()) ≈ 1/3
