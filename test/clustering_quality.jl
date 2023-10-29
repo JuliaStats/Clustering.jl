@@ -1,6 +1,5 @@
 using Test
 using Clustering, Distances
-using OffsetArrays
 
 @testset "clustering_quality()" begin
 
