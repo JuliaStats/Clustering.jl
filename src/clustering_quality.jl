@@ -113,7 +113,7 @@ function clustering_quality(
 
     if quality_index == :calinski_harabasz
         _cluquality_calinski_harabasz(data, centers, weights, fuzziness, metric)
-    elseif quality_index ∈ (:xie_beni, :Xie_Beni, :xb)
+    elseif quality_index == :xie_beni
         _cluquality_xie_beni(data, centers, weights, fuzziness, metric)
     else
         throw(ArgumentError("Quality index $quality_index not supported."))
