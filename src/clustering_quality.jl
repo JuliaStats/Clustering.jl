@@ -177,13 +177,14 @@ function _inner_inertia(data, centers, cluster_samples, metric) # shared between
     return inner_inertia
 end
 
-function _inner_inertia(data, centers, weights, fuzziness, metric) # shared between soft clustering calinski_harabasz and xie_beni
-    n, k = size(data, 2), size(centers, 2)
-    w_idx1, w_idx2 = axes(weights)
+function _inner_inertia(data, centers, weights, fuzziness, metric) # shared between fuzzy clustering calinski_harabasz and xie_beni
+
     pointCentreDistances = pairwise(metric, eachcol(data), eachcol(centers))
+
     inner_inertia = sum(
-        weights[i₁,j₁]^fuzziness * pointCentreDistances[i₂,j₂] for (i₁,i₂) in zip(w_idx1,1:n), (j₁,j₂) in zip(w_idx2, 1:k)
+        w^fuzziness * d for (w, d) in zip(weights, pointCentreDistances) 
     )
+
     return inner_inertia
 end
 
@@ -298,19 +299,19 @@ end
 
 function _cluquality_dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Real})
 
-    k = maximum(assignments)
-
-    cluster_samples = _gather_samples(assignments, k)
-
-    min_outer_distance = minimum(
-        minimum(view(dist, cluster_samples[j₁], cluster_samples[j₂]), init = typemax(eltype(dist)))
-            for j₁ in 1:k for j₂ in j₁+1:k
-    )
-
-    max_inner_distance = maximum(
-        maximum(dist[i₁,i₂] for i₁ in sample, i₂ in sample, init = typemin(eltype(dist)))
-            for sample in cluster_samples
-    )
+    max_inner_distance, min_outer_distance = typemin(eltype(dist)), typemax(eltype(dist))
     
+    for i in eachindex(assignments), j in (i + 1):lastindex(assignments)
+        d = dist[i,j]
+        if assignments[i] == assignments[j]
+            if max_inner_distance < d
+                max_inner_distance = d
+            end
+        else
+            if min_outer_distance > d
+                min_outer_distance = d
+            end
+        end
+    end
     return min_outer_distance / max_inner_distance
 end
