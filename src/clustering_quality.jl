@@ -75,15 +75,13 @@ function clustering_quality(
         _cluquality_xie_beni(data, centers, assignments, metric)
     elseif quality_index == :davies_bouldin
         _cluquality_davies_bouldin(data, centers, assignments, metric)
-    else quality_index == :davies_bouldin
-    if quality_index == :silhouettes
-        mean(silhouettes(assignments, pairwise(metric, eachcol(data))))
+    elseif quality_index == :silhouettes
+        mean(silhouettes(assignments, pairwise(metric, data, dims=2)))
     elseif quality_index == :dunn 
-        _cluquality_dunn(assignments, pairwise(metric, eachcol(data)))
+        _cluquality_dunn(assignments, pairwise(metric, data, dims=2))
     else
         throw(ArgumentError("Quality index $quality_index not supported."))
     end
-end
 end
 
 clustering_quality(data::AbstractMatrix{<:Real}, R::KmeansResult; quality_index::Symbol, metric::SemiMetric=SqEuclidean()) =
@@ -115,7 +113,7 @@ function clustering_quality(
 
     if quality_index == :calinski_harabasz
         _cluquality_calinski_harabasz(data, centers, weights, fuzziness, metric)
-    elseif quality_index ∈ (:xie_beni, :Xie_Beni, :xb)
+    elseif quality_index == :xie_beni
         _cluquality_xie_beni(data, centers, weights, fuzziness, metric)
     else
         throw(ArgumentError("Quality index $quality_index not supported."))
@@ -149,10 +147,10 @@ end
 
 
 clustering_quality(data::AbstractMatrix{<:Real}, assignments::AbstractVector{<:Integer}; quality_index::Symbol, metric::SemiMetric=SqEuclidean()) = 
-    clustering_quality(assignments, pairwise(metric,eachcol(data)); quality_index = quality_index)
+    clustering_quality(assignments, pairwise(metric, data, dims=2); quality_index = quality_index)
 
 clustering_quality(data::AbstractMatrix{<:Real}, R::ClusteringResult;  quality_index::Symbol, metric::SemiMetric=SqEuclidean()) =
-    clustering_quality(R.assignments, pairwise(metric,eachcol(data)); quality_index = quality_index)
+    clustering_quality(R.assignments, pairwise(metric, data, dims=2); quality_index = quality_index)
 
 clustering_quality(R::ClusteringResult, dist::AbstractMatrix{<:Real}; quality_index::Symbol) = 
     clustering_quality(R.assignments, dist; quality_index = quality_index)
@@ -177,14 +175,13 @@ function _inner_inertia(data, centers, cluster_samples, metric) # shared between
     return inner_inertia
 end
 
-function _inner_inertia(data, centers, weights, fuzziness, metric) # shared between fuzzy clustering calinski_harabasz and xie_beni
-
-    pointCentreDistances = pairwise(metric, eachcol(data), eachcol(centers))
-
+# shared between fuzzy clustering calinski_harabasz and xie_beni (fuzzy version)
+function _inner_inertia(metric::SemiMetric, data::AbstractMatrix, centers::AbstractMatrix,
+                        weights::AbstractMatrix, fuzziness::Real)
+    pointCentreDistances = pairwise(metric, data, centers, dims=2)
     inner_inertia = sum(
         w^fuzziness * d for (w, d) in zip(weights, pointCentreDistances) 
     )
-
     return inner_inertia
 end
 
@@ -288,7 +285,7 @@ function _cluquality_xie_beni(
 
     inner_intertia = _inner_inertia(data, centers, weights, fuzziness, metric)
 
-    center_distances = pairwise(metric, eachcol(centers))
+    center_distances = pairwise(metric, centers, dims=2)
     min_center_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
 
     return inner_intertia / (n * min_center_distance)
