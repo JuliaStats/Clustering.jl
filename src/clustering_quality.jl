@@ -175,14 +175,13 @@ function _inner_inertia(data, centers, cluster_samples, metric) # shared between
     return inner_inertia
 end
 
-function _inner_inertia(data, centers, weights, fuzziness, metric) # shared between fuzzy clustering calinski_harabasz and xie_beni
-
+# shared between fuzzy clustering calinski_harabasz and xie_beni (fuzzy version)
+function _inner_inertia(metric::SemiMetric, data::AbstractMatrix, centers::AbstractMatrix,
+                        weights::AbstractMatrix, fuzziness::Real)
     pointCentreDistances = pairwise(metric, data, centers, dims=2)
-
     inner_inertia = sum(
         w^fuzziness * d for (w, d) in zip(weights, pointCentreDistances) 
     )
-
     return inner_inertia
 end
 
