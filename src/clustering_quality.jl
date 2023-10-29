@@ -75,15 +75,13 @@ function clustering_quality(
         _cluquality_xie_beni(data, centers, assignments, metric)
     elseif quality_index == :davies_bouldin
         _cluquality_davies_bouldin(data, centers, assignments, metric)
-    else quality_index == :davies_bouldin
-    if quality_index == :silhouettes
+    elseif quality_index == :silhouettes
         mean(silhouettes(assignments, pairwise(metric, eachcol(data))))
     elseif quality_index == :dunn 
         _cluquality_dunn(assignments, pairwise(metric, eachcol(data)))
     else
         throw(ArgumentError("Quality index $quality_index not supported."))
     end
-end
 end
 
 clustering_quality(data::AbstractMatrix{<:Real}, R::KmeansResult; quality_index::Symbol, metric::SemiMetric=SqEuclidean()) =
