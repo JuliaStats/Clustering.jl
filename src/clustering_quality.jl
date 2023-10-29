@@ -218,17 +218,17 @@ function _cluquality_calinski_harabasz(
     )
 
     n, k = size(data, 2), size(centers, 2)
-    w_idx1, w_idx2 = axes(weights)
 
     global_center = vec(mean(data, dims=2))
     center_distances = colwise(metric, centers, global_center)
-    outer_intertia = sum(
-        weights[i,j₁]^fuzziness * center_distances[j₂] for i in w_idx1, (j₁,j₂) in zip(w_idx2, 1:k)
-    )
 
+    outer_inertia = 
+        sum(sum(w^fuzziness for w in w_col) * d
+            for (w_col, d) in zip(eachcol(weights), center_distances)
+        )
     inner_inertia = _inner_inertia(data, centers, weights, fuzziness, metric)
 
-    return (outer_intertia / inner_inertia) * (n - k) / (k - 1)
+    return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
 
 # Davies-Bouldin index 
