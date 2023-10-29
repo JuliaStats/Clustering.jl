@@ -167,13 +167,10 @@ function _gather_samples(assignments, k) # cluster_samples[j]: indices of points
 end
 
 
-function _inner_inertia(data, centers, cluster_samples, metric) # shared between hard clustering calinski_harabasz and xie_beni
-    inner_inertia = sum(
-        sum(colwise(metric, view(data, :, samples), center))
-            for (center, samples) in zip(eachcol(centers), cluster_samples)
-    )
-    return inner_inertia
-end
+# shared between calinski_harabasz and xie_beni (hard version)
+_inner_inertia(metric::SemiMetric, data::AbstractMatrix, centers::AbstractMatrix,
+               assignments::AbstractVector{<:Integer}) =
+    sum(metric(view(data, :, i), view(center, :, clu)) for (i, clu) in enumerate(assignments))
 
 # shared between fuzzy clustering calinski_harabasz and xie_beni (fuzzy version)
 function _inner_inertia(metric::SemiMetric, data::AbstractMatrix, centers::AbstractMatrix,
@@ -196,12 +193,10 @@ function  _cluquality_calinski_harabasz(
 
     n, k = size(data, 2), size(centers, 2)
 
-    cluster_samples = _gather_samples(assignments, k)
     global_center = vec(mean(data, dims=2))
     center_distances = colwise(metric, centers, global_center)
-    outer_inertia = length.(cluster_samples) ⋅ center_distances
-
-    inner_inertia = _inner_inertia(data, centers, cluster_samples, metric)
+    outer_inertia = sum(center_distances[clu] for clu in assignments)
+    inner_inertia = _inner_inertia(metric, data, centers, assignments)
 
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
@@ -219,11 +214,9 @@ function _cluquality_calinski_harabasz(
     global_center = vec(mean(data, dims=2))
     center_distances = colwise(metric, centers, global_center)
 
-    outer_inertia = 
-        sum(sum(w^fuzziness for w in w_col) * d
-            for (w_col, d) in zip(eachcol(weights), center_distances)
-        )
-    inner_inertia = _inner_inertia(data, centers, weights, fuzziness, metric)
+    outer_inertia = sum(sum(w^fuzziness for w in view(weights, :, clu)) * d
+                        for (clu, d) in enumerate(center_distances))
+    inner_inertia = _inner_inertia(metric, data, centers, weights, fuzziness)
 
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
@@ -264,10 +257,8 @@ function _cluquality_xie_beni(
 
     n, k = size(data, 2), size(centers,2)
 
-    cluster_samples = _gather_samples(assignments, k)
-    inner_intertia  = _inner_inertia(data, centers, cluster_samples, metric)
-
-    center_distances = pairwise(metric,centers)
+    inner_intertia  = _inner_inertia(metric, data, centers, assignments)
+    center_distances = pairwise(metric, centers, dims=2)
     min_center_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
     
     return inner_intertia / (n * min_center_distance)
@@ -283,8 +274,7 @@ function _cluquality_xie_beni(
 
     n, k = size(data, 2), size(centers, 2)
 
-    inner_intertia = _inner_inertia(data, centers, weights, fuzziness, metric)
-
+    inner_intertia = _inner_inertia(metric, data, centers, weights, fuzziness)
     center_distances = pairwise(metric, centers, dims=2)
     min_center_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
 
