@@ -170,7 +170,7 @@ end
 # shared between calinski_harabasz and xie_beni (hard version)
 _inner_inertia(metric::SemiMetric, data::AbstractMatrix, centers::AbstractMatrix,
                assignments::AbstractVector{<:Integer}) =
-    sum(metric(view(data, :, i), view(center, :, clu)) for (i, clu) in enumerate(assignments))
+    sum(metric(view(data, :, i), view(centers, :, clu)) for (i, clu) in enumerate(assignments))
 
 # shared between fuzzy clustering calinski_harabasz and xie_beni (fuzzy version)
 function _inner_inertia(metric::SemiMetric, data::AbstractMatrix, centers::AbstractMatrix,
