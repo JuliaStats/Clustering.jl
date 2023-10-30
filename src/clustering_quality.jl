@@ -228,6 +228,7 @@ function _outer_inertia(
             )
 end
 
+# Calinsk-Harabasz index
 function  _cluquality_calinski_harabasz(
         metric::SemiMetric,
         data::AbstractMatrix{<:Real},
@@ -242,6 +243,8 @@ function  _cluquality_calinski_harabasz(
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
 
+
+# Davies Bouldin index
 function _cluquality_davies_bouldin(
         metric::SemiMetric,
         data::AbstractMatrix{<:Real},
@@ -263,7 +266,6 @@ end
 
 
 # Xie-Beni index
-
 function _cluquality_xie_beni(
         metric::SemiMetric,
         data::AbstractMatrix{<:Real},
@@ -279,24 +281,7 @@ function _cluquality_xie_beni(
     return inner_intertia / (n * min_center_distance)
 end
 
-# function _cluquality_xie_beni(
-#         data::AbstractMatrix{<:Real},
-#         centers::AbstractMatrix{<:Real},
-#         weights::AbstractMatrix{<:Real},
-#         fuzziness::Real,
-#         metric::SemiMetric=SqEuclidean()
-#     )
-
-#     n, k = size(data, 2), size(centers, 2)
-
-#     inner_intertia = _inner_inertia(metric, data, centers, weights, fuzziness)
-
-#     center_distances = pairwise(metric, centers, dims=2)
-#     min_center_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
-#     return inner_intertia / (n * min_center_distance)
-# end
-
-
+# Dunn index
 function _cluquality_dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Real})
 
     max_inner_distance, min_outer_distance = typemin(eltype(dist)), typemax(eltype(dist))
