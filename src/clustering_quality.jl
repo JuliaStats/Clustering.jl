@@ -74,7 +74,7 @@ function clustering_quality(
     elseif quality_index == :xie_beni
         _cluquality_xie_beni(metric, data, centers, assignments, nothing)
     elseif quality_index == :davies_bouldin
-        _cluquality_davies_bouldin(data, centers, assignments, metric)
+        _cluquality_davies_bouldin(metric, data, centers, assignments)
     elseif quality_index == :silhouettes
         mean(silhouettes(assignments, pairwise(metric, data, dims=2)))
     elseif quality_index == :dunn 
@@ -212,28 +212,21 @@ function  _cluquality_calinski_harabasz(
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
 
-# Davies-Bouldin index 
-
 function _cluquality_davies_bouldin(
+        metric::SemiMetric,
         data::AbstractMatrix{<:Real},
         centers::AbstractMatrix{<:Real},
         assignments::AbstractVector{<:Integer},
-        metric::SemiMetric=SqEuclidean()
-    )
+)
+    clu_idx = axes(centers, 2)
+    clu_samples = _gather_samples(assignments, length(clu_idx))
+    clu_diams = [mean(colwise(metric, view(data, :, samples), view(centers, :, clu)))
+                 for (clu, samples) in zip(clu_idx, clu_samples)]
+    center_dists = pairwise(metric, centers, dims=2)
 
-    k = size(centers, 2)
-    c_idx = axes(centers, 2)
-
-    cluster_samples = _gather_samples(assignments, k)
-
-    cluster_diameters = [mean(colwise(metric,view(data, :, sample), centers[:,j])) for (j, sample) in zip(c_idx, cluster_samples) ]
-    center_distances = pairwise(metric,centers)
-
-    DB = mean(
-        maximum( (cluster_diameters[j₁] + cluster_diameters[j₂]) / center_distances[j₁,j₂] for j₂ in c_idx if j₂ ≠ j₁)
-            for j₁ in c_idx
-    )
-    return  DB
+    return mean(maximum((clu_diams[j₁] + clu_diams[j₂]) / center_dists[j₁, j₂]
+                        for j₂ in clu_idx if j₂ ≠ j₁)
+                for j₁ in clu_idx)
 end
 
 
