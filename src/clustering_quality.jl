@@ -65,11 +65,14 @@ function clustering_quality(
     (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
+    seen_clusters = falses(k)
     for (i, clu) in enumerate(assignments)
         (clu in axes(centers, 2)) || throw(ArgumentError("Invalid cluster index: assignments[$i]=$(clu)."))
+        seen_clusters[clu] = true
     end
-    for i in 1:k
-        i ∉ assignments && @warn "Cluster number $(i) is empty. Clustering quality calculation may not be reliable."
+    if !all(seen_clusters)
+        empty_clu_ixs = findall(~seen_clusters)
+        @warn "Empty cluster(s) detected: $(join(String.(empty_clu_ixs), ", ")). clustering_quality() results might be incorrect."
     end
 
     if quality_index == :calinski_harabasz
