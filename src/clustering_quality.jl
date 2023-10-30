@@ -1,4 +1,4 @@
-# hard clustering indices interface + general docs
+# interface of hard clustering indices + general docs
 
 """
 For hard clustering:
@@ -68,6 +68,9 @@ function clustering_quality(
     for i in eachindex(assignments)
         (assignments[i] in axes(centers, 2)) || throw(ArgumentError("Bad assignments[$i]=$(assignments[i]) is not a valid index for `data`."))
     end
+    for i in 1:k
+        i ∉ assignments && @warn "Cluster number $(i) is empty. Clustering quality calculation may not be reliable."
+    end
 
     if quality_index == :calinski_harabasz
         _cluquality_calinski_harabasz(data, centers, assignments, metric)
@@ -88,7 +91,7 @@ clustering_quality(data::AbstractMatrix{<:Real}, R::KmeansResult; quality_index:
     clustering_quality(data, R.centers, R.assignments; quality_index = quality_index, metric = metric)
 
 
-# fuzzy clustering indices interface
+# interface of fuzzy clustering indices
 
 function clustering_quality(
         data::AbstractMatrix{<:Real},    # d×n matrix
@@ -124,7 +127,7 @@ clustering_quality(data::AbstractMatrix{<:Real}, R::FuzzyCMeansResult; quality_i
     clustering_quality(data, R.centers, R.weights; quality_index = quality_index, fuzziness = fuzziness, metric = metric)
 
 
-# clustering indices with cluster centres not known interface
+# interface of clustering indices with cluster centres not known
 
 function clustering_quality( 
         assignments::AbstractVector{<:Integer}, # n vector
@@ -256,7 +259,7 @@ function _cluquality_davies_bouldin(
     center_distances = pairwise(metric,centers)
 
     DB = mean(
-        maximum( (cluster_diameters[j₁] + cluster_diameters[j₂]) / center_distances[j₁,j₂] for j₂ in c_idx if j₂ ≠ j₁)
+        maximum(@inbounds (cluster_diameters[j₁] + cluster_diameters[j₂]) / center_distances[j₁,j₂] for j₂ in c_idx if j₂ ≠ j₁)
             for j₁ in c_idx
     )
     return  DB
@@ -307,7 +310,7 @@ function _cluquality_dunn(assignments::AbstractVector{<:Integer}, dist::Abstract
 
     max_inner_distance, min_outer_distance = typemin(eltype(dist)), typemax(eltype(dist))
     
-    for i in eachindex(assignments), j in (i + 1):lastindex(assignments)
+    @inbounds for i in eachindex(assignments), j in (i + 1):lastindex(assignments)
         d = dist[i,j]
         if assignments[i] == assignments[j]
             if max_inner_distance < d
