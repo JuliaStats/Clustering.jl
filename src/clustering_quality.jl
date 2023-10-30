@@ -174,7 +174,8 @@ function _inner_inertia(
         metric::SemiMetric,
         data::AbstractMatrix,
         centers::AbstractMatrix,
-        assignments::AbstractVector{<:Integer}
+        assignments::AbstractVector{<:Integer},
+        fuzziness::Nothing
     ) 
     inner_inertia = sum(
         sum(colwise(metric, view(data, :, samples), center))
