@@ -231,11 +231,8 @@ function  _cluquality_calinski_harabasz(
     global_center = vec(mean(data, dims=2))
     center_distances = colwise(metric, centers, global_center)
 
-    outer_inertia = 
-        sum(sum(w^fuzziness for w in w_col) * d
-            for (w_col, d) in zip(eachcol(weights), center_distances)
-        )
-    inner_inertia = _inner_inertia(metric, data, centers, weights, fuzziness)
+    outer_inertia = _outer_inertia(metric, data, centers, assignments, fuzziness)
+    inner_inertia = _inner_inertia(metric, data, centers, assignments, fuzziness)
 
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
