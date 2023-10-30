@@ -252,14 +252,12 @@ function _cluquality_xie_beni(
 end
 
 
-# Dunn index
-
 function _cluquality_dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Real})
+    T = eltype(dist)
+    max_inner_distance, min_outer_distance = typemin(T), typemax(T)
 
-    max_inner_distance, min_outer_distance = typemin(eltype(dist)), typemax(eltype(dist))
-    
     for i in eachindex(assignments), j in (i + 1):lastindex(assignments)
-        d = dist[i,j]
+        @inbounds d = dist[i, j]
         if assignments[i] == assignments[j]
             if max_inner_distance < d
                 max_inner_distance = d
