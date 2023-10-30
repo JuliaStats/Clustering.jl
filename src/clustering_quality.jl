@@ -224,7 +224,7 @@ function _cluquality_davies_bouldin(
                  for (clu, samples) in zip(clu_idx, clu_samples)]
     center_dists = pairwise(metric, centers, dims=2)
 
-    return mean(maximum((clu_diams[j₁] + clu_diams[j₂]) / center_dists[j₁, j₂]
+    return mean(maximum(@inbounds (clu_diams[j₁] + clu_diams[j₂]) / center_dists[j₁, j₂]
                         for j₂ in clu_idx if j₂ ≠ j₁)
                 for j₁ in clu_idx)
 end
