@@ -78,7 +78,7 @@ using Clustering, Distances
         degC = [0 4; 2 0; 0 -4; -2 0; -2 0]
         degA = [1, 1, 2, 2, 2, 2, 3, 3, 5, 5, 5, 5] # no 4th cluster
 
-        @test_logs (:warn, "Cluster number 4 is empty. Clustering quality calculation may not be reliable.") clustering_quality(Y', degC', degA; quality_index = :calinski_harabasz) 
+        @test_logs (:warn, "Detected empty cluster(s) no.: 4. clustering_quality() results might be incorrect.") clustering_quality(Y', degC', degA; quality_index = :calinski_harabasz) 
     end
 
 end
