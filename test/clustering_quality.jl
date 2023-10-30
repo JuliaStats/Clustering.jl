@@ -40,6 +40,9 @@ using Clustering, Distances
         @test_throws ArgumentError clustering_quality(zeros(2,2),zeros(2,1), [1, ], quality_index = :calinski_harabasz)
         @test_throws ArgumentError clustering_quality(zeros(2,2),zeros(2,2), [1, 2], quality_index = :calinski_harabasz)
         @test_throws DimensionMismatch clustering_quality([1,2,3], zeros(2,2), quality_index = :dunn)
+        @test_throws ArgumentError clustering_quality(Y', C', A; quality_index = :nonexistent_index)
+        @test_throws ArgumentError clustering_quality(Y', C', W; quality_index = :nonexistent_index, fuzziness = 2)
+        @test_throws ArgumentError clustering_quality(Y', A; quality_index = :nonexistent_index)
     end
 
     @testset "correct index values" begin
@@ -50,6 +53,7 @@ using Clustering, Distances
 
         @test clustering_quality(Y', C', A; quality_index = :xie_beni, metric = Euclidean()) ≈ 1/3
         @test clustering_quality(Y', C', W; quality_index = :xie_beni, fuzziness = 2, metric = Euclidean()) ≈ 1/3
+        
         @test clustering_quality(Y', A; quality_index = :dunn, metric = Euclidean()) ≈ 1/2
     end
 
