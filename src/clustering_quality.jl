@@ -179,7 +179,7 @@ function _inner_inertia(
     ) 
     inner_inertia = sum(
         sum(colwise(metric, view(data, :, samples), center))
-            for (center, samples) in zip(eachcol(centers), _gather_samples(assignments, size(centers)[2]))
+            for (center, samples) in zip((view(centers,:,j) for j in axes(centers)[2]), _gather_samples(assignments, size(centers)[2]))
     )
     return inner_inertia
 end
