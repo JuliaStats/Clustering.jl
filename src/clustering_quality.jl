@@ -71,8 +71,8 @@ function clustering_quality(
         seen_clusters[clu] = true
     end
     if !all(seen_clusters)
-        empty_clu_ixs = findall(~seen_clusters)
-        @warn "Empty cluster(s) detected: $(join(String.(empty_clu_ixs), ", ")). clustering_quality() results might be incorrect."
+        empty_clu_ixs = findall(!, seen_clusters)
+        @warn "Detected empty cluster(s) no.: $(join(string.(empty_clu_ixs), ", ")). clustering_quality() results might be incorrect."
     end
 
     if quality_index == :calinski_harabasz
@@ -182,7 +182,7 @@ function _inner_inertia(
     ) 
     inner_inertia = sum(
         sum(colwise(metric, view(data, :, samples), center))
-            for (center, samples) in zip((view(centers,:,j) for j in axes(centers)[2]), _gather_samples(assignments, size(centers)[2]))
+            for (center, samples) in zip((view(centers,:,j) for j in axes(centers, 2)), _gather_samples(assignments, size(centers, 2)))
     )
     return inner_inertia
 end
