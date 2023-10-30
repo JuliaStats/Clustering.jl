@@ -65,8 +65,8 @@ function clustering_quality(
     (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
-    for i in eachindex(assignments)
-        (assignments[i] in axes(centers, 2)) || throw(ArgumentError("Bad assignments[$i]=$(assignments[i]) is not a valid index for `data`."))
+    for (i, clu) in enumerate(assignments)
+        (clu in axes(centers, 2)) || throw(ArgumentError("Invalid cluster index: assignments[$i]=$(clu)."))
     end
     for i in 1:k
         i ∉ assignments && @warn "Cluster number $(i) is empty. Clustering quality calculation may not be reliable."
