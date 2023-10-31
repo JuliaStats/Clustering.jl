@@ -151,7 +151,7 @@ scatter(X[1,:],X[2,:],
 )
 ```
 
-Hard clustering quality for K-means method number of clusters in `2:5`
+Hard clustering quality for K-means method with number of clusters in `2:5`.
 
 ```@example 
 using Plots, Clustering
@@ -170,7 +170,7 @@ kmeans_quality =
 p = [
     plot(2:5, kmeans_quality[qidx],
         marker = :circle,
-        title = string.(qidx),
+        title = ":"*string.(qidx),
         label = nothing,
     )
         for qidx in hard_indices
@@ -181,7 +181,7 @@ plot(p...,
 )
 ```
 
-Fuzzy clustering quality for fuzzy C-means method with number of clusters in `2:5`
+Fuzzy clustering quality for fuzzy C-means method with number of clusters in `2:5`.
 ```@example
 using Plots, Clustering
 X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
@@ -201,7 +201,7 @@ fuzzy_cmeans_quality =
 p = [
     plot(2:5, fuzzy_cmeans_quality[qidx],
         marker = :circle,
-        title = string.(qidx),
+        title = ":"*string.(qidx),
         label = nothing,
     )
         for qidx in fuzzy_indices
