@@ -1,4 +1,4 @@
-# hard clustering indices interface + general docs
+# interface of hard clustering indices + general docs
 
 """
 For hard clustering:
@@ -65,32 +65,36 @@ function clustering_quality(
     (1 <= k <= n) || throw(ArgumentError("Number of clusters k must be from 1:n (n=$n), k=$k given."))
     k >= 2 || throw(ArgumentError("Quality index not defined for the degenerated clustering with a single cluster."))
     n == k && throw(ArgumentError("Quality index not defined for the degenerated clustering where each data point is its own cluster."))
-    for i in eachindex(assignments)
-        (assignments[i] in axes(centers, 2)) || throw(ArgumentError("Bad assignments[$i]=$(assignments[i]) is not a valid index for `data`."))
+    seen_clusters = falses(k)
+    for (i, clu) in enumerate(assignments)
+        (clu in axes(centers, 2)) || throw(ArgumentError("Invalid cluster index: assignments[$i]=$(clu)."))
+        seen_clusters[clu] = true
+    end
+    if !all(seen_clusters)
+        empty_clu_ixs = findall(!, seen_clusters)
+        @warn "Detected empty cluster(s) no.: $(join(string.(empty_clu_ixs), ", ")). clustering_quality() results might be incorrect."
     end
 
     if quality_index == :calinski_harabasz
-        _cluquality_calinski_harabasz(data, centers, assignments, metric)
+        _cluquality_calinski_harabasz(metric, data, centers, assignments, nothing)
     elseif quality_index == :xie_beni
-        _cluquality_xie_beni(data, centers, assignments, metric)
+        _cluquality_xie_beni(metric, data, centers, assignments, nothing)
     elseif quality_index == :davies_bouldin
-        _cluquality_davies_bouldin(data, centers, assignments, metric)
-    else quality_index == :davies_bouldin
-    if quality_index == :silhouettes
-        mean(silhouettes(assignments, pairwise(metric, eachcol(data))))
+        _cluquality_davies_bouldin(metric, data, centers, assignments)
+    elseif quality_index == :silhouettes
+        mean(silhouettes(assignments, pairwise(metric, data, dims=2)))
     elseif quality_index == :dunn 
-        _cluquality_dunn(assignments, pairwise(metric, eachcol(data)))
+        _cluquality_dunn(assignments, pairwise(metric, data, dims=2))
     else
         throw(ArgumentError("Quality index $quality_index not supported."))
     end
-end
 end
 
 clustering_quality(data::AbstractMatrix{<:Real}, R::KmeansResult; quality_index::Symbol, metric::SemiMetric=SqEuclidean()) =
     clustering_quality(data, R.centers, R.assignments; quality_index = quality_index, metric = metric)
 
 
-# fuzzy clustering indices interface
+# interface of fuzzy clustering indices
 
 function clustering_quality(
         data::AbstractMatrix{<:Real},    # d×n matrix
@@ -114,9 +118,9 @@ function clustering_quality(
     1 < fuzziness || throw(ArgumentError("Fuzziness must be greater than 1 ($fuzziness given)"))
 
     if quality_index == :calinski_harabasz
-        _cluquality_calinski_harabasz(data, centers, weights, fuzziness, metric)
-    elseif quality_index ∈ (:xie_beni, :Xie_Beni, :xb)
-        _cluquality_xie_beni(data, centers, weights, fuzziness, metric)
+        _cluquality_calinski_harabasz(metric, data, centers, weights, fuzziness)
+    elseif quality_index == :xie_beni
+        _cluquality_xie_beni(metric, data, centers, weights, fuzziness)
     else
         throw(ArgumentError("Quality index $quality_index not supported."))
     end
@@ -126,7 +130,7 @@ clustering_quality(data::AbstractMatrix{<:Real}, R::FuzzyCMeansResult; quality_i
     clustering_quality(data, R.centers, R.weights; quality_index = quality_index, fuzziness = fuzziness, metric = metric)
 
 
-# clustering indices with cluster centres not known interface
+# interface of clustering indices with cluster centres not known
 
 function clustering_quality( 
         assignments::AbstractVector{<:Integer}, # n vector
@@ -143,16 +147,16 @@ function clustering_quality(
     elseif quality_index == :dunn
         _cluquality_dunn(assignments, dist)
     else
-        error(ArgumentError("Quality index $quality_index not available."))
+        throw(ArgumentError("Quality index $quality_index not supported."))
     end
 end
 
 
 clustering_quality(data::AbstractMatrix{<:Real}, assignments::AbstractVector{<:Integer}; quality_index::Symbol, metric::SemiMetric=SqEuclidean()) = 
-    clustering_quality(assignments, pairwise(metric,eachcol(data)); quality_index = quality_index)
+    clustering_quality(assignments, pairwise(metric, data, dims=2); quality_index = quality_index)
 
 clustering_quality(data::AbstractMatrix{<:Real}, R::ClusteringResult;  quality_index::Symbol, metric::SemiMetric=SqEuclidean()) =
-    clustering_quality(R.assignments, pairwise(metric,eachcol(data)); quality_index = quality_index)
+    clustering_quality(R.assignments, pairwise(metric, data, dims=2); quality_index = quality_index)
 
 clustering_quality(R::ClusteringResult, dist::AbstractMatrix{<:Real}; quality_index::Symbol) = 
     clustering_quality(R.assignments, dist; quality_index = quality_index)
@@ -168,149 +172,134 @@ function _gather_samples(assignments, k) # cluster_samples[j]: indices of points
     return cluster_samples
 end
 
-
-function _inner_inertia(data, centers, cluster_samples, metric) # shared between hard clustering calinski_harabasz and xie_beni
+# shared between hard clustering calinski_harabasz and xie_beni
+function _inner_inertia(
+        metric::SemiMetric,
+        data::AbstractMatrix,
+        centers::AbstractMatrix,
+        assignments::AbstractVector{<:Integer},
+        fuzziness::Nothing
+    ) 
     inner_inertia = sum(
         sum(colwise(metric, view(data, :, samples), center))
-            for (center, samples) in zip(eachcol(centers), cluster_samples)
+            for (center, samples) in zip((view(centers,:,j) for j in axes(centers, 2)), _gather_samples(assignments, size(centers, 2)))
     )
     return inner_inertia
 end
 
-function _inner_inertia(data, centers, weights, fuzziness, metric) # shared between soft clustering calinski_harabasz and xie_beni
-    n, k = size(data, 2), size(centers, 2)
-    w_idx1, w_idx2 = axes(weights)
-    pointCentreDistances = pairwise(metric, eachcol(data), eachcol(centers))
+# shared between fuzzy clustering calinski_harabasz and xie_beni (fuzzy version)
+function _inner_inertia(
+        metric::SemiMetric,
+        data::AbstractMatrix,
+        centers::AbstractMatrix,
+        weights::AbstractMatrix,
+        fuzziness::Real
+    )
+    pointCentreDistances = pairwise(metric, data, centers, dims=2)
     inner_inertia = sum(
-        weights[i₁,j₁]^fuzziness * pointCentreDistances[i₂,j₂] for (i₁,i₂) in zip(w_idx1,1:n), (j₁,j₂) in zip(w_idx2, 1:k)
+        w^fuzziness * d for (w, d) in zip(weights, pointCentreDistances) 
     )
     return inner_inertia
 end
 
-# Calinski-Harabasz index
-
-function  _cluquality_calinski_harabasz(
-        data::AbstractMatrix{<:Real},
-        centers::AbstractMatrix{<:Real},
+# hard outer inertia for calinski_harabasz
+function _outer_inertia(
+        metric::SemiMetric,
+        data::AbstractMatrix,
+        centers::AbstractMatrix,
         assignments::AbstractVector{<:Integer},
-        metric::SemiMetric=SqEuclidean()
+        fuzziness::Nothing
     )
-
-    n, k = size(data, 2), size(centers, 2)
-
-    cluster_samples = _gather_samples(assignments, k)
     global_center = vec(mean(data, dims=2))
     center_distances = colwise(metric, centers, global_center)
-    outer_inertia = length.(cluster_samples) ⋅ center_distances
+    return sum(center_distances[clu] for clu in assignments)
+end
 
-    inner_inertia = _inner_inertia(data, centers, cluster_samples, metric)
+# fuzzy outer inertia for calinski_harabasz
+function _outer_inertia(
+        metric::SemiMetric,
+        data::AbstractMatrix,
+        centers::AbstractMatrix,
+        weights::AbstractMatrix,
+        fuzziness::Real
+    )
+
+    global_center = vec(mean(data, dims=2))
+    center_distances = colwise(metric, centers, global_center)
+    return sum(sum(w^fuzziness for w in view(weights, :, clu)) * d
+                for (clu, d) in enumerate(center_distances)
+            )
+end
+
+# Calinsk-Harabasz index
+function  _cluquality_calinski_harabasz(
+        metric::SemiMetric,
+        data::AbstractMatrix{<:Real},
+        centers::AbstractMatrix{<:Real},
+        assignments::Union{AbstractVector{<:Integer}, AbstractMatrix{<:Real}},
+        fuzziness::Union{Real, Nothing}
+    )
+    n, k = size(data, 2), size(centers, 2)
+    outer_inertia = _outer_inertia(metric, data, centers, assignments, fuzziness)
+    inner_inertia = _inner_inertia(metric, data, centers, assignments, fuzziness)
 
     return (outer_inertia / inner_inertia) * (n - k) / (k - 1)
 end
 
-function _cluquality_calinski_harabasz(
-        data::AbstractMatrix{<:Real},
-        centers::AbstractMatrix{<:Real},
-        weights::AbstractMatrix{<:Real},
-        fuzziness::Real,
-        metric::SemiMetric=SqEuclidean()
-    )
 
-    n, k = size(data, 2), size(centers, 2)
-    w_idx1, w_idx2 = axes(weights)
-
-    global_center = vec(mean(data, dims=2))
-    center_distances = colwise(metric, centers, global_center)
-    outer_intertia = sum(
-        weights[i,j₁]^fuzziness * center_distances[j₂] for i in w_idx1, (j₁,j₂) in zip(w_idx2, 1:k)
-    )
-
-    inner_inertia = _inner_inertia(data, centers, weights, fuzziness, metric)
-
-    return (outer_intertia / inner_inertia) * (n - k) / (k - 1)
-end
-
-# Davies-Bouldin index 
-
+# Davies Bouldin index
 function _cluquality_davies_bouldin(
+        metric::SemiMetric,
         data::AbstractMatrix{<:Real},
         centers::AbstractMatrix{<:Real},
         assignments::AbstractVector{<:Integer},
-        metric::SemiMetric=SqEuclidean()
     )
-
-    k = size(centers, 2)
-    c_idx = axes(centers, 2)
-
-    cluster_samples = _gather_samples(assignments, k)
-
-    cluster_diameters = [mean(colwise(metric,view(data, :, sample), centers[:,j])) for (j, sample) in zip(c_idx, cluster_samples) ]
-    center_distances = pairwise(metric,centers)
+    clu_idx = axes(centers, 2)
+    clu_samples = _gather_samples(assignments, length(clu_idx))
+    clu_diams = [mean(colwise(metric, view(data, :, samples), view(centers, :, clu)))
+                 for (clu, samples) in zip(clu_idx, clu_samples)]
+    center_dists = pairwise(metric, centers, dims=2)
 
     DB = mean(
-        maximum( (cluster_diameters[j₁] + cluster_diameters[j₂]) / center_distances[j₁,j₂] for j₂ in c_idx if j₂ ≠ j₁)
-            for j₁ in c_idx
+        maximum(@inbounds (clu_diams[j₁] + clu_diams[j₂]) / center_dists[j₁,j₂] for j₂ in clu_idx if j₂ ≠ j₁)
+            for j₁ in clu_idx
     )
     return  DB
 end
 
 
 # Xie-Beni index
-
 function _cluquality_xie_beni(
+        metric::SemiMetric,
         data::AbstractMatrix{<:Real},
         centers::AbstractMatrix{<:Real},
-        assignments::AbstractVector{<:Integer},
-        metric::SemiMetric=SqEuclidean()
+        assignments::Union{AbstractVector{<:Integer}, AbstractMatrix{<:Real}},
+        fuzziness::Union{Real, Nothing}
     )
-
     n, k = size(data, 2), size(centers,2)
-
-    cluster_samples = _gather_samples(assignments, k)
-    inner_intertia  = _inner_inertia(data, centers, cluster_samples, metric)
-
-    center_distances = pairwise(metric,centers)
-    min_center_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
-    
-    return inner_intertia / (n * min_center_distance)
-end
-
-function _cluquality_xie_beni(
-        data::AbstractMatrix{<:Real},
-        centers::AbstractMatrix{<:Real},
-        weights::AbstractMatrix{<:Real},
-        fuzziness::Real,
-        metric::SemiMetric=SqEuclidean()
-    )
-
-    n, k = size(data, 2), size(centers, 2)
-
-    inner_intertia = _inner_inertia(data, centers, weights, fuzziness, metric)
-
-    center_distances = pairwise(metric, eachcol(centers))
+    inner_intertia  = _inner_inertia(metric, data, centers, assignments, fuzziness)
+    center_distances = pairwise(metric, centers, dims=2)
     min_center_distance = minimum(center_distances[j₁,j₂] for j₁ in 1:k for j₂ in j₁+1:k)
 
     return inner_intertia / (n * min_center_distance)
 end
-
 
 # Dunn index
-
 function _cluquality_dunn(assignments::AbstractVector{<:Integer}, dist::AbstractMatrix{<:Real})
 
-    k = maximum(assignments)
-
-    cluster_samples = _gather_samples(assignments, k)
-
-    min_outer_distance = minimum(
-        minimum(view(dist, cluster_samples[j₁], cluster_samples[j₂]), init = typemax(eltype(dist)))
-            for j₁ in 1:k for j₂ in j₁+1:k
-    )
-
-    max_inner_distance = maximum(
-        maximum(dist[i₁,i₂] for i₁ in sample, i₂ in sample, init = typemin(eltype(dist)))
-            for sample in cluster_samples
-    )
+    max_inner_distance, min_outer_distance = typemin(eltype(dist)), typemax(eltype(dist))
     
+    for i in eachindex(assignments), j in (i + 1):lastindex(assignments)
+        @inbounds d = dist[i,j]
+        if assignments[i] == assignments[j]
+            if max_inner_distance < d
+                max_inner_distance = d
+            end
+        else
+            if min_outer_distance > d
+                min_outer_distance = d
+            end
+        end
+    end
     return min_outer_distance / max_inner_distance
 end

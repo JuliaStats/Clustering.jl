@@ -88,7 +88,7 @@ Option `:calinski_harabasz`. Higher values indicate better quality. Measures cor
 ```math
 
 \frac{n-k}{k-1}\frac{\sum_{C_j}|C_j|d(c_j,c)}{\sum\limits_{C_j}\sum\limits_{x_i\in C_j} d(x_i,c_j)} \quad \text{and}\quad 
-\frac{n-k}{k-1} \frac{\sum_{C_j} \sum_{x_i} w_{ik}^\alpha d(x_i,c_j)}{\sum\limits_{C_j}\sum\limits_{x_i}w_{ij}^\alpha d(c_j,c)}
+\frac{n-k}{k-1} \frac{\sum\limits_{C_j}\left(\sum\limits_{x_i}w_{ij}^\alpha\right) d(c_j,c)}{\sum_{C_j} \sum_{x_i} w_{ij}^\alpha d(x_i,c_j)}
 ```
 respectively.
 
