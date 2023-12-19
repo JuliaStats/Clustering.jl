@@ -73,8 +73,8 @@ Perform Fuzzy C-means clustering over the given `data`.
  - `data::AbstractMatrix`: ``d×n`` data matrix. Each column represents
    one ``d``-dimensional data point.
  - `C::Int`: the number of fuzzy clusters, ``2 ≤ C < n``.
- - `fuzziness::Real`: clusters fuzziness (see ``m`` in the
-   [mathematical formulation](@ref fuzzy_cmeans_def)), ``\\mathrm{fuzziness} > 1``.
+ - `fuzziness::Real`: clusters fuzziness (``μ`` in the
+   [mathematical formulation](@ref fuzzy_cmeans_def)), ``μ > 1``.
 
 Optional keyword arguments:
  - `dist_metric::Metric` (defaults to `Euclidean`): the `Metric` object
