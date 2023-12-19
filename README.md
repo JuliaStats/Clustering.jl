@@ -44,6 +44,7 @@ Pkg.add("Clustering")
 
 ## See Also
 
-Julia packages providing other clustering methods:
+Julia packages providing other clustering methods and performance evaluation:
  - [QuickShiftClustering.jl](https://github.com/rened/QuickShiftClustering.jl)
  - [SpectralClustering.jl](https://github.com/lucianolorenti/SpectralClustering.jl)
+ - [ClusteringBenchmarks.jl](https://github.com/HolyLab/ClusteringBenchmarks.jl)

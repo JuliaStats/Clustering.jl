@@ -109,3 +109,8 @@ the partition co-occurrence, see [`counts`](@ref).
 ```@docs
 confusion
 ```
+
+## Other packages
+
+* [ClusteringBenchmarks.jl](https://github.com/HolyLab/ClusteringBenchmarks.jl) provides
+  benchmark datasets and implements additional methods for evaluating clustering performance.
