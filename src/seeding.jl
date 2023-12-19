@@ -239,21 +239,11 @@ function initseeds_by_costs!(iseeds::AbstractVector{<:Integer}, alg::KmCentralit
     k = length(iseeds)
     check_seeding_args(n, k)
 
-    # compute score for each item
-    coefs = vec(sum(costs, dims=2))
-    for i = 1:n
-        @inbounds coefs[i] = inv(coefs[i])
-    end
-
     # scores[j] = \sum_j costs[i,j] / (\sum_{j'} costs[i,j'])
-    #           = costs[i,j] * coefs[i]
-    scores = costs'coefs
+    scores = costs'vec(mapslices(inv∘sum, costs, dims=2))
 
     # lower score indicates better seeds
-    sp = sortperm(scores)
-    for i = 1:k
-        @inbounds iseeds[i] = sp[i]
-    end
+    copyto!(iseeds, 1, sortperm(scores), 1, k)
     return iseeds
 end
 
