@@ -180,9 +180,8 @@ function initseeds!(iseeds::AbstractVector{<:Integer}, alg::KmppAlg,
             iseeds[j] = p
 
             # update mincosts
-            c = view(X, :, p)
             colwise!(metric, tmpcosts, X, view(X, :, p))
-            updatemin!(mincosts, tmpcosts)
+            mincosts .= min.(mincosts, tmpcosts)
             mincosts[p] = 0
         end
     end
@@ -211,7 +210,7 @@ function initseeds_by_costs!(iseeds::AbstractVector{<:Integer}, alg::KmppAlg,
             iseeds[j] = p
 
             # update mincosts
-            updatemin!(mincosts, view(costs, :, p))
+            mincosts .= min.(mincosts, view(costs, :, p))
             mincosts[p] = 0
         end
     end
