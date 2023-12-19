@@ -64,54 +64,53 @@ const _fcmeans_default_tol = 1.0e-3
 const _fcmeans_default_display = :none
 
 """
-    fuzzy_cmeans(data::AbstractMatrix, C::Int, fuzziness::Real,
-                 [...]) -> FuzzyCMeansResult
+    fuzzy_cmeans(data::AbstractMatrix, C::Integer, fuzziness::Real;
+                 [dist_metric::SemiMetric], [...]) -> FuzzyCMeansResult
 
 Perform Fuzzy C-means clustering over the given `data`.
 
 # Arguments
  - `data::AbstractMatrix`: ``d×n`` data matrix. Each column represents
    one ``d``-dimensional data point.
- - `C::Int`: the number of fuzzy clusters, ``2 ≤ C < n``.
+ - `C::Integer`: the number of fuzzy clusters, ``2 ≤ C < n``.
  - `fuzziness::Real`: clusters fuzziness (``μ`` in the
    [mathematical formulation](@ref fuzzy_cmeans_def)), ``μ > 1``.
 
 Optional keyword arguments:
- - `dist_metric::Metric` (defaults to `Euclidean`): the `Metric` object
+ - `dist_metric::SemiMetric` (defaults to `Euclidean`): the `SemiMetric` object
     that defines the distance between the data points
- - `maxiter`, `tol`, `display`: see [common options](@ref common_options)
+ - `maxiter`, `tol`, `display`, `rng`: see [common options](@ref common_options)
 """
 function fuzzy_cmeans(
-    data::AbstractMatrix{T},
-    C::Int,
+    data::AbstractMatrix{<:Real},
+    C::Integer,
     fuzziness::Real;
-    maxiter::Int = _fcmeans_default_maxiter,
+    maxiter::Integer = _fcmeans_default_maxiter,
     tol::Real = _fcmeans_default_tol,
-    dist_metric::Metric = Euclidean(),
+    dist_metric::SemiMetric = Euclidean(),
     display::Symbol = _fcmeans_default_display,
     rng::AbstractRNG = Random.GLOBAL_RNG
-    ) where T<:Real
-
+)
     nrows, ncols = size(data)
     2 <= C < ncols || throw(ArgumentError("C must have 2 <= C < n=$ncols ($C given)"))
     1 < fuzziness || throw(ArgumentError("fuzziness must be greater than 1 ($fuzziness given)"))
 
-    _fuzzy_cmeans(data, C, fuzziness, maxiter, tol, dist_metric, display_level(display),rng)
-
+    _fuzzy_cmeans(data, C, fuzziness,
+                  maxiter, tol, dist_metric, display_level(display), rng)
 end
 
 ## Core implementation
 
 function _fuzzy_cmeans(
     data::AbstractMatrix{T},                        # data matrix
-    C::Int,                                         # total number of classes
+    C::Integer,                                     # total number of classes
     fuzziness::Real,                                # fuzziness
     maxiter::Int,                                   # maximum number of iterations
     tol::Real,                                      # tolerance
-    dist_metric::Metric,                            # metric to calculate distance
+    dist_metric::SemiMetric,                        # metric to calculate distance
     displevel::Int,                                 # the level of display
     rng::AbstractRNG                                # RNG object
-    ) where T<:Real
+) where T<:Real
 
     nrows, ncols = size(data)
 
