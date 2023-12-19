@@ -129,7 +129,7 @@ function _fuzzy_cmeans(
         println("----------------------------")
     end
 
-    while iter < maxiter && δ > tol
+    while iter < maxiter && (iter <= 1 || δ > tol) # skip tol test for iter=1 since prev_centers are not relevant
         update_centers!(centers, data, weights, fuzziness)
         update_weights!(weights, data, centers, fuzziness, dist_metric)
         δ = maximum(colwise(dist_metric, prev_centers, centers))
