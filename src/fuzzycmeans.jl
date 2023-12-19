@@ -140,12 +140,12 @@ function _fuzzy_cmeans(
         end
     end
 
-    if displevel >= 1
-        if δ <= tol
-            println("Fuzzy C-means converged with $iter iterations (δ = $δ)")
-        else
-            println("Fuzzy C-means terminated without convergence after $iter iterations (δ = $δ)")
+    if δ <= tol
+        if displevel >= 1
+            @info "Fuzzy C-means converged with $iter iterations (δ = $δ)"
         end
+    else
+        @warn "Fuzzy C-means terminated without convergence after $iter iterations (δ = $δ)"
     end
 
     FuzzyCMeansResult(centers, weights, iter, δ <= tol)

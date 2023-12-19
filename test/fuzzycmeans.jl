@@ -26,6 +26,7 @@ x = rand(rng, d, n)
 @testset "fuzziness = 2.0" begin
     fuzziness = 2.0
     Random.seed!(rng, 34568)
+    @test_logs (:warn, r"^Fuzzy C-means terminated without convergence") fuzzy_cmeans(x, k, fuzziness; maxiter=1, rng=rng)
     r = fuzzy_cmeans(x, k, fuzziness; rng=rng)
     @test isa(r, FuzzyCMeansResult{Float64})
     @test nclusters(r) == k
