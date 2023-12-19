@@ -5,7 +5,7 @@ Methods for data clustering and evaluation of clustering quality.
 [![Build Status](https://github.com/JuliaStats/Clustering.jl/workflows/CI/badge.svg)](https://github.com/JuliaStats/Clustering.jl/actions?query=workflow%3ACI+branch%3Amaster)
 [![codecov](https://codecov.io/gh/JuliaStats/Clustering.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaStats/Clustering.jl)
 
-**Documentation**: [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url]
+**Documentation**: [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url]
 
 ## Installation
 
@@ -36,15 +36,18 @@ Pkg.add("Clustering")
 - Rand index
 - V-Measure
 
-[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: http://JuliaStats.github.io/Clustering.jl/latest/
-
-[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: http://JuliaStats.github.io/Clustering.jl/stable/
-
 ## See Also
 
 Julia packages providing other clustering methods and performance evaluation:
  - [QuickShiftClustering.jl](https://github.com/rened/QuickShiftClustering.jl)
  - [SpectralClustering.jl](https://github.com/lucianolorenti/SpectralClustering.jl)
  - [ClusteringBenchmarks.jl](https://github.com/HolyLab/ClusteringBenchmarks.jl)
+
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: http://JuliaStats.github.io/Clustering.jl/dev/
+
+[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
+[docs-latest-url]: http://JuliaStats.github.io/Clustering.jl/latest/
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: http://JuliaStats.github.io/Clustering.jl/stable/
