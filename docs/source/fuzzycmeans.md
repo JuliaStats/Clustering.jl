@@ -5,16 +5,15 @@ is a clustering method that provides cluster membership weights instead
 of "hard" classification (e.g. K-means).
 
 From a mathematical standpoint, fuzzy C-means solves the following
-optimization
-problem:
+optimization problem:
 ```math
-\arg\min_C \ \sum_{i=1}^n \sum_{j=1}^c w_{ij}^m \| \mathbf{x}_i - \mathbf{c}_{j} \|^2, \
-\text{where}\ w_{ij} = \left(\sum_{k=1}^{c} \left(\frac{\left\|\mathbf{x}_i - \mathbf{c}_j \right\|}{\left\|\mathbf{x}_i - \mathbf{c}_k \right\|}\right)^{\frac{2}{m-1}}\right)^{-1}
+\arg\min_\mathcal{C} \ \sum_{i=1}^n \sum_{j=1}^C w_{ij}^\mu \| \mathbf{x}_i - \mathbf{c}_j \|^2, \
+\text{where}\ w_{ij} = \left(\sum_{k=1}^{C} \left(\frac{\left\|\mathbf{x}_i - \mathbf{c}_j \right\|}{\left\|\mathbf{x}_i - \mathbf{c}_k \right\|}\right)^{\frac{2}{\mu-1}}\right)^{-1}
 ```
 
 Here, ``\mathbf{c}_j`` is the center of the ``j``-th cluster, ``w_{ij}``
 is the membership weight of the ``i``-th point in the ``j``-th cluster,
-and ``m > 1`` is a user-defined fuzziness parameter.
+and ``\mu > 1`` is a user-defined fuzziness parameter.
 
 ```@docs
 fuzzy_cmeans

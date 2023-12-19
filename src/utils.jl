@@ -60,7 +60,8 @@ assignments(A::ClusterAssignments) = A
 const DisplayLevels = Dict(:none => 0, :final => 1, :iter => 2)
 
 display_level(s::Symbol) = get(DisplayLevels, s) do
-    throw(ArgumentError("Invalid value for the 'display' option: $s."))
+    valid_vals = string.(":", first.(sort!(collect(pairs(DisplayLevels)), by=last)))
+    throw(ArgumentError("Invalid option display=:$s ($(join(valid_vals, ", ", ", or ")) expected)"))
 end
 
 ##### update minimum value
