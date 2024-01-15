@@ -1,27 +1,30 @@
 # main method for hard clustering indices + docs
 """
-For hard clustering:
+For "hard" clustering:
 
     clustering_quality(data, centers, assignments; quality_index, [metric])
     clustering_quality(data, clustering; quality_index, [metric])
 
-For fuzzy clustering:
+For fuzzy ("soft") clustering:
 
     clustering_quality(data, centers, weights; quality_index, fuzziness, [metric])
     clustering_quality(data, clustering; quality_index, fuzziness, [metric])
 
-For hard clustering without cluster centers known:
+For "hard" clustering without specifying cluster centers:
 
-    clustering_quality(assignments, dist_matrix; quality_index)
-    clustering_quality(clustering, dist_matrix; quality_index)
     clustering_quality(data, assignments; quality_index, [metric])
     clustering_quality(data, clustering; quality_index, [metric])
 
-Compute the clustering quality index for a given clustering.
+For "hard" clustering without specifying data points and cluster centers:
 
-Returns a real number which is the value of the chosen quality index type of the given clustering.
+    clustering_quality(assignments, dist_matrix; quality_index)
+    clustering_quality(clustering, dist_matrix; quality_index)
 
-# Arguments
+Compute the *quality index* for a given clustering.
+
+Returns a quality index (real value).
+
+## Arguments
  - `data::AbstractMatrix`: ``d×n`` data matrix with each column representing one ``d``-dimensional data point
  - `centers::AbstractMatrix`: ``d×k`` matrix with cluster centers represented as columns
  - `assignments::AbstractVector{Int}`: ``n`` vector of point assignments (cluster indices)
@@ -30,25 +33,28 @@ Returns a real number which is the value of the chosen quality index type of the
  - `quality_index::Symbol`: quality index to calculate; see below for the supported options
  - `dist_matrix::AbstractMatrix`: a ``n×n`` pairwise distance matrix; `dist_matrix[i,j]` is the distance between ``i``-th and ``j``-th points
 
- # Keyword arguments
- - `quality_index::Symbol`: quality index to calculate; see below for the supported options
- - `fuzziness::Real`: clustering fuzziness > 1
+ ## Keyword arguments
+ - `quality_index::Symbol`: clustering *quality index* to calculate; see below for the supported options
+ - `fuzziness::Real`: clustering *fuzziness* > 1
  - `metric::SemiMetric=SqEuclidean()`: `SemiMetric` object that defines the metric/distance/similarity function
 
-When calling `clustering_quality` one can give `centers`, `assignments` or `weights` arguments by hand or provide a single `clustering` argument from which the necessary data will be read automatically.
+When calling `clustering_quality`, one can explicitly specify `centers`, `assignments`, and `weights`,
+or provide `ClusteringResult` via `clustering`, from which the necessary data will be read automatically.
 
-For clustering without known cluster centers the datapoints are not required, only `dist_matrix` is necessary. If given, `data` and `metric` will be used to calculate distance matrix instead.
+For clustering without known cluster centers the `data` points are not required.
+`dist_matrix` could be provided explicitly, otherwise it would be calculated from the `data` points
+using the specified `metric`.
 
-# Supported quality indices
+## Supported quality indices
 
-Symbols ↑/↓ are quality direction.
-- `:calinski_harabasz`: hard or fuzzy Calinski-Harabsz index (↑) returns the corrected ratio of between cluster centers inertia and within-clusters inertia
-- `:xie_beni`: hard or fuzzy Xie-Beni index (↓) returns ratio betwen inertia within clusters and minimal distance between cluster centers
-- `:davies_bouldin`: Davies-Bouldin index (↓) returns average similarity between each cluster and its most similar one, averaged over all the clusters
-- `:dunn`: Dunn index (↑) returns ratio between minimal distance between clusters and maximal cluster diameter; it does not make use of `centers` argument
-- `:silhouettes`: average silhouette index (↑), for all silhouettes use [`silhouettes`](@ref) method instead; it does not make use of `centers` argument
-Please refer to the [documentation](@ref clustering_quality) for the definitions and usage descriptions of the supported quality indices.
+- `:calinski_harabasz`: hard or fuzzy Calinski-Harabsz index (↑), the corrected ratio of between cluster centers inertia and within-clusters inertia
+- `:xie_beni`: hard or fuzzy Xie-Beni index (↓), the ratio betwen inertia within clusters and minimal distance between the cluster centers
+- `:davies_bouldin`: Davies-Bouldin index (↓), the similarity between the cluster and the other most similar one, averaged over all clusters
+- `:dunn`: Dunn index (↑), the ratio of the minimal distance between clusters and the maximal cluster diameter
+- `:silhouettes`: the average silhouette index (↑), see [`silhouettes`](@ref)
 
+The arrows ↑ or ↓ specify the direction of the incresing clustering quality.
+Please refer to the [documentation](@ref clustering_quality) for more details on the clustering quality indices.
 """
 function clustering_quality(
     data::AbstractMatrix{<:Real},           # d×n matrix

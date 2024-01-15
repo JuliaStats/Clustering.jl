@@ -29,6 +29,11 @@ from `b`.
 
 The clusterings could be specified either as [`ClusteringResult`](@ref)
 instances or as vectors of data point assignments.
+
+## See also
+
+[`confusion(a::ClusteringResult, a::ClusteringResult)`](@ref confusion) for 2×2 *confusion matrix*.
+
 """
 counts(a::ClusteringResult, b::ClusteringResult) =
     _counts(assignments(a), assignments(b))
