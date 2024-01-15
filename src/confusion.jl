@@ -19,6 +19,11 @@ true negatives is `C₂₂`:
 |:--:|:-:|:-:|
 |Positive|C₁₁|C₁₂|
 |Negative|C₂₁|C₂₂|
+
+## See also
+
+[`counts(a::ClusteringResult, a::ClusteringResult)`](@ref counts) for full *contingency matrix*.
+
 """
 function confusion(::Type{T}, a::AbstractVector{<:Integer}, b::AbstractVector{<:Integer}) where T<:Union{Integer, AbstractFloat}
     cc = counts(a, b)
