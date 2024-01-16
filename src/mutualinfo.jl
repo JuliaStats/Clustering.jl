@@ -35,7 +35,7 @@ If `normed` parameter is `true` the return value is the normalized mutual inform
 see "Data Mining Practical Machine Tools and Techniques", Witten & Frank 2005.
 
 # References
-> Vinh, Epps, and Bailey, (2009). “Information theoretic measures for clusterings comparison”.
-Proceedings of the 26th Annual International Conference on Machine Learning - ICML ‘09.
+> Vinh, Epps, and Bailey, (2009). *Information theoretic measures for clusterings comparison*.
+> Proceedings of the 26th Annual International Conference on Machine Learning - ICML ‘09.
 """
 mutualinfo(a, b; normed::Bool=true) = _mutualinfo(counts(a, b), normed)
