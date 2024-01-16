@@ -49,6 +49,9 @@ module Clustering
     # silhouette
     silhouettes,
 
+    # quality indices
+    clustering_quality,
+
     # varinfo
     varinfo,
 
@@ -70,6 +73,7 @@ module Clustering
     # pair confusion matrix
     confusion
 
+
     ## source files
 
     include("utils.jl")
@@ -84,13 +88,15 @@ module Clustering
 
     include("counts.jl")
     include("cluster_distances.jl")
+
     include("silhouette.jl")
+    include("clustering_quality.jl")
+
     include("randindex.jl")
     include("varinfo.jl")
     include("vmeasure.jl")
     include("mutualinfo.jl")
     include("confusion.jl")
-
     include("hclust.jl")
 
     include("deprecate.jl")

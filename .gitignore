@@ -1,2 +1,5 @@
 doc/build
 Manifest.toml
+*.swp
+.vscode
+docs/build/
