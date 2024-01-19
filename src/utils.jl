@@ -60,21 +60,8 @@ assignments(A::ClusterAssignments) = A
 const DisplayLevels = Dict(:none => 0, :final => 1, :iter => 2)
 
 display_level(s::Symbol) = get(DisplayLevels, s) do
-    throw(ArgumentError("Invalid value for the 'display' option: $s."))
-end
-
-##### update minimum value
-
-function updatemin!(r::AbstractArray, x::AbstractArray)
-    n = length(r)
-    length(x) == n || throw(DimensionMismatch("Inconsistent array lengths."))
-    @inbounds for i = 1:n
-        xi = x[i]
-        if xi < r[i]
-            r[i] = xi
-        end
-    end
-    return r
+    valid_vals = string.(":", first.(sort!(collect(pairs(DisplayLevels)), by=last)))
+    throw(ArgumentError("Invalid option display=:$s ($(join(valid_vals, ", ", ", or ")) expected)"))
 end
 
 function check_assignments(assignments::AbstractVector{<:Integer}, nclusters::Union{Integer, Nothing})
