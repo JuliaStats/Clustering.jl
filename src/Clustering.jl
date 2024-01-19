@@ -87,6 +87,7 @@ module Clustering
     include("fuzzycmeans.jl")
 
     include("counts.jl")
+
     include("cluster_distances.jl")
 
     include("silhouette.jl")
