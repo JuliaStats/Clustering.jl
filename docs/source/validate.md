@@ -85,7 +85,7 @@ mutualinfo
 
 ## Clustering quality indices
 
-[`clustering_quality()`][@ref clustering_quality] methods allow computing *intrinsic* clustering quality indices,
+[`clustering_quality()`](@ref clustering_quality) methods allow computing *intrinsic* clustering quality indices,
 i.e. the metrics that depend only on the clustering itself and do not use the external knowledge.
 These metrics can be used to compare different clustering algorithms or choose the optimal number of clusters.
 
@@ -180,7 +180,7 @@ Higher values indicate better separation of clusters w.r.t. point distances.
 silhouettes
 ```
 
-[`clustering_quality(..., quality_index=:silhouettes)`][@ref clustering_quality]
+[`clustering_quality(..., quality_index=:silhouettes)`](@ref clustering_quality)
 provides mean silhouette metric for the datapoints. Higher values indicate better quality.
 
 ## References
