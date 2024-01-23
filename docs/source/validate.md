@@ -85,7 +85,7 @@ mutualinfo
 
 ## Clustering quality indices
 
-[`clustering_quality()`][@ref clustering_quality] methods allow computing *intrinsic* clustering quality indices,
+[`clustering_quality()`](@ref clustering_quality) methods allow computing *intrinsic* clustering quality indices,
 i.e. the metrics that depend only on the clustering itself and do not use the external knowledge.
 These metrics can be used to compare different clustering algorithms or choose the optimal number of clusters.
 
@@ -180,7 +180,7 @@ Higher values indicate better separation of clusters w.r.t. point distances.
 silhouettes
 ```
 
-[`clustering_quality(..., quality_index=:silhouettes)`][@ref clustering_quality]
+[`clustering_quality(..., quality_index=:silhouettes)`](@ref clustering_quality)
 provides mean silhouette metric for the datapoints. Higher values indicate better quality.
 
 ## References
@@ -214,11 +214,11 @@ X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
          [9., -5.] .+ 0.4 * randn(2, 5),
          [-4., -9.] .+ 1 * randn(2, 5))
 
-nclusters = 2:5
-clusterings = kmeans.(Ref(X), nclusters)
+№_clu = 2:5
+clusterings = kmeans.(Ref(X), №_clu)
 
 plot((
-    plot(nclusters,
+    plot(№_clu,
          clustering_quality.(Ref(X), clusterings, quality_index = qidx),
          marker = :circle,
          title = ":$qidx", label = nothing,
@@ -237,11 +237,11 @@ X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
          [-4., -9.] .+ 1 * randn(2, 5))
 
 fuzziness = 2
-fuzzy_nclusters = 2:5
-fuzzy_clusterings = fuzzy_cmeans.(Ref(X), fuzzy_nclusters, fuzziness)
+fuzzy_№_clu = 2:5
+fuzzy_clusterings = fuzzy_cmeans.(Ref(X), fuzzy_№_clu, fuzziness)
 
 plot((
-    plot(fuzzy_nclusters,
+    plot(fuzzy_№_clu,
          clustering_quality.(Ref(X), fuzzy_clusterings,
                              fuzziness = fuzziness, quality_index = qidx),
          marker = :circle,
