@@ -214,11 +214,11 @@ X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
          [9., -5.] .+ 0.4 * randn(2, 5),
          [-4., -9.] .+ 1 * randn(2, 5))
 
-nclusters = 2:5
-clusterings = kmeans.(Ref(X), nclusters)
+№_clu = 2:5
+clusterings = kmeans.(Ref(X), №_clu)
 
 plot((
-    plot(nclusters,
+    plot(№_clu,
          clustering_quality.(Ref(X), clusterings, quality_index = qidx),
          marker = :circle,
          title = ":$qidx", label = nothing,
@@ -237,11 +237,11 @@ X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
          [-4., -9.] .+ 1 * randn(2, 5))
 
 fuzziness = 2
-fuzzy_nclusters = 2:5
-fuzzy_clusterings = fuzzy_cmeans.(Ref(X), fuzzy_nclusters, fuzziness)
+fuzzy_№_clu = 2:5
+fuzzy_clusterings = fuzzy_cmeans.(Ref(X), fuzzy_№_clu, fuzziness)
 
 plot((
-    plot(fuzzy_nclusters,
+    plot(fuzzy_№_clu,
          clustering_quality.(Ref(X), fuzzy_clusterings,
                              fuzziness = fuzziness, quality_index = qidx),
          marker = :circle,
