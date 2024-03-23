@@ -1,9 +1,9 @@
 struct HDBSCANGraph
-    edges::Vector{Vector{Tuple{Int64, Float64}}}
-    HDBSCANGraph(n) = new([Tuple{Int64, Float64}[] for _ in 1 : n])
+    edges::Vector{Vector{Tuple{Int, Float64}}}
+    HDBSCANGraph(n) = new([Tuple{Int, Float64}[] for _ in 1 : n])
 end
 
-function add_edge(G::HDBSCANGraph, v::Tuple{Int64, Int64, Float64})
+function add_edge(G::HDBSCANGraph, v::Tuple{Int, Int, Float64})
     i, j, c = v
     push!(G.edges[i], (j, c))
     push!(G.edges[j], (i, c))
