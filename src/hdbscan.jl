@@ -12,13 +12,13 @@ end
 Base.getindex(G::HDBSCANGraph, i::Int) = G.edges[i]
 
 mutable struct HDBSCANCluster
-    parent::Int64
-    children::Vector{Int64}
-    points::Vector{Int64}
+    parent::Int
+    children::Vector{Int}
+    points::Vector{Int}
     λp::Vector{Float64}
     stability::Float64
     children_stability::Float64
-    function HDBSCANCluster(noise::Bool, points::Vector{Int64})
+    function HDBSCANCluster(noise::Bool, points::Vector{Int})
         if noise
             return new(0, [], [], [], -1, -1)
         else
@@ -46,10 +46,10 @@ This algorithm performs clustering as follows.
 The detail is so complex it is difficult to explain the detail in here. But, if you want to know more about this algorithm, you should read [this docs](https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html).
 """
 mutable struct HDBSCANResult
-    k::Int64
-    min_cluster_size::Int64
-    labels::Union{Vector{Int64}, Nothing}
-    function HDBSCANResult(k::Int64, min_cluster_size::Int64)
+    k::Int
+    min_cluster_size::Int
+    labels::Union{Vector{Int}, Nothing}
+    function HDBSCANResult(k::Int, min_cluster_size::Int)
         if min_cluster_size < 1
             throw(DomainError(min_cluster_size, "The `min_cluster_size` must be greater than or equal to 1"))
         end
@@ -58,7 +58,7 @@ mutable struct HDBSCANResult
 end
 
 """
-    hdbscan!(points::AbstractMatrix, k::Int64, min_cluster_size::INt64; gen_mst::Bool=true, mst=nothing)
+    hdbscan!(points::AbstractMatrix, k::Int, min_cluster_size::Int; gen_mst::Bool=true, mst=nothing)
 # Parameters
 - `points`: the d×n matrix, where each column is a d-dimensional coordinate of a point
 - `k`: we will define "core distance of point A" as the distance between point A and the `k` th neighbor point of point A.
@@ -66,7 +66,7 @@ end
 - `gen_mst`: whether to generate minimum-spannig-tree or not
 - `mst`: when is specified and `gen_mst` is false, new mst won't be generated
 """
-function hdbscan!(points::AbstractMatrix, k::Int64, min_cluster_size::Int64; gen_mst::Bool=true, mst=nothing)
+function hdbscan!(points::AbstractMatrix, k::Int, min_cluster_size::Int; gen_mst::Bool=true, mst=nothing)
     model = HDBSCANResult(k, min_cluster_size)
     n = size(points, 1)
     if gen_mst
@@ -119,7 +119,7 @@ function mutual_reachability_distance(core_dists, points)
 end
 
 function prim(graph, n)
-    minimum_spanning_tree = Array{Tuple{Float64, Int64, Int64}}(undef, n-1)
+    minimum_spanning_tree = Array{Tuple{Float64, Int, Int}}(undef, n-1)
     
     marked = falses(n)
     marked_cnt = 1
@@ -158,7 +158,7 @@ function build_hierarchy(mst, min_size)
         end
     else
         for i in 1 : n
-            Hierarchy[i] = HDBSCANCluster(true, Int64[])
+            Hierarchy[i] = HDBSCANCluster(true, Int[])
         end
     end
     sort!(mst)
@@ -199,7 +199,7 @@ function build_hierarchy(mst, min_size)
             #create parent cluster
             points = members(uf, group(uf, j))
             if length(points) < min_size
-                Hierarchy[n+i] = HDBSCANCluster(true, Int64[])
+                Hierarchy[n+i] = HDBSCANCluster(true, Int[])
             else
                 Hierarchy[n+i] = HDBSCANCluster(false, points)
             end
@@ -237,7 +237,7 @@ heappush!(h, v) = insert!(h, searchsortedfirst(h, v), v)
 mutable struct UnionFind{T <: Integer}
     parent:: Vector{T}  # parent[root] is the negative of the size
     label::Dict{Int, Int}
-    cnt::Int64
+    cnt::Int
 
     function UnionFind{T}(nodes::T) where T<:Integer
         if nodes <= 0
