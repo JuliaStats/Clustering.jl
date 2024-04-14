@@ -237,18 +237,19 @@ savefig("clu_quality_hard.svg"); nothing # hide
 
 Fuzzy clustering quality for fuzzy C-means method with 2 to 5 clusters:
 ```@example clu_quality
-fuzziness = 2
+fuzziness = [1.3 2 3]
 fuzzy_nclusters = 2:5
 fuzzy_clusterings = fuzzy_cmeans.(Ref(X), fuzzy_nclusters, fuzziness)
 
 plot((
     plot(fuzzy_nclusters,
-         clustering_quality.(Ref(X), fuzzy_clusterings,
-                             fuzziness = fuzziness, quality_index = qidx),
+         [clustering_quality.(Ref(X), fuzz_clusterings,
+                              fuzziness = fuzz, quality_index = qidx)
+          for (fuzz, fuzz_clusterings) in zip(fuzziness, eachcol(fuzzy_clusterings))],
          marker = :circle,
-         title = ":$qidx", label = nothing,
+         title = ":$qidx", label = ["Fuzziness $fuzz" for fuzz in fuzziness],
     ) for qidx in [:calinski_harabasz, :xie_beni])...,
-    layout = (1, 2),
+    layout = (1, 2), legend = :left,
     xaxis = "N clusters", yaxis = "Quality",
     plot_title = "\"Soft\" clustering quality indices",
     size = (700, 350), left_margin = 10pt
