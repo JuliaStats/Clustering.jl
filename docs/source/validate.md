@@ -192,7 +192,7 @@ provides mean silhouette metric for the datapoints. Higher values indicate bette
 
 Exemplary data with 3 real clusters.
 ```@example clu_quality
-using Plots, Clustering
+using Plots, Plots.PlotMeasures, Clustering
 X_clusters = [(center = [4., 5.], std = 0.4, n = 10),
               (center = [9., -5.], std = 0.4, n = 5),
               (center = [-4., -9.], std = 1, n = 5)]
@@ -207,11 +207,14 @@ scatter(view(X, 1, :), view(X, 2, :),
     markercolor = X_assignments,
     plot_title = "Data", label = nothing,
     xlabel = "x", ylabel = "y",
-    legend = :outerright
-)
+    legend = :outerright,
+    size = (600, 500)
+);
+savefig("clu_quality_data.svg"); nothing # hide
 ```
+![](clu_quality_data.svg)
 
-Hard clustering quality for K-means method with 2 to 5 clusters:
+Hard clustering quality for [K-means](@ref) method with 2 to 5 clusters:
 
 ```@example clu_quality
 hard_nclusters = 2:5
@@ -223,11 +226,14 @@ plot((
          marker = :circle,
          title = ":$qidx", label = nothing,
     ) for qidx in [:silhouettes, :calinski_harabasz, :xie_beni, :davies_bouldin, :dunn])...,
-    layout = (3, 2),
-    xaxis = "N clusters",
-    plot_title = "\"Hard\" clustering quality indices"
+    layout = (2, 3),
+    xaxis = "N clusters", yaxis = "Quality",
+    plot_title = "\"Hard\" clustering quality indices",
+    size = (1000, 600), left_margin = 10pt
 )
+savefig("clu_quality_hard.svg"); nothing # hide
 ```
+![](clu_quality_hard.svg)
 
 Fuzzy clustering quality for fuzzy C-means method with 2 to 5 clusters:
 ```@example clu_quality
@@ -242,11 +248,14 @@ plot((
          marker = :circle,
          title = ":$qidx", label = nothing,
     ) for qidx in [:calinski_harabasz, :xie_beni])...,
-    layout = (2, 1),
-    xaxis = "N clusters",
-    plot_title = "\"Soft\" clustering quality indices"
+    layout = (1, 2),
+    xaxis = "N clusters", yaxis = "Quality",
+    plot_title = "\"Soft\" clustering quality indices",
+    size = (700, 350), left_margin = 10pt
 )
+savefig("clu_quality_soft.svg"); nothing # hide
 ```
+![](clu_quality_soft.svg)
 
 
 ## Other packages
