@@ -191,29 +191,29 @@ provides mean silhouette metric for the datapoints. Higher values indicate bette
 ### Examples
 
 Exemplary data with 3 real clusters.
-```@example
+```@example clu_quality
 using Plots, Clustering
-X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
-         [9., -5.] .+ 0.4 * randn(2, 5),
-         [-4., -9.] .+ 1 * randn(2, 5))
-
+X_clusters = [(center = [4., 5.], std = 0.4, n = 10),
+              (center = [9., -5.], std = 0.4, n = 5),
+              (center = [-4., -9.], std = 1, n = 5)]
+X = mapreduce(hcat, X_clusters) do (center, std, n)
+    center .+ std .* randn(length(center), n)
+end
+X_assignments = mapreduce(vcat, enumerate(X_clusters)) do (i, (_, _, n))
+    fill(i, n)
+end
 
 scatter(view(X, 1, :), view(X, 2, :),
-    label = "data points",
-    xlabel = "x",
-    ylabel = "y",
-    legend = :right,
+    markercolor = X_assignments,
+    plot_title = "Data", label = nothing,
+    xlabel = "x", ylabel = "y",
+    legend = :outerright
 )
 ```
 
 Hard clustering quality for K-means method with 2 to 5 clusters:
 
-```@example
-using Plots, Clustering
-X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
-         [9., -5.] .+ 0.4 * randn(2, 5),
-         [-4., -9.] .+ 1 * randn(2, 5))
-
+```@example clu_quality
 hard_nclusters = 2:5
 clusterings = kmeans.(Ref(X), hard_nclusters)
 
@@ -230,12 +230,7 @@ plot((
 ```
 
 Fuzzy clustering quality for fuzzy C-means method with 2 to 5 clusters:
-```@example
-using Plots, Clustering
-X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
-         [9., -5.] .+ 0.4 * randn(2, 5),
-         [-4., -9.] .+ 1 * randn(2, 5))
-
+```@example clu_quality
 fuzziness = 2
 fuzzy_nclusters = 2:5
 fuzzy_clusterings = fuzzy_cmeans.(Ref(X), fuzzy_nclusters, fuzziness)
