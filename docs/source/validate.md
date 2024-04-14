@@ -85,7 +85,7 @@ mutualinfo
 
 ## Clustering quality indices
 
-[`clustering_quality()`][@ref clustering_quality] methods allow computing *intrinsic* clustering quality indices,
+[`clustering_quality()`](@ref clustering_quality) methods allow computing *intrinsic* clustering quality indices,
 i.e. the metrics that depend only on the clustering itself and do not use the external knowledge.
 These metrics can be used to compare different clustering algorithms or choose the optimal number of clusters.
 
@@ -180,7 +180,7 @@ Higher values indicate better separation of clusters w.r.t. point distances.
 silhouettes
 ```
 
-[`clustering_quality(..., quality_index=:silhouettes)`][@ref clustering_quality]
+[`clustering_quality(..., quality_index=:silhouettes)`](@ref clustering_quality)
 provides mean silhouette metric for the datapoints. Higher values indicate better quality.
 
 ## References
@@ -191,51 +191,52 @@ provides mean silhouette metric for the datapoints. Higher values indicate bette
 ### Examples
 
 Exemplary data with 3 real clusters.
-```@example
-using Plots, Clustering
-X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
-         [9., -5.] .+ 0.4 * randn(2, 5),
-         [-4., -9.] .+ 1 * randn(2, 5))
-
+```@example clu_quality
+using Plots, Plots.PlotMeasures, Clustering
+X_clusters = [(center = [4., 5.], std = 0.4, n = 10),
+              (center = [9., -5.], std = 0.4, n = 5),
+              (center = [-4., -9.], std = 1, n = 5)]
+X = mapreduce(hcat, X_clusters) do (center, std, n)
+    center .+ std .* randn(length(center), n)
+end
+X_assignments = mapreduce(vcat, enumerate(X_clusters)) do (i, (_, _, n))
+    fill(i, n)
+end
 
 scatter(view(X, 1, :), view(X, 2, :),
-    label = "data points",
-    xlabel = "x",
-    ylabel = "y",
-    legend = :right,
-)
+    markercolor = X_assignments,
+    plot_title = "Data", label = nothing,
+    xlabel = "x", ylabel = "y",
+    legend = :outerright,
+    size = (600, 500)
+);
+savefig("clu_quality_data.svg"); nothing # hide
 ```
+![](clu_quality_data.svg)
 
-Hard clustering quality for K-means method with 2 to 5 clusters:
+Hard clustering quality for [K-means](@ref) method with 2 to 5 clusters:
 
-```@example
-using Plots, Clustering
-X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
-         [9., -5.] .+ 0.4 * randn(2, 5),
-         [-4., -9.] .+ 1 * randn(2, 5))
-
-nclusters = 2:5
-clusterings = kmeans.(Ref(X), nclusters)
+```@example clu_quality
+hard_nclusters = 2:5
+clusterings = kmeans.(Ref(X), hard_nclusters)
 
 plot((
-    plot(nclusters,
+    plot(hard_nclusters,
          clustering_quality.(Ref(X), clusterings, quality_index = qidx),
          marker = :circle,
          title = ":$qidx", label = nothing,
     ) for qidx in [:silhouettes, :calinski_harabasz, :xie_beni, :davies_bouldin, :dunn])...,
-    layout = (3, 2),
-    xaxis = "N clusters",
-    plot_title = "\"Hard\" clustering quality indices"
+    layout = (2, 3),
+    xaxis = "N clusters", yaxis = "Quality",
+    plot_title = "\"Hard\" clustering quality indices",
+    size = (1000, 600), left_margin = 10pt
 )
+savefig("clu_quality_hard.svg"); nothing # hide
 ```
+![](clu_quality_hard.svg)
 
 Fuzzy clustering quality for fuzzy C-means method with 2 to 5 clusters:
-```@example
-using Plots, Clustering
-X = hcat([4., 5.] .+ 0.4 * randn(2, 10),
-         [9., -5.] .+ 0.4 * randn(2, 5),
-         [-4., -9.] .+ 1 * randn(2, 5))
-
+```@example clu_quality
 fuzziness = 2
 fuzzy_nclusters = 2:5
 fuzzy_clusterings = fuzzy_cmeans.(Ref(X), fuzzy_nclusters, fuzziness)
@@ -247,11 +248,14 @@ plot((
          marker = :circle,
          title = ":$qidx", label = nothing,
     ) for qidx in [:calinski_harabasz, :xie_beni])...,
-    layout = (2, 1),
-    xaxis = "N clusters",
-    plot_title = "\"Soft\" clustering quality indices"
+    layout = (1, 2),
+    xaxis = "N clusters", yaxis = "Quality",
+    plot_title = "\"Soft\" clustering quality indices",
+    size = (700, 350), left_margin = 10pt
 )
+savefig("clu_quality_soft.svg"); nothing # hide
 ```
+![](clu_quality_soft.svg)
 
 
 ## Other packages
