@@ -1,19 +1,25 @@
 # HDBSCAN Graph
-# edge[i] is a list of edges adjacent to the i-th vertex?
+# edge[i] is a list of edges adjacent to the i-th vertex
 # the second element of HDBSCANEdge is the mutual reachability distance.
 HDBSCANEdge = Tuple{Int, Float64}
 struct HDBSCANGraph
     edges::Vector{Vector{HDBSCANEdge}}
-    HDBSCANGraph(n) = new([HDBSCANEdge[] for _ in 1 : n])
+    HDBSCANGraph(nv::Integer) = new([HDBSCANEdge[] for _ in 1 : nv])
 end
 
-function add_edge(G::HDBSCANGraph, v::Tuple{Int, Int, Float64})
-    i, j, c = v
-    push!(G.edges[i], (j, c))
-    push!(G.edges[j], (i, c))
+function add_edge!(G::HDBSCANGraph, v1::Integer, v2::Integer, dist::Number)
+    push!(G.edges[v1], (v2, dist))
+    push!(G.edges[v2], (v1, dist))
 end
 
 Base.getindex(G::HDBSCANGraph, i::Int) = G.edges[i]
+
+struct MSTEdge
+    v1::Integer
+    v2::Integer
+    dist::Number
+end
+expand(edge::MSTEdge) = (edge.v1, edge.v2, edge.dist)
 
 """
     HdbscanCluster(..., points, stability, ...)
@@ -29,20 +35,17 @@ mutable struct HdbscanCluster
     λp::Vector{Float64}
     stability::Float64
     children_stability::Float64
-    function HdbscanCluster(noise::Bool, points::Vector{Int})
-        if noise
-            return new(0, [], [], [], -1, -1)
-        else
-            return new(0, [], points, [], 0, 0)
-        end
+    function HdbscanCluster(points::Union{Vector{Int}, Nothing})
+        noise = isnothing(points)
+        return new(0, Int[], noise ? Int[] : points, Float64[], noise ? -1 : 0, noise ? -1 : 0)
     end
 end
 
 Base.length(c::HdbscanCluster) = size(c.points, 1)
 isnoise(c::HdbscanCluster) = c.stability == -1
-hasstability(c::HdbscanCluster) = c.stability != 0
-function compute_stability(c::HdbscanCluster, λbirth)
-    c.stability += sum(c.λp.-λbirth)
+isstable(c::HdbscanCluster) = c.stability != 0
+function increment_stability(c::HdbscanCluster, λbirth)
+    c.stability += sum(c.λp) - length(c.λ) * λbirth
 end
 
 """
@@ -51,10 +54,9 @@ end
 - `min_cluster_size`: minimum number of points in the cluster
 - `clusters`: result vector of clusters
 """
-mutable struct HdbscanResult
-    k::Int
-    min_cluster_size::Int
+struct HdbscanResult
     clusters::Vector{HdbscanCluster}
+    assignments::Vector{Int}
 end
 
 """
@@ -105,21 +107,21 @@ function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; gen_mst:
     end
     push!(result, HdbscanCluster(true, Int[]))
     result[end].points = findall(x->x==-1, noise_points)
-    return HdbscanResult(k, min_cluster_size, result)
+    return HdbscanResult(result, )
 end
 
-function core_dist(points, k)
+# calculate the core distances of the points
+function core_distances(points::AbstractMatrix, k::Integer)
     core_dists = Array{Float64}(undef, size(points, 1))
-    for i in 1 : size(points, 1)
-        p = points[i:i, :]
-        dists = vec(sum((@. (points - p)^2), dims=2))
+    for i in 1:size(points, 1)
+        dists = pairwise(Euclidean(), points[i:i, :], points; dims=2)
         sort!(dists)
         core_dists[i] = dists[k]
     end
     return core_dists
 end
 
-function mutual_reachability_distance(core_dists, points)
+function hdbscan_graph(core_dists::AbstractVector, points::AbstractMatrix)
     n = size(points, 1)
     graph = HDBSCANGraph(div(n * (n-1), 2))
     for i in 1 : n-1
@@ -131,30 +133,30 @@ function mutual_reachability_distance(core_dists, points)
     return graph
 end
 
-function prim(graph, n)
+function hdbscan_minspantree(graph::HDBSCANGraph, n::Integer)
     minimum_spanning_tree = Array{Tuple{Float64, Int, Int}}(undef, n-1)
     
     marked = falses(n)
     marked_cnt = 1
     marked[1] = true
     
-    h = []
+    h = MSTEdge[]
     
     for (i, c) in graph[1]
-        heappush!(h, (c, 1, i))
+        heappush!(h, MSTEdge(1, i, c))
     end
     
     while marked_cnt < n
-        c, i, j = popfirst!(h)
+        i, j, c = expand(popfirst!(h))
         
         marked[j] == true && continue
-        minimum_spanning_tree[marked_cnt] = (c, i, j)
+        minimum_spanning_tree[marked_cnt] = MSTEdge(i, j, c)
         marked[j] = true
         marked_cnt += 1
         
         for (k, c) in graph[j]
             marked[k] == true && continue
-            heappush!(h, (c, j, k))
+            heappush!(h, MSTEdge(j, k, c))
         end
     end
     return minimum_spanning_tree
