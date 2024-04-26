@@ -16,7 +16,6 @@ makedocs(
             "mcl.md",
             "affprop.md",
             "dbscan.md",
-            "hdbscan.md",
             "fuzzycmeans.md",
         ],
         "validate.md",
