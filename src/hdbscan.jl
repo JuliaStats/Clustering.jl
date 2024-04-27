@@ -235,9 +235,6 @@ function prune_cluster!(hierarchy::Vector{HdbscanCluster})
     end
 end
 
-# Below are utility functions for building hierarchical trees
-heappush!(h, v) = insert!(h, searchsortedfirst(h, v), v)
-
 # Union-Find
 # structure for managing disjoint sets
 # This structure tracks which sets the elements of a set belong to,
