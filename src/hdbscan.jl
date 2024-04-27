@@ -18,7 +18,7 @@ struct MSTEdge
     v2::Integer
     dist::Number
 end
-expand(edge::MSTEdge) = (edge.v1, edge.v2, edge.dist)
+
 Base.isless(edge1::MSTEdge, edge2::MSTEdge) = edge1.dist < edge2.dist
 
 """
@@ -141,8 +141,8 @@ function hdbscan_minspantree(graph::HdbscanGraph, n::Integer)
     end
     
     while nmarked < n
-        i, j, c = expand(pop!(h))
-        
+        i, j, c = pop!(h)
+
         marked[j] && continue
         minspantree[nmarked] = MSTEdge(i, j, c)
         marked[j] = true
@@ -164,7 +164,7 @@ function hdbscan_clusters(mst::AbstractVector{MSTEdge}, min_size::Integer)
     sort!(mst)
     
     for i in 1 : n-1
-        j, k, c = expand(mst[i])
+        j, k, c = mst[i]
         cost += c
         λ = 1 / cost
         #child clusters
