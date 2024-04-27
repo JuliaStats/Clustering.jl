@@ -8,11 +8,6 @@ struct HdbscanGraph
     HdbscanGraph(nv::Integer) = new([HdbscanEdge[] for _ in 1 : nv])
 end
 
-function add_edge!(G::HdbscanGraph, v1::Integer, v2::Integer, dist::Number)
-    push!(G.adj_edges[v1], (v2, dist))
-    push!(G.adj_edges[v2], (v1, dist))
-end
-
 # Edge of the minimum spanning tree for HDBScan algorithm
 HdbscanMSTEdge = NamedTuple{(:v1, :v2, :dist), Tuple{Int, Int, Float64}}
 
@@ -106,12 +101,14 @@ end
 
 function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
     n = size(dists, 1)
-    graph = HdbscanGraph(div(n * (n-1), 2))
+    graph = HdbscanGraph(n)
     for (i, i_dists) in enumerate(eachcol(dists))
         i_core = core_dists[i]
         for j in i+1:n
             c = max(i_core, core_dists[j], i_dists[j])
-            add_edge!(graph, i, j, c)
+            # add reciprocal edges
+            push!(graph.adj_edges[i], (j, c))
+            push!(graph.adj_edges[j], (i, c))
         end
     end
     return graph
