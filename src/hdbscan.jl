@@ -46,6 +46,7 @@ mutable struct HdbscanCluster
 end
 
 Base.length(c::HdbscanCluster) = size(c.points, 1)
+
 """
     isnoise(c::HdbscanCluster)
 This function returns whether the cluster is the noise or not.
