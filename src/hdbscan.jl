@@ -3,17 +3,15 @@ HdbscanEdge = Tuple{Int, Float64}
 
 # HDBSCAN Graph
 struct HdbscanGraph
-    edges::Vector{Vector{HdbscanEdge}}
+    adj_edges::Vector{Vector{HdbscanEdge}}
 
     HdbscanGraph(nv::Integer) = new([HdbscanEdge[] for _ in 1 : nv])
 end
 
 function add_edge!(G::HdbscanGraph, v1::Integer, v2::Integer, dist::Number)
-    push!(G.edges[v1], (v2, dist))
-    push!(G.edges[v2], (v1, dist))
+    push!(G.adj_edges[v1], (v2, dist))
+    push!(G.adj_edges[v2], (v1, dist))
 end
-
-Base.getindex(G::HdbscanGraph, i::Int) = G.edges[i]
 
 struct MSTEdge
     v1::Integer
@@ -137,8 +135,8 @@ function hdbscan_minspantree(graph::HdbscanGraph, n::Integer)
     marked[1] = true
     
     h = MSTEdge[]
-    
-    for (i, c) in graph[1]
+
+    for (i, c) in graph.adj_edges[1]
         heapput!(h, MSTEdge(1, i, c))
     end
     
@@ -149,8 +147,8 @@ function hdbscan_minspantree(graph::HdbscanGraph, n::Integer)
         minspantree[nmarked] = MSTEdge(i, j, c)
         marked[j] = true
         nmarked += 1
-        
-        for (k, c) in graph[j]
+
+        for (k, c) in graph.adj_edges[j]
             marked[k] && continue
             heapput!(h, MSTEdge(j, k, c))
         end
