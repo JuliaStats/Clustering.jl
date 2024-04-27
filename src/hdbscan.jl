@@ -13,13 +13,8 @@ function add_edge!(G::HdbscanGraph, v1::Integer, v2::Integer, dist::Number)
     push!(G.adj_edges[v2], (v1, dist))
 end
 
-struct MSTEdge
-    v1::Integer
-    v2::Integer
-    dist::Number
-end
-
-Base.isless(edge1::MSTEdge, edge2::MSTEdge) = edge1.dist < edge2.dist
+# Edge of the minimum spanning tree for HDBScan algorithm
+HdbscanMSTEdge = NamedTuple{(:v1, :v2, :dist), Tuple{Int, Int, Float64}}
 
 """
     HdbscanCluster
@@ -124,39 +119,39 @@ end
 
 function hdbscan_minspantree(graph::HdbscanGraph, n::Integer)
     function heapput!(h, v)
-        idx = searchsortedlast(h, v, rev=true)
+        idx = searchsortedlast(h, v, by=e -> e.dist, rev=true)
         insert!(h, (idx != 0) ? idx : 1, v)
     end
 
-    minspantree = Vector{MSTEdge}(undef, n-1)
-    
+    minspantree = Vector{HdbscanMSTEdge}(undef, n-1)
+
     marked = falses(n)
     nmarked = 1
     marked[1] = true
-    
-    h = MSTEdge[]
+
+    h = HdbscanMSTEdge[]
 
     for (i, c) in graph.adj_edges[1]
-        heapput!(h, MSTEdge(1, i, c))
+        heapput!(h, (v1=1, v2=i, dist=c))
     end
     
     while nmarked < n
-        i, j, c = pop!(h)
+        (i, j, c) = pop!(h)
 
         marked[j] && continue
-        minspantree[nmarked] = MSTEdge(i, j, c)
+        minspantree[nmarked] = (v1=i, v2=j, dist=c)
         marked[j] = true
         nmarked += 1
 
         for (k, c) in graph.adj_edges[j]
             marked[k] && continue
-            heapput!(h, MSTEdge(j, k, c))
+            heapput!(h, (v1=j, v2=k, dist=c))
         end
     end
     return minspantree
 end
 
-function hdbscan_clusters(mst::AbstractVector{MSTEdge}, min_size::Integer)
+function hdbscan_clusters(mst::AbstractVector{HdbscanMSTEdge}, min_size::Integer)
     n = length(mst) + 1
     cost = 0
     uf = UnionFind(n)
