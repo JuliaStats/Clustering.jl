@@ -79,14 +79,15 @@ Refer to [HDBSCAN algorithm](@ref hdbscan_algorithm) description for the details
 - `min_cluster_size::Integer`: minimum number of points in the cluster
 - `metric`(defaults to Euclidean): the points distance metric to use.
 """
-function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; metric=Euclidean())
+function hdbscan(points::AbstractMatrix, ncore::Integer, min_cluster_size::Int; metric=Euclidean())
     if min_cluster_size < 1
         throw(DomainError(min_cluster_size, "The `min_cluster_size` must be greater than or equal to 1"))
     end
     n = size(points, 2)
     dists = pairwise(metric, points; dims=2)
-    #calculate core distances for each point
-    core_dists = core_distances(dists, k)
+    # calculate core (ncore-th nearest) distance for each point
+    core_dists = [partialsort(i_dists, ncore) for i_dists in eachcol(dists)]
+
     #calculate mutual reachability distance between any two points
     mrd = hdbscan_graph(core_dists, dists)
     #compute a minimum spanning tree by prim method
@@ -107,15 +108,6 @@ function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; metric=E
     noise_points = findall(==(0), assignments)
     isempty(noise_points) || push!(clusters, HdbscanCluster(noise_points))
     return HdbscanResult(clusters, assignments)
-end
-
-# calculate the core (k-th nearest) distances of the points
-function core_distances(dists::AbstractMatrix, k::Integer)
-    core_dists = Array{Float64}(undef, size(dists, 1))
-    for i in axes(dists, 2)
-        core_dists[i] = partialsort!(dists[:, i], k)
-    end
-    return core_dists
 end
 
 function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
