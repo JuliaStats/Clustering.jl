@@ -75,7 +75,7 @@ function hdbscan(points::AbstractMatrix, ncore::Integer, min_cluster_size::Int; 
     n = size(points, 2)
     dists = pairwise(metric, points; dims=2)
     # calculate core (ncore-th nearest) distance for each point
-    core_dists = [partialsort(i_dists, ncore) for i_dists in eachcol(dists)]
+    core_dists = [partialsort!(dists[:, i], ncore) for i in axes(dists, 2)]
 
     #calculate mutual reachability distance between any two points
     mrd = hdbscan_graph(core_dists, dists)
@@ -102,7 +102,8 @@ end
 function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
     n = size(dists, 1)
     graph = HdbscanGraph(n)
-    for (i, i_dists) in enumerate(eachcol(dists))
+    for i in axes(dists, 2)
+        i_dists = view(dists, :, i)
         i_core = core_dists[i]
         for j in i+1:n
             c = max(i_core, core_dists[j], i_dists[j])
