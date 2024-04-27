@@ -1,11 +1,11 @@
-# HDBSCAN Graph
-# edge[i] is a list of edges adjacent to the i-th vertex
-# the second element of HDBSCANEdge is the mutual reachability distance.
-HDBSCANEdge = Tuple{Int, Float64}
-struct HdbscanGraph
-    edges::Vector{Vector{HDBSCANEdge}}
+# HDBSCAN Graph edge: target vertex and mutual reachability distance.
+HdbscanEdge = Tuple{Int, Float64}
 
-    HdbscanGraph(nv::Integer) = new([HDBSCANEdge[] for _ in 1 : nv])
+# HDBSCAN Graph
+struct HdbscanGraph
+    edges::Vector{Vector{HdbscanEdge}}
+
+    HdbscanGraph(nv::Integer) = new([HdbscanEdge[] for _ in 1 : nv])
 end
 
 function add_edge!(G::HdbscanGraph, v1::Integer, v2::Integer, dist::Number)
