@@ -184,7 +184,6 @@ function hdbscan_clusters(mst::AbstractVector{MSTEdge}, min_size::Integer)
         c1 = group(uf, j)
         c2 = group(uf, k)
         #reference to the parent cluster
-        println(c1, c2, n+i)
         clusters[c1].parent = clusters[c2].parent = n+i
         nc1, nc2 = isnoise(clusters[c1]), isnoise(clusters[c2])
         if !(nc1 || nc2)
@@ -235,7 +234,6 @@ function prune_cluster!(hierarchy::Vector{HdbscanCluster})
                 push!(hierarchy[c.parent].children, i)
                 hierarchy[c.parent].children_stability += c.stability
             else
-                println(c.parent, i)
                 append!(hierarchy[c.parent].children, c.children)
                 hierarchy[c.parent].children_stability += c.children_stability
             end
