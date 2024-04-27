@@ -115,12 +115,11 @@ function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; metric=E
     return HdbscanResult(result, assignments)
 end
 
-# calculate the core distances of the points
+# calculate the core (k-th nearest) distances of the points
 function core_distances(dists::AbstractMatrix, k::Integer)
     core_dists = Array{Float64}(undef, size(dists, 1))
-    for i in axes(dists, 1)
-        dist = sort(dists[i, :])
-        core_dists[i] = dist[k]
+    for i in axes(dists, 2)
+        core_dists[i] = partialsort!(dists[:, i], k)
     end
     return core_dists
 end
