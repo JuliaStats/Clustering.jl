@@ -84,7 +84,7 @@ function hdbscan(points::AbstractMatrix, ncore::Integer, min_cluster_size::Int; 
     #build a HDBSCAN hierarchy
     hierarchy = hdbscan_clusters(mst, min_cluster_size)
     #extract the target cluster
-    prune_cluster!(hierarchy)
+    prune_clusters!(hierarchy)
     #generate the list of cluster assignment for each point
     clusters = HdbscanCluster[]
     assignments = fill(0, n) # cluster index of each point
@@ -202,21 +202,16 @@ function hdbscan_clusters(mst::AbstractVector{HdbscanMSTEdge}, min_size::Integer
     return clusters
 end
 
-function prune_cluster!(hierarchy::Vector{HdbscanCluster})
-    for i in 1 : length(hierarchy)-1
-        if isnoise(hierarchy[i])
-            c = hierarchy[i]
-            push!(hierarchy[c.parent].children, i)
-            hierarchy[c.parent].children_stability += c.stability
+function prune_clusters!(hierarchy::Vector{HdbscanCluster})
+    for i in 1:length(hierarchy)-1
+        c = hierarchy[i]
+        parent = hierarchy[c.parent]
+        if isnoise(c) || c.stability > c.children_stability
+            push!(parent.children, i)
+            parent.children_stability += c.stability
         else
-            c = hierarchy[i]
-            if c.stability > c.children_stability
-                push!(hierarchy[c.parent].children, i)
-                hierarchy[c.parent].children_stability += c.stability
-            else
-                append!(hierarchy[c.parent].children, c.children)
-                hierarchy[c.parent].children_stability += c.children_stability
-            end
+            append!(parent.children, c.children)
+            parent.children_stability += c.children_stability
         end
     end
 end
