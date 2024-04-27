@@ -113,9 +113,10 @@ end
 function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
     n = size(dists, 1)
     graph = HDBSCANGraph(div(n * (n-1), 2))
-    for i in 1 : n-1
-        for j in i+1 : n
-            c = max(core_dists[i], core_dists[j], dists[i, j])
+    for (i, i_dists) in enumerate(eachcol(dists))
+        i_core = core_dists[i]
+        for j in i+1:n
+            c = max(i_core, core_dists[j], i_dists[j])
             add_edge!(graph, i, j, c)
         end
     end
