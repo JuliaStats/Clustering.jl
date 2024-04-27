@@ -80,7 +80,7 @@ function hdbscan(points::AbstractMatrix, ncore::Integer, min_cluster_size::Int; 
     #calculate mutual reachability distance between any two points
     mrd = hdbscan_graph(core_dists, dists)
     #compute a minimum spanning tree by prim method
-    mst = hdbscan_minspantree(mrd, n)
+    mst = hdbscan_minspantree(mrd)
     #build a HDBSCAN hierarchy
     hierarchy = hdbscan_clusters(mst, min_cluster_size)
     #extract the target cluster
@@ -114,35 +114,36 @@ function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
     return graph
 end
 
-function hdbscan_minspantree(graph::HdbscanGraph, n::Integer)
-    function heapput!(h, v)
+function hdbscan_minspantree(graph::HdbscanGraph)
+    function heapput!(h, v::HdbscanMSTEdge)
         idx = searchsortedlast(h, v, by=e -> e.dist, rev=true)
         insert!(h, (idx != 0) ? idx : 1, v)
     end
 
-    minspantree = Vector{HdbscanMSTEdge}(undef, n-1)
-
-    marked = falses(n)
-    nmarked = 1
-    marked[1] = true
-
-    h = HdbscanMSTEdge[]
-
+    # initialize the edges heap by putting all edges of the first node (the root)
+    heap = HdbscanMSTEdge[]
     for (i, c) in graph.adj_edges[1]
-        heapput!(h, (v1=1, v2=i, dist=c))
+        heapput!(heap, (v1=1, v2=i, dist=c))
     end
-    
-    while nmarked < n
-        (i, j, c) = pop!(h)
 
-        marked[j] && continue
-        minspantree[nmarked] = (v1=i, v2=j, dist=c)
-        marked[j] = true
-        nmarked += 1
+    # build the tree
+    n = length(graph.adj_edges)
+    minspantree = Vector{HdbscanMSTEdge}()
+    inmst = falses(n) # if the graph node is in MST
+    inmst[1] = true # root
 
+    while length(minspantree) < n-1
+        # get the next edge with maximal? distance
+        (i, j, c) = pop!(heap)
+
+        # add j-th node to MST if not there
+        inmst[j] && continue
+        push!(minspantree, (v1=i, v2=j, dist=c))
+        inmst[j] = true
+
+        # add adjacent edges of j to the heap
         for (k, c) in graph.adj_edges[j]
-            marked[k] && continue
-            heapput!(h, (v1=j, v2=k, dist=c))
+            inmst[k] || heapput!(heap, (v1=j, v2=k, dist=c))
         end
     end
     return minspantree
