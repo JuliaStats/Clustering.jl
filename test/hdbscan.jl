@@ -1,5 +1,16 @@
 using Test
 using Clustering
+using Clustering: UnionFind, set_id, items, root, setsize, unite!
+
+@testset "UnionFind" begin
+    uf = UnionFind(10)
+    @test set_id(uf, 5) == 5
+    @test items(uf, 5) == [5]
+    @test !(unite!(uf, 5, 5))
+    @test unite!(uf, 4, 5)
+    @test setsize(uf, 4) == 2
+    @test root(uf, 5) == 4
+end
 
 @testset "HDBSCAN" begin
     # make moons for test
