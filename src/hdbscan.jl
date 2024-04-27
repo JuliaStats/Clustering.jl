@@ -20,6 +20,7 @@ struct MSTEdge
     dist::Number
 end
 expand(edge::MSTEdge) = (edge.v1, edge.v2, edge.dist)
+Base.isless(edge1::MSTEdge, edge2::MSTEdge) = edge1.dist < edge2.dist
 
 """
     HdbscanCluster(..., points, stability, ...)
@@ -45,7 +46,7 @@ Base.length(c::HdbscanCluster) = size(c.points, 1)
 isnoise(c::HdbscanCluster) = c.stability == -1
 isstable(c::HdbscanCluster) = c.stability != 0
 function increment_stability(c::HdbscanCluster, λbirth)
-    c.stability += sum(c.λp) - length(c.λ) * λbirth
+    c.stability += sum(c.λp) - length(c.λp) * λbirth
 end
 
 """
@@ -76,25 +77,22 @@ The detail is so complex it is difficult to explain the detail in here. But, if 
 - `gen_mst`: whether to generate minimum-spannig-tree or not
 - `mst`: when is specified and `gen_mst` is false, new mst won't be generated
 """
-function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; gen_mst::Bool=true, mst=nothing)
+function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; metric=SqEuclidean())
     if min_cluster_size < 1
         throw(DomainError(min_cluster_size, "The `min_cluster_size` must be greater than or equal to 1"))
     end
-    n = size(points, 1)
-    if gen_mst
-        #calculate core distances for each point
-        core_dists = core_dist(points, k)
-        #calculate mutual reachability distance between any two points
-        mrd = mutual_reachability_distance(core_dists, points)
-        #compute a minimum spanning tree by prim method
-        mst = prim(mrd, n)
-    elseif mst == nothing
-        throw(ArgumentError("if you set `gen_mst` to false, you must pass a minimum spanning tree as `mst`"))
-    end
+    n = size(points, 2)
+    dists = pairwise(metric, points; dims=2)
+    #calculate core distances for each point
+    core_dists = core_distances(dists, k)
+    #calculate mutual reachability distance between any two points
+    mrd = hdbscan_graph(core_dists, dists)
+    #compute a minimum spanning tree by prim method
+    mst = hdbscan_minspantree(mrd, n)
     #build a HDBSCAN hierarchy
-    hierarchy = build_hierarchy(mst, min_cluster_size)
+    hierarchy = hdbscan_clusters(mst, min_cluster_size)
     #extract the target cluster
-    extract_cluster!(hierarchy)
+    prune_cluster!(hierarchy)
     #generate the list of cluster assignment for each point
     result = HdbscanCluster[]
     noise_points = fill(-1, n)
@@ -105,125 +103,127 @@ function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; gen_mst:
             noise_points[k] = 0
         end
     end
-    push!(result, HdbscanCluster(true, Int[]))
+    push!(result, HdbscanCluster(Int[]))
     result[end].points = findall(x->x==-1, noise_points)
-    return HdbscanResult(result, )
+    assignments = Array{Int}(undef, length(points))
+    for i in 1 : length(result)-1
+        assignments[result[i].points] = i
+    end
+    assignments[result[end].points] .= -1
+    return HdbscanResult(result, assignments)
 end
 
 # calculate the core distances of the points
-function core_distances(points::AbstractMatrix, k::Integer)
-    core_dists = Array{Float64}(undef, size(points, 1))
-    for i in 1:size(points, 1)
-        dists = pairwise(Euclidean(), points[i:i, :], points; dims=2)
-        sort!(dists)
-        core_dists[i] = dists[k]
+function core_distances(dists::AbstractMatrix, k::Integer)
+    core_dists = Array{Float64}(undef, size(dists, 1))
+    for i in axes(dists, 1)
+        dist = sort(dists[i, :])
+        core_dists[i] = dist[k]
     end
     return core_dists
 end
 
-function hdbscan_graph(core_dists::AbstractVector, points::AbstractMatrix)
-    n = size(points, 1)
+function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
+    n = size(dists, 1)
     graph = HDBSCANGraph(div(n * (n-1), 2))
     for i in 1 : n-1
         for j in i+1 : n
-            c = max(core_dists[i], core_dists[j], sum((points[i, :]-points[j, :]).^2))
-            add_edge(graph, (i, j, c))
+            c = max(core_dists[i], core_dists[j], dists[i, j])
+            add_edge!(graph, i, j, c)
         end
     end
     return graph
 end
 
 function hdbscan_minspantree(graph::HDBSCANGraph, n::Integer)
-    minimum_spanning_tree = Array{Tuple{Float64, Int, Int}}(undef, n-1)
+    function heapput!(h, v)
+        idx = searchsortedlast(h, v, rev=true)
+        insert!(h, (idx != 0) ? idx : 1, v)
+    end
+
+    minspantree = Vector{MSTEdge}(undef, n-1)
     
     marked = falses(n)
-    marked_cnt = 1
+    nmarked = 1
     marked[1] = true
     
     h = MSTEdge[]
     
     for (i, c) in graph[1]
-        heappush!(h, MSTEdge(1, i, c))
+        heapput!(h, MSTEdge(1, i, c))
     end
     
-    while marked_cnt < n
-        i, j, c = expand(popfirst!(h))
+    while nmarked < n
+        i, j, c = expand(pop!(h))
         
-        marked[j] == true && continue
-        minimum_spanning_tree[marked_cnt] = MSTEdge(i, j, c)
+        marked[j] && continue
+        minspantree[nmarked] = MSTEdge(i, j, c)
         marked[j] = true
-        marked_cnt += 1
+        nmarked += 1
         
         for (k, c) in graph[j]
-            marked[k] == true && continue
-            heappush!(h, MSTEdge(j, k, c))
+            marked[k] && continue
+            heapput!(h, MSTEdge(j, k, c))
         end
     end
-    return minimum_spanning_tree
+    return minspantree
 end
 
-function build_hierarchy(mst, min_size)
+function hdbscan_clusters(mst::AbstractVector{MSTEdge}, min_size::Integer)
     n = length(mst) + 1
     cost = 0
     uf = UnionFind(n)
-    Hierarchy = Array{HdbscanCluster}(undef, 2n-1)
-    if min_size == 1
-        for i in 1 : n
-            Hierarchy[i] = HdbscanCluster(false, [i])
-        end
-    else
-        for i in 1 : n
-            Hierarchy[i] = HdbscanCluster(true, Int[])
-        end
-    end
+    clusters = [HdbscanCluster(min_size > 1 ? Int[i] : Int[]) for i in 1:n]
     sort!(mst)
     
     for i in 1 : n-1
-        c, j, k = mst[i]
+        j, k, c = expand(mst[i])
         cost += c
         λ = 1 / cost
         #child clusters
         c1 = group(uf, j)
         c2 = group(uf, k)
         #reference to the parent cluster
-        Hierarchy[c1].parent = Hierarchy[c2].parent = n+i
-        nc1, nc2 = isnoise(Hierarchy[c1]), isnoise(Hierarchy[c2])
+        println(c1, c2, n+i)
+        clusters[c1].parent = clusters[c2].parent = n+i
+        nc1, nc2 = isnoise(clusters[c1]), isnoise(clusters[c2])
         if !(nc1 || nc2)
             #compute stability
-            compute_stability(Hierarchy[c1], λ)
-            compute_stability(Hierarchy[c2], λ)
+            increment_stability(clusters[c1], λ)
+            increment_stability(clusters[c2], λ)
             #unite cluster
             unite!(uf, j, k)
             #create parent cluster
             points = members(uf, group(uf, j))
-            Hierarchy[n+i] = HdbscanCluster(false, points)
+            push!(clusters, HdbscanCluster(points))
         elseif !(nc1 && nc2)
             if nc2 == true
                 (c1, c2) = (c2, c1)
             end
             #record the lambda value
-            append!(Hierarchy[c2].λp, fill(λ, length(Hierarchy[c1])))
+            append!(clusters[c2].λp, fill(λ, length(clusters[c1])))
             #unite cluster
             unite!(uf, j, k)
             #create parent cluster
             points = members(uf, group(uf, j))
-            Hierarchy[n+i] = HdbscanCluster(false, points)
+            push!(clusters, HdbscanCluster(points))
         else
             #unite the noise cluster
             unite!(uf, j, k)
             #create parent cluster
             points = members(uf, group(uf, j))
             if length(points) < min_size
-                Hierarchy[n+i] = HdbscanCluster(true, Int[])
+                push!(clusters, HdbscanCluster(Int[]))
             else
-                Hierarchy[n+i] = HdbscanCluster(false, points)
+                push!(clusters, HdbscanCluster(points))
             end
         end
     end
-    return Hierarchy
+    @assert length(clusters) == 2n - 1
+    return clusters
 end
 
-function extract_cluster!(hierarchy::Vector{HdbscanCluster})
+function prune_cluster!(hierarchy::Vector{HdbscanCluster})
     for i in 1 : length(hierarchy)-1
         if isnoise(hierarchy[i])
             c = hierarchy[i]
@@ -235,6 +235,7 @@ function extract_cluster!(hierarchy::Vector{HdbscanCluster})
                 push!(hierarchy[c.parent].children, i)
                 hierarchy[c.parent].children_stability += c.stability
             else
+                println(c.parent, i)
                 append!(hierarchy[c.parent].children, c.children)
                 hierarchy[c.parent].children_stability += c.children_stability
             end
@@ -245,27 +246,34 @@ end
 # Below are utility functions for building hierarchical trees
 heappush!(h, v) = insert!(h, searchsortedfirst(h, v), v)
 
-mutable struct UnionFind{T <: Integer}
-    parent:: Vector{T}  # parent[root] is the negative of the size
+# Union-Find
+# structure for managing disjoint sets
+# This structure tracks which sets the elements of a set belong to,
+# and allows us to efficiently determine whether two elements belong to the same set.
+mutable struct UnionFind
+    parent:: Vector{Integer}  # parent[root] is the negative of the size
     label::Dict{Int, Int}
-    cnt::Int
+    next_id::Int
 
-    function UnionFind{T}(nodes::T) where T<:Integer
+    function UnionFind(nodes::Integer)
         if nodes <= 0
             throw(ArgumentError("invalid argument for nodes: $nodes"))
         end
 
-        parent = -ones(T, nodes)
+        parent = -ones(nodes)
         label = Dict([(i, i) for i in 1 : nodes])
-        new{T}(parent, label, nodes)
+        new(parent, label, nodes)
     end
 end
 
-UnionFind(nodes::Integer) = UnionFind{typeof(nodes)}(nodes)
-group(uf::UnionFind, x)::Int = uf.label[root(uf, x)]
+# label of the set which element `x` belong to
+group(uf::UnionFind, x) = uf.label[root(uf, x)]
+# all elements that have the specified label
 members(uf::UnionFind, x::Int) = collect(keys(filter(n->n.second == x, uf.label)))
 
-function root(uf::UnionFind{T}, x::T)::T where T<:Integer
+# root of element `x`
+# The root is the representative element of the set
+function root(uf::UnionFind, x::Integer)
     if uf.parent[x] < 0
         return x
     else
@@ -273,15 +281,16 @@ function root(uf::UnionFind{T}, x::T)::T where T<:Integer
     end
 end
 
-function issame(uf::UnionFind{T}, x::T, y::T)::Bool where T<:Integer
+# whether element `x` and `y` belong to the same set
+function issame(uf::UnionFind, x::Integer, y::Integer)
     return root(uf, x) == root(uf, y)
 end
 
-function Base.size(uf::UnionFind{T}, x::T)::T where T<:Integer
+function Base.size(uf::UnionFind, x::Integer)
     return -uf.parent[root(uf, x)]
 end
 
-function unite!(uf::UnionFind{T}, x::T, y::T)::Bool where T<:Integer
+function unite!(uf::UnionFind, x::Integer, y::Integer)
     x = root(uf, x)
     y = root(uf, y)
     if x == y
@@ -293,10 +302,10 @@ function unite!(uf::UnionFind{T}, x::T, y::T)::Bool where T<:Integer
     # unite smaller tree(y) to bigger one(x)
     uf.parent[x] += uf.parent[y]
     uf.parent[y] = x
-    uf.cnt += 1
-    uf.label[y] = uf.cnt
+    uf.next_id += 1
+    uf.label[y] = uf.next_id
     for i in members(uf, group(uf, x))
-        uf.label[i] = uf.cnt
+        uf.label[i] = uf.next_id
     end
     return true
 end
