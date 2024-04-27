@@ -96,23 +96,16 @@ function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; metric=E
     #extract the target cluster
     prune_cluster!(hierarchy)
     #generate the list of cluster assignment for each point
-    result = HdbscanCluster[]
-    noise_points = fill(-1, n)
+    clusters = HdbscanCluster[]
+    assignments = fill(0, length(points)) # cluster index of each point
     for (i, j) in enumerate(hierarchy[2n-1].children)
-        c = hierarchy[j]
-        push!(result, c)
-        for k in c.points
-            noise_points[k] = 0
-        end
+        clu = hierarchy[j]
+        push!(clusters, clu)
+        assignments[clu.points] .= i
     end
-    push!(result, HdbscanCluster(Int[]))
-    result[end].points = findall(x->x==-1, noise_points)
-    assignments = Array{Int}(undef, length(points))
-    for i in 1 : length(result)-1
-        assignments[result[i].points] = i
-    end
-    assignments[result[end].points] .= -1
-    return HdbscanResult(result, assignments)
+    # add the cluster of all unassigned (noise) points
+    push!(clusters, HdbscanCluster(findall(==(0), assignments)))
+    return HdbscanResult(clusters, assignments)
 end
 
 # calculate the core (k-th nearest) distances of the points
