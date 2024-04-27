@@ -29,6 +29,7 @@ mutable struct HdbscanCluster
     λp::Vector{Float64}
     stability::Float64
     children_stability::Float64
+
     function HdbscanCluster(points::Union{Vector{Int}, Nothing})
         noise = points === nothing
         return new(0, Int[], noise ? Int[] : points, Float64[], noise ? -1 : 0, noise ? -1 : 0)
@@ -166,8 +167,8 @@ function hdbscan_clusters(mst::AbstractVector{HdbscanMSTEdge}, min_size::Integer
         cost += c
         λ = 1 / cost
         #child clusters
-        c1 = group(uf, j)
-        c2 = group(uf, k)
+        c1 = set_id(uf, j)
+        c2 = set_id(uf, k)
         #reference to the parent cluster
         clusters[c1].parent = clusters[c2].parent = n+i
         nc1, nc2 = isnoise(clusters[c1]), isnoise(clusters[c2])
@@ -178,7 +179,7 @@ function hdbscan_clusters(mst::AbstractVector{HdbscanMSTEdge}, min_size::Integer
             #unite cluster
             unite!(uf, j, k)
             #create parent cluster
-            points = members(uf, group(uf, j))
+            points = items(uf, set_id(uf, j))
             push!(clusters, HdbscanCluster(points))
         elseif !(nc1 && nc2)
             if nc2 == true
@@ -189,13 +190,13 @@ function hdbscan_clusters(mst::AbstractVector{HdbscanMSTEdge}, min_size::Integer
             #unite cluster
             unite!(uf, j, k)
             #create parent cluster
-            points = members(uf, group(uf, j))
+            points = items(uf, set_id(uf, j))
             push!(clusters, HdbscanCluster(points))
         else
             #unite the noise cluster
             unite!(uf, j, k)
             #create parent cluster
-            points = members(uf, group(uf, j))
+            points = items(uf, set_id(uf, j))
             if length(points) < min_size
                 push!(clusters, HdbscanCluster(Int[]))
             else
@@ -219,68 +220,4 @@ function prune_clusters!(hierarchy::Vector{HdbscanCluster})
             parent.children_stability += c.children_stability
         end
     end
-end
-
-# Union-Find
-# structure for managing disjoint sets
-# This structure tracks which sets the elements of a set belong to,
-# and allows us to efficiently determine whether two elements belong to the same set.
-mutable struct UnionFind
-    parent:: Vector{Integer}  # parent[root] is the negative of the size
-    label::Dict{Int, Int}
-    next_id::Int
-
-    function UnionFind(nodes::Integer)
-        if nodes <= 0
-            throw(ArgumentError("invalid argument for nodes: $nodes"))
-        end
-
-        parent = -ones(nodes)
-        label = Dict([(i, i) for i in 1 : nodes])
-        new(parent, label, nodes)
-    end
-end
-
-# label of the set which element `x` belong to
-group(uf::UnionFind, x) = uf.label[root(uf, x)]
-# all elements that have the specified label
-members(uf::UnionFind, x::Int) = collect(keys(filter(n->n.second == x, uf.label)))
-
-# root of element `x`
-# The root is the representative element of the set
-function root(uf::UnionFind, x::Integer)
-    if uf.parent[x] < 0
-        return x
-    else
-        return uf.parent[x] = root(uf, uf.parent[x])
-    end
-end
-
-# whether element `x` and `y` belong to the same set
-function issame(uf::UnionFind, x::Integer, y::Integer)
-    return root(uf, x) == root(uf, y)
-end
-
-function Base.size(uf::UnionFind, x::Integer)
-    return -uf.parent[root(uf, x)]
-end
-
-function unite!(uf::UnionFind, x::Integer, y::Integer)
-    x = root(uf, x)
-    y = root(uf, y)
-    if x == y
-        return false
-    end
-    if uf.parent[x] > uf.parent[y]
-        x, y = y, x
-    end
-    # unite smaller tree(y) to bigger one(x)
-    uf.parent[x] += uf.parent[y]
-    uf.parent[y] = x
-    uf.next_id += 1
-    uf.label[y] = uf.next_id
-    for i in members(uf, group(uf, x))
-        uf.label[i] = uf.next_id
-    end
-    return true
 end

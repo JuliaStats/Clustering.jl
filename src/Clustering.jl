@@ -81,6 +81,7 @@ module Clustering
 
     include("utils.jl")
     include("seeding.jl")
+    include("unionfind.jl")
 
     include("kmeans.jl")
     include("kmedoids.jl")
