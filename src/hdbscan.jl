@@ -37,7 +37,7 @@ mutable struct HdbscanCluster
     stability::Float64
     children_stability::Float64
     function HdbscanCluster(points::Union{Vector{Int}, Nothing})
-        noise = isnothing(points)
+        noise = points === nothing
         return new(0, Int[], noise ? Int[] : points, Float64[], noise ? -1 : 0, noise ? -1 : 0)
     end
 end
