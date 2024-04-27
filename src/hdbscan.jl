@@ -97,14 +97,15 @@ function hdbscan(points::AbstractMatrix, k::Int, min_cluster_size::Int; metric=E
     prune_cluster!(hierarchy)
     #generate the list of cluster assignment for each point
     clusters = HdbscanCluster[]
-    assignments = fill(0, length(points)) # cluster index of each point
+    assignments = fill(0, n) # cluster index of each point
     for (i, j) in enumerate(hierarchy[2n-1].children)
         clu = hierarchy[j]
         push!(clusters, clu)
         assignments[clu.points] .= i
     end
     # add the cluster of all unassigned (noise) points
-    push!(clusters, HdbscanCluster(findall(==(0), assignments)))
+    noise_points = findall(==(0), assignments)
+    isempty(noise_points) || push!(clusters, HdbscanCluster(noise_points))
     return HdbscanResult(clusters, assignments)
 end
 
