@@ -41,7 +41,7 @@ module Clustering
     DbscanResult, DbscanCluster, dbscan,
 
     # hdbscan
-    HdbscanResult, HdbscanCluster, hdbscan,
+    HdbscanResult, HdbscanCluster, hdbscan, isnoise,
 
     # fuzzy_cmeans
     fuzzy_cmeans, FuzzyCMeansResult,
