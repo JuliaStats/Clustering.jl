@@ -2,17 +2,18 @@
 # edge[i] is a list of edges adjacent to the i-th vertex
 # the second element of HDBSCANEdge is the mutual reachability distance.
 HDBSCANEdge = Tuple{Int, Float64}
-struct HDBSCANGraph
+struct HdbscanGraph
     edges::Vector{Vector{HDBSCANEdge}}
-    HDBSCANGraph(nv::Integer) = new([HDBSCANEdge[] for _ in 1 : nv])
+
+    HdbscanGraph(nv::Integer) = new([HDBSCANEdge[] for _ in 1 : nv])
 end
 
-function add_edge!(G::HDBSCANGraph, v1::Integer, v2::Integer, dist::Number)
+function add_edge!(G::HdbscanGraph, v1::Integer, v2::Integer, dist::Number)
     push!(G.edges[v1], (v2, dist))
     push!(G.edges[v2], (v1, dist))
 end
 
-Base.getindex(G::HDBSCANGraph, i::Int) = G.edges[i]
+Base.getindex(G::HdbscanGraph, i::Int) = G.edges[i]
 
 struct MSTEdge
     v1::Integer
@@ -112,7 +113,7 @@ end
 
 function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
     n = size(dists, 1)
-    graph = HDBSCANGraph(div(n * (n-1), 2))
+    graph = HdbscanGraph(div(n * (n-1), 2))
     for (i, i_dists) in enumerate(eachcol(dists))
         i_core = core_dists[i]
         for j in i+1:n
@@ -123,7 +124,7 @@ function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
     return graph
 end
 
-function hdbscan_minspantree(graph::HDBSCANGraph, n::Integer)
+function hdbscan_minspantree(graph::HdbscanGraph, n::Integer)
     function heapput!(h, v)
         idx = searchsortedlast(h, v, rev=true)
         insert!(h, (idx != 0) ? idx : 1, v)
