@@ -54,7 +54,7 @@ Hierarchical Density-based Spatial Clustering of Applications with Noise(HDBSCAN
 > Ricardo J. G. B. Campello, Davoud Moulavi & Joerg Sander 
 > *Density-Based Clustering Based on Hierarchical Density Estimates* 2013
 
-## Algorithm
+## [Algorithm](@id hdbscan_algorithm)
 The main procedure of HDBSCAN:
 1. calculate the *mutual reachability distance*
 2. generate a *minimum spanning tree*
@@ -90,4 +90,5 @@ The implementation of *HDBSCAN* algorithm is provided by [`hdbscan`](@ref) funct
 hdbscan
 HdbscanResult
 HdbscanCluster
+isnoise
 ```
