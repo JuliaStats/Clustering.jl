@@ -154,7 +154,7 @@ end
 
 function hdbscan_clusters(mst::AbstractVector{HdbscanMSTEdge}, min_size::Integer)
     n = length(mst) + 1
-    cost = 0
+    cost = 0.0
     uf = UnionFind(n)
     clusters = [HdbscanCluster(min_size > 1 ? Int[i] : Int[]) for i in 1:n]
     
