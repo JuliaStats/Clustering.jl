@@ -152,14 +152,13 @@ function hdbscan_minspantree(graph::HdbscanGraph)
     return sort!(minspantree, by=e -> e.dist)
 end
 
-function hdbscan_clusters(mst::AbstractVector{HdbscanMSTEdge}, min_size::Integer)
-    n = length(mst) + 1
+function hdbscan_clusters(minspantree::AbstractVector{HdbscanMSTEdge}, min_size::Integer)
+    n = length(minspantree) + 1
     cost = 0.0
     uf = UnionFind(n)
     clusters = [HdbscanCluster(min_size > 1 ? Int[i] : Int[]) for i in 1:n]
-    
-    for i in 1 : n-1
-        j, k, c = mst[i]
+
+    for (i, (j, k, c)) in enumerate(minspantree)
         cost += c
         λ = 1 / cost
         #child clusters
