@@ -121,9 +121,10 @@ function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
 end
 
 function hdbscan_minspantree(graph::HdbscanGraph)
+    # put the edge to the heap (sorted from largest to smallest distances)
     function heapput!(h, v::HdbscanMSTEdge)
         idx = searchsortedlast(h, v, by=e -> e.dist, rev=true)
-        insert!(h, (idx != 0) ? idx : 1, v)
+        insert!(h, idx + 1, v)
     end
 
     # initialize the edges heap by putting all edges of the first node (the root)
@@ -131,6 +132,7 @@ function hdbscan_minspantree(graph::HdbscanGraph)
     for (i, c) in graph.adj_edges[1]
         heapput!(heap, (v1=1, v2=i, dist=c))
     end
+    @assert issorted(heap, by=e -> e.dist, rev=true)
 
     # build the tree
     n = length(graph.adj_edges)
@@ -139,7 +141,7 @@ function hdbscan_minspantree(graph::HdbscanGraph)
     inmst[1] = true # root
 
     while length(minspantree) < n-1
-        # get the next edge with maximal? distance
+        # get the edge with the smallest distance from the heap
         (i, j, c) = pop!(heap)
 
         # add j-th node to MST if not there
@@ -152,18 +154,16 @@ function hdbscan_minspantree(graph::HdbscanGraph)
             inmst[k] || heapput!(heap, (v1=j, v2=k, dist=c))
         end
     end
-    return minspantree
+    return sort!(minspantree, by=e -> e.dist)
 end
 
-function hdbscan_clusters(mst::AbstractVector{HdbscanMSTEdge}, min_size::Integer)
-    n = length(mst) + 1
-    cost = 0
+function hdbscan_clusters(minspantree::AbstractVector{HdbscanMSTEdge}, min_size::Integer)
+    n = length(minspantree) + 1
+    cost = 0.0
     uf = UnionFind(n)
     clusters = [HdbscanCluster(min_size > 1 ? Int[i] : Int[]) for i in 1:n]
-    sort!(mst)
-    
-    for i in 1 : n-1
-        j, k, c = mst[i]
+
+    for (i, (j, k, c)) in enumerate(minspantree)
         cost += c
         λ = 1 / cost
         #child clusters
