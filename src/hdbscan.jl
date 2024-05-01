@@ -11,6 +11,21 @@ end
 # Edge of the minimum spanning tree for HDBScan algorithm
 HdbscanMSTEdge = NamedTuple{(:v1, :v2, :dist), Tuple{Int, Int, Float64}}
 
+mutable struct HdbscanNode
+    parent::Int
+    children::Vector{Int}
+    points::Vector{Int}
+    λp::Vector{Float64}
+    stability::Float64
+    children_stability::Float64
+
+    function HdbscanNode(points::Union{Vector{Int}, Nothing})
+        noise = points === nothing
+        return new(0, Int[], noise ? Int[] : points, Float64[], noise ? -1 : 0, noise ? -1 : 0)
+    end
+end
+
+
 """
     HdbscanCluster
 
@@ -22,21 +37,12 @@ The stability represents how much the cluster is "reasonable". So, a cluster whi
 The noise cluster is determined not to belong to any cluster. So, you can ignore them.
 See also: [isnoise](@ref)
 """
-mutable struct HdbscanCluster
-    parent::Int
-    children::Vector{Int}
+struct HdbscanCluster
     points::Vector{Int}
-    λp::Vector{Float64}
     stability::Float64
-    children_stability::Float64
-
-    function HdbscanCluster(points::Union{Vector{Int}, Nothing})
-        noise = points === nothing
-        return new(0, Int[], noise ? Int[] : points, Float64[], noise ? -1 : 0, noise ? -1 : 0)
-    end
 end
 
-Base.length(c::HdbscanCluster) = size(c.points, 1)
+Base.length(c::HdbscanCluster) = length(c.points)
 
 """
     isnoise(c::HdbscanCluster)
@@ -44,8 +50,9 @@ Base.length(c::HdbscanCluster) = size(c.points, 1)
 This function returns whether the cluster is the noise or not.
 """
 isnoise(c::HdbscanCluster) = c.stability == -1
-isstable(c::HdbscanCluster) = c.stability != 0
-function increment_stability(c::HdbscanCluster, λbirth)
+isnoise(c::HdbscanNode) = c.stability == -1
+isstable(c::HdbscanNode) = c.stability != 0
+function increment_stability(c::HdbscanNode, λbirth)
     c.stability += sum(c.λp) - length(c.λp) * λbirth
 end
 
@@ -55,6 +62,8 @@ end
 Result of the [hdbscan](@ref) clustering.
 - `clusters`: vector of clusters
 - `assignments`: vectors of assignments for each points
+
+See also: [HdbscanCluster](@ref)
 """
 struct HdbscanResult
     clusters::Vector{HdbscanCluster}
@@ -95,12 +104,12 @@ function hdbscan(points::AbstractMatrix, ncore::Integer, min_cluster_size::Int; 
     assignments = fill(0, n) # cluster index of each point
     for (i, j) in enumerate(hierarchy[2n-1].children)
         clu = hierarchy[j]
-        push!(clusters, clu)
+        push!(clusters, HdbscanCluster(clu.points, clu.stability))
         assignments[clu.points] .= i
     end
     # add the cluster of all unassigned (noise) points
     noise_points = findall(==(0), assignments)
-    isempty(noise_points) || push!(clusters, HdbscanCluster(noise_points))
+    isempty(noise_points) || push!(clusters, HdbscanCluster(noise_points, -1))
     return HdbscanResult(clusters, assignments)
 end
 
@@ -161,7 +170,7 @@ function hdbscan_clusters(minspantree::AbstractVector{HdbscanMSTEdge}, min_size:
     n = length(minspantree) + 1
     cost = 0.0
     uf = UnionFind(n)
-    clusters = [HdbscanCluster(min_size > 1 ? Int[i] : Int[]) for i in 1:n]
+    clusters = [HdbscanNode(min_size > 1 ? Int[i] : Int[]) for i in 1:n]
 
     for (i, (j, k, c)) in enumerate(minspantree)
         cost += c
@@ -180,7 +189,7 @@ function hdbscan_clusters(minspantree::AbstractVector{HdbscanMSTEdge}, min_size:
             unite!(uf, j, k)
             #create parent cluster
             points = items(uf, set_id(uf, j))
-            push!(clusters, HdbscanCluster(points))
+            push!(clusters, HdbscanNode(points))
         elseif !(nc1 && nc2)
             if nc2 == true
                 (c1, c2) = (c2, c1)
@@ -191,16 +200,16 @@ function hdbscan_clusters(minspantree::AbstractVector{HdbscanMSTEdge}, min_size:
             unite!(uf, j, k)
             #create parent cluster
             points = items(uf, set_id(uf, j))
-            push!(clusters, HdbscanCluster(points))
+            push!(clusters, HdbscanNode(points))
         else
             #unite the noise cluster
             unite!(uf, j, k)
             #create parent cluster
             points = items(uf, set_id(uf, j))
             if length(points) < min_size
-                push!(clusters, HdbscanCluster(Int[]))
+                push!(clusters, HdbscanNode(Int[]))
             else
-                push!(clusters, HdbscanCluster(points))
+                push!(clusters, HdbscanNode(points))
             end
         end
     end
@@ -208,7 +217,7 @@ function hdbscan_clusters(minspantree::AbstractVector{HdbscanMSTEdge}, min_size:
     return clusters
 end
 
-function prune_clusters!(hierarchy::Vector{HdbscanCluster})
+function prune_clusters!(hierarchy::Vector{HdbscanNode})
     for i in 1:length(hierarchy)-1
         c = hierarchy[i]
         parent = hierarchy[c.parent]

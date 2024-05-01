@@ -19,7 +19,7 @@ mutable struct UnionFind
 end
 
 # label of the set which element `x` belong to
-set_id(uf::UnionFind, x) = uf.label[root(uf, x)]
+set_id(uf::UnionFind, x::Int) = uf.label[root(uf, x)]
 # all elements that have the specified label
 items(uf::UnionFind, x::Int) = [k for (k, v) in pairs(uf.label) if v == x]
 
