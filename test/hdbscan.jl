@@ -27,9 +27,9 @@ end
     # tests for result
     result = @inferred(hdbscan(data, 5, 15))
     @test isa(result, HdbscanResult)
-    @test sum(length, result.clusters) == size(data, 2)
+    @test sum(x->length(x.points), result.clusters) == size(data, 2)
     # test whether the model recognizes the moons
-    @test length(result.clusters) == 3
+    @test nclusters(result) == 2
 
     # generate more complicated data
     n_points = 100  # number of points
@@ -41,9 +41,9 @@ end
     # generate all the points
     data = hcat([0.5 * randn(2, n_points) .+ centers[i] for i in 1:clusters]...)
     # check the effect of min_size
-    nclusters1 = length(@inferred(hdbscan(data, 5, 5)).clusters)
-    nclusters2 = length(@inferred(hdbscan(data, 5, 15)).clusters)
-    nclusters3 = length(@inferred(hdbscan(data, 5, 25)).clusters)
+    nclusters1 = nclusters(@inferred(hdbscan(data, 5, 5)))
+    nclusters2 = nclusters(@inferred(hdbscan(data, 5, 15)))
+    nclusters3 = nclusters(@inferred(hdbscan(data, 5, 25)))
     @test nclusters1 >= nclusters2
     @test nclusters2 >= nclusters3
 end

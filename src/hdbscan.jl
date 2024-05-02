@@ -43,8 +43,6 @@ struct HdbscanCluster
     stability::Float64
 end
 
-Base.length(c::HdbscanCluster) = length(c.points)
-
 """
     isnoise(c::HdbscanCluster)
 
@@ -67,9 +65,10 @@ Result of the [hdbscan](@ref) clustering.
 
 See also: [HdbscanCluster](@ref)
 """
-struct HdbscanResult
+struct HdbscanResult <: ClusteringResult
     clusters::Vector{HdbscanCluster}
     assignments::Vector{Int}
+    counts::Vector{Int}
 end
 
 """
@@ -103,16 +102,18 @@ function hdbscan(points::AbstractMatrix, ncore::Integer, min_cluster_size::Int; 
     extract_clusters!(tree)
     #generate the list of cluster assignment for each point
     clusters = HdbscanCluster[]
+    counts = Int[]
     assignments = fill(0, n) # cluster index of each point
     for (i, j) in enumerate(tree[end].children)
         clu = tree[j]
         push!(clusters, HdbscanCluster(clu.points, clu.stability))
+        push!(counts, length(clu.points))
         assignments[clu.points] .= i
     end
     # add the cluster of all unassigned (noise) points
     noise_points = findall(==(0), assignments)
     isempty(noise_points) || push!(clusters, HdbscanCluster(noise_points, -1))
-    return HdbscanResult(clusters, assignments)
+    return HdbscanResult(clusters, assignments, counts)
 end
 
 function hdbscan_graph(core_dists::AbstractVector, dists::AbstractMatrix)
