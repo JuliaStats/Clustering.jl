@@ -19,12 +19,13 @@ mutable struct HdbscanNode
     stability::Float64
     children_stability::Float64
 
-    function HdbscanNode(points::Union{Vector{Int}, Nothing})
-        noise = points === nothing
-        return new(0, Int[], noise ? Int[] : points, Float64[], noise ? -1 : 0, noise ? -1 : 0)
+    function HdbscanNode(points::Vector{Int}; λp::Vector{Float64}=Float64[], children::Vector{Int}=Int[], children_stability::Float64=0.0)
+        noise = isempty(λp)
+        return new(0, children, points, λp, noise ? -1 : 0, children_stability)
     end
 end
 
+cluster_len(c::HdbscanNode) = length(c.points)
 
 """
     HdbscanCluster
@@ -52,8 +53,9 @@ This function returns whether the cluster is the noise or not.
 isnoise(c::HdbscanCluster) = c.stability == -1
 isnoise(c::HdbscanNode) = c.stability == -1
 isstable(c::HdbscanNode) = c.stability != 0
-function increment_stability(c::HdbscanNode, λbirth)
-    c.stability += sum(c.λp) - length(c.λp) * λbirth
+function compute_stability!(c::HdbscanNode, λbirth)
+    c.stability = sum(c.λp) - length(c.λp) * λbirth
+    return c.stability
 end
 
 """
@@ -96,14 +98,14 @@ function hdbscan(points::AbstractMatrix, ncore::Integer, min_cluster_size::Int; 
     #compute a minimum spanning tree by prim method
     mst = hdbscan_minspantree(mrd)
     #build a HDBSCAN hierarchy
-    hierarchy = hdbscan_clusters(mst, min_cluster_size)
+    tree = hdbscan_build_tree(mst, min_cluster_size)
     #extract the target cluster
-    prune_clusters!(hierarchy)
+    extract_clusters!(tree)
     #generate the list of cluster assignment for each point
     clusters = HdbscanCluster[]
     assignments = fill(0, n) # cluster index of each point
-    for (i, j) in enumerate(hierarchy[2n-1].children)
-        clu = hierarchy[j]
+    for (i, j) in enumerate(tree[end].children)
+        clu = tree[j]
         push!(clusters, HdbscanCluster(clu.points, clu.stability))
         assignments[clu.points] .= i
     end
@@ -166,11 +168,11 @@ function hdbscan_minspantree(graph::HdbscanGraph)
     return sort!(minspantree, by=e -> e.dist)
 end
 
-function hdbscan_clusters(minspantree::AbstractVector{HdbscanMSTEdge}, min_size::Integer)
+function hdbscan_build_tree(minspantree::AbstractVector{HdbscanMSTEdge}, min_size::Integer)
     n = length(minspantree) + 1
     cost = 0.0
     uf = UnionFind(n)
-    clusters = [HdbscanNode(min_size > 1 ? Int[i] : Int[]) for i in 1:n]
+    clusters = [HdbscanNode(Int[i], λp=(min_size==1) ? Float64[Inf] : Float64[]) for i in 1:n]
 
     for (i, (j, k, c)) in enumerate(minspantree)
         cost += c
@@ -180,53 +182,50 @@ function hdbscan_clusters(minspantree::AbstractVector{HdbscanMSTEdge}, min_size:
         c2 = set_id(uf, k)
         #reference to the parent cluster
         clusters[c1].parent = clusters[c2].parent = n+i
-        nc1, nc2 = isnoise(clusters[c1]), isnoise(clusters[c2])
-        if !(nc1 || nc2)
-            #compute stability
-            increment_stability(clusters[c1], λ)
-            increment_stability(clusters[c2], λ)
-            #unite cluster
-            unite!(uf, j, k)
-            #create parent cluster
-            points = items(uf, set_id(uf, j))
-            push!(clusters, HdbscanNode(points))
-        elseif !(nc1 && nc2)
-            if nc2 == true
-                (c1, c2) = (c2, c1)
-            end
-            #record the lambda value
-            append!(clusters[c2].λp, fill(λ, length(clusters[c1])))
-            #unite cluster
-            unite!(uf, j, k)
-            #create parent cluster
-            points = items(uf, set_id(uf, j))
+        #unite the clusters
+        unite!(uf, j, k)
+        points = items(uf, set_id(uf, j))
+        if length(points) < min_size
             push!(clusters, HdbscanNode(points))
         else
-            #unite the noise cluster
-            unite!(uf, j, k)
-            #create parent cluster
-            points = items(uf, set_id(uf, j))
-            if length(points) < min_size
-                push!(clusters, HdbscanNode(Int[]))
+            nc1, nc2 = isnoise(clusters[c1]), isnoise(clusters[c2])
+            if nc1 && nc2
+                push!(clusters, HdbscanNode(points, λp=fill(λ, length(points))))
+            elseif nc1 || nc2
+                #ensure that c1 is the cluster
+                if nc1 == true
+                    c1, c2 = c2, c1
+                end
+                push!(clusters, HdbscanNode(points, λp=[clusters[c1].λp..., fill(λ, cluster_len(clusters[c2]))...]))
             else
-                push!(clusters, HdbscanNode(points))
+                #compute stabilities for children
+                c1_stability = compute_stability!(clusters[c1], λ)
+                c2_stability = compute_stability!(clusters[c2], λ)
+                #unite the two clusters
+                push!(clusters, HdbscanNode(points, λp=fill(λ, length(points)), children=[c1, c2], children_stability=c1_stability+c2_stability))
             end
         end
     end
+    compute_stability!(clusters[end], 1/cost)
     @assert length(clusters) == 2n - 1
     return clusters
 end
 
-function prune_clusters!(hierarchy::Vector{HdbscanNode})
-    for i in 1:length(hierarchy)-1
-        c = hierarchy[i]
-        parent = hierarchy[c.parent]
-        if isnoise(c) || c.stability > c.children_stability
-            push!(parent.children, i)
-            parent.children_stability += c.stability
-        else
+function extract_clusters!(tree::Vector{HdbscanNode})
+    for i in eachindex(tree)
+        i == length(tree) && continue
+        c = tree[i]
+        isempty(c.children) && continue
+        parent = tree[c.parent]
+        children_stability = sum([tree[c.children[i]].stability for i in eachindex(c.children)])
+        if children_stability > c.stability
+            filter!(x->x!=i, parent.children)
             append!(parent.children, c.children)
-            parent.children_stability += c.children_stability
         end
+    end
+    c = tree[end]
+    children_stability = sum([tree[c.children[i]].stability for i in eachindex(c.children)])
+    if children_stability <= c.stability
+        c.children = Int[2 * length(tree) - 1]
     end
 end
