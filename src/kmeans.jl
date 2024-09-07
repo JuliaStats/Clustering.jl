@@ -388,6 +388,6 @@ function repick_unused_centers(X::AbstractMatrix{<:Real}, # in: the data matrix 
         v = view(X, :, j)
         centers[:, i] = v
         colwise!(distance, ds, v, X)
-        tcosts = min(tcosts, ds)
+        tcosts .= min.(tcosts, ds)
     end
 end
