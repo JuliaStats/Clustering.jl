@@ -40,6 +40,9 @@ module Clustering
     # dbscan
     DbscanResult, DbscanCluster, dbscan,
 
+    # hdbscan
+    HdbscanResult, HdbscanCluster, hdbscan, isnoise,
+
     # fuzzy_cmeans
     fuzzy_cmeans, FuzzyCMeansResult,
 
@@ -78,11 +81,13 @@ module Clustering
 
     include("utils.jl")
     include("seeding.jl")
+    include("unionfind.jl")
 
     include("kmeans.jl")
     include("kmedoids.jl")
     include("affprop.jl")
     include("dbscan.jl")
+    include("hdbscan.jl")
     include("mcl.jl")
     include("fuzzycmeans.jl")
 
