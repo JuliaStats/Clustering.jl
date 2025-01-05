@@ -6,7 +6,6 @@ using Clustering
 using LinearAlgebra
 using Random, StableRNGs
 using Statistics
-include("test_helpers.jl")
 
 @testset "affinityprop() (affinity propagation)" begin
 

@@ -1,7 +1,6 @@
 using Test
 using Clustering
 using Distances
-include("test_helpers.jl")
 
 @testset "dbscan() (DBSCAN clustering)" begin
 

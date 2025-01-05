@@ -1,7 +1,6 @@
 using Test
 using Distances
 using Clustering
-include("test_helpers.jl")
 
 @testset "kmedoids() (k-medoids)" begin
 
