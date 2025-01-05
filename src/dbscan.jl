@@ -101,7 +101,6 @@ function dbscan(points::AbstractMatrix, radius::Real;
     if metric !== nothing
         # points are point coordinates
         dim, num_points = size(points)
-        num_points <= dim && throw(ArgumentError("points has $dim rows and $num_points columns. Must be a D x N matric with D < N"))
         kdtree = KDTree(points, metric; nntree_kwargs...)
         data = (kdtree, points)
     else

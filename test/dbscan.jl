@@ -14,6 +14,51 @@ include("test_helpers.jl")
     @test @inferred(dbscan(randn(2, 2), 0.5, metric=nothing, min_neighbors=1)) isa DbscanResult
 end
 
+@testset "Simple 2D tests" begin
+    X = [10.0  0.0   10.5
+          0.0  10.0  0.1]
+
+    @testset "n=3 samples" begin
+        X3 = X
+
+        R = dbscan(X3, 20)
+        @test nclusters(R) == 1
+
+        R = dbscan(X3, 1.0)
+        @test nclusters(R) == 2
+
+        R = dbscan(X3, 0.1)
+        @test nclusters(R) == 3
+    end
+
+    @testset "n=2 samples" begin
+        X2 = X[:, 1:2]
+
+        R = dbscan(X2, 20)
+        @test nclusters(R) == 1
+
+        R = dbscan(X2, 1.0)
+        @test nclusters(R) == 2
+    end
+
+    @testset "n=1 samples" begin
+        X1 = X[:, 1:1]
+
+        R = dbscan(X1, 20)
+        @test nclusters(R) == 1
+
+        R = dbscan(X1, 1.0)
+        @test nclusters(R) == 1
+    end
+
+    @testset "n=0 samples" begin
+        X0 = X[:, 1:0]
+
+        R = dbscan(X0, 20)
+        @test nclusters(R) == 0
+    end
+end
+
 @testset "clustering synthetic data with 3 clusters" begin
     Random.seed!(34568)
 
