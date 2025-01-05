@@ -6,6 +6,8 @@ using SparseArrays
 using StableRNGs
 using Statistics
 
+include("test_helpers.jl")
+
 tests = ["seeding",
          "kmeans",
          "kmedoids",
