@@ -157,15 +157,15 @@ function _kmedoids!(medoids::Vector{Int},      # initialized medoids
 
         # display progress
         if displevel >= 2
-            @printf("%7d %18.6e %18.6e\n", t, tcost, tcost - tcost_pre)
+            @info("$(t) $(tcost) $(tcost - tcost_pre)")
         end
     end
 
     if displevel >= 1
         if converged
-            println("K-medoids converged with $t iterations (objv = $tcost)")
+            @info("K-medoids converged with $t iterations (objv = $tcost)")
         else
-            println("K-medoids terminated without convergence after $t iterations (objv = $tcost)")
+            @info("K-medoids terminated without convergence after $t iterations (objv = $tcost)")
         end
     end
 

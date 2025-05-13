@@ -195,15 +195,15 @@ function _kmeans!(X::AbstractMatrix{<:Real},                # in: data matrix (d
 
         # display information (if required)
         if displevel >= 2
-            @printf("%7d %18.6e %18.6e | %8d\n", t, objv, objv_change, num_affected)
+            @info("$(t) $(objv) $(objv_change) $(num_affected)")
         end
     end
 
     if displevel >= 1
         if converged
-            println("K-means converged with $t iterations (objv = $objv)")
+            @info("K-means converged with $t iterations (objv = $objv)")
         else
-            println("K-means terminated without convergence after $t iterations (objv = $objv)")
+            @info("K-means terminated without convergence after $t iterations (objv = $objv)")
         end
     end
 
