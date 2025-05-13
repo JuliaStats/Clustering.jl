@@ -136,7 +136,7 @@ function _fuzzy_cmeans(
         copyto!(prev_centers, centers)
         iter += 1
         if displevel >= 2
-            @printf("%7d %18.6e\n", iter, δ)
+            @info("$(iter) $(δ)")
         end
     end
 
