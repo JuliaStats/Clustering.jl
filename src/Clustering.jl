@@ -100,4 +100,8 @@ module Clustering
     include("hclust.jl")
 
     include("deprecate.jl")
+
+    if !isdefined(Base, :get_extension)
+        include("../ext/SpecialFunctionsExt.jl")
+    end
 end

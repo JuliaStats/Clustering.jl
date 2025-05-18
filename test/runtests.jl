@@ -3,6 +3,7 @@ using Test
 using Random
 using LinearAlgebra
 using SparseArrays
+using SpecialFunctions
 using StableRNGs
 using Statistics
 
